@@ -37,7 +37,11 @@ export const materialStatusValidator = v.union(
 );
 
 export const analysisValidator = v.object({
+  title: v.optional(v.string()),
+  // A. simple explanation
   summary: v.string(),
+  // B. deep explanation
+  deepExplanation: v.optional(v.string()),
   keyPoints: v.array(v.string()),
   concepts: v.array(
     v.object({
@@ -50,11 +54,29 @@ export const analysisValidator = v.object({
       ),
     }),
   ),
+  definitions: v.optional(
+    v.array(v.object({ term: v.string(), definition: v.string() })),
+  ),
+  formulas: v.optional(
+    v.array(
+      v.object({ name: v.string(), expression: v.string(), note: v.string() }),
+    ),
+  ),
+  examples: v.optional(
+    v.array(v.object({ title: v.string(), walkthrough: v.string() })),
+  ),
+  applications: v.optional(v.array(v.string())),
   misconceptions: v.array(
     v.object({ wrong: v.string(), why: v.string(), correct: v.string() }),
   ),
   commonMistakes: v.array(v.string()),
   prerequisites: v.array(v.string()),
+  causeEffect: v.optional(
+    v.array(v.object({ cause: v.string(), effect: v.string() })),
+  ),
+  remember: v.optional(v.array(v.string())),
+  applySkills: v.optional(v.array(v.string())),
+  examinerQuestions: v.optional(v.array(v.string())),
   practiceAreas: v.array(v.object({ name: v.string(), reason: v.string() })),
   model: v.string(),
   analyzedAt: v.number(),
@@ -86,6 +108,18 @@ const schema = defineSchema(
       studyGoal: v.optional(v.string()),
       onboardingComplete: v.boolean(),
       seededDemo: v.boolean(), // has demo/sample content been added
+    }).index("by_user", ["userId"]),
+
+    gameProfiles: defineTable({
+      userId: v.id("users"),
+      xp: v.number(),
+      level: v.number(),
+      streakCount: v.number(),
+      longestStreak: v.number(),
+      lastStudyDay: v.optional(v.string()), // "YYYY-MM-DD" (UTC)
+      goalMinutesPerDay: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
     }).index("by_user", ["userId"]),
 
     subjects: defineTable({
@@ -150,6 +184,7 @@ const schema = defineSchema(
       conversationId: v.optional(v.id("conversations")),
       mode: v.union(v.literal("diagnostic"), v.literal("practice")),
       status: v.union(
+        v.literal("generating"),
         v.literal("active"),
         v.literal("completed"),
         v.literal("failed"),
@@ -179,6 +214,8 @@ const schema = defineSchema(
           correct: v.boolean(),
         }),
       ),
+      conceptFocus: v.optional(v.string()),
+      missionId: v.optional(v.id("missions")),
       createdAt: v.number(),
       completedAt: v.optional(v.number()),
     })
@@ -207,9 +244,88 @@ const schema = defineSchema(
     studySessions: defineTable({
       userId: v.id("users"),
       minutes: v.number(),
-      kind: v.string(), // "chat" | "quiz" | "material"
+      kind: v.string(), // "chat" | "quiz" | "material" | "flashcards"
       createdAt: v.number(),
     }).index("by_user_created", ["userId", "createdAt"]),
+
+    // ---- gamification ----
+
+    missions: defineTable({
+      userId: v.id("users"),
+      title: v.string(),
+      description: v.string(),
+      kind: v.union(
+        v.literal("practice"),
+        v.literal("review"),
+        v.literal("learn"),
+        v.literal("fix_gap"),
+        v.literal("master"),
+      ),
+      targetCount: v.number(),
+      progress: v.number(),
+      xpReward: v.number(),
+      conceptKey: v.optional(v.string()),
+      conceptLabel: v.optional(v.string()),
+      materialId: v.optional(v.id("materials")),
+      status: v.union(v.literal("active"), v.literal("completed")),
+      createdAt: v.number(),
+      completedAt: v.optional(v.number()),
+    })
+      .index("by_user_status", ["userId", "status"])
+      .index("by_user_created", ["userId", "createdAt"]),
+
+    xpEvents: defineTable({
+      userId: v.id("users"),
+      amount: v.number(),
+      reason: v.string(),
+      createdAt: v.number(),
+    }).index("by_user_created", ["userId", "createdAt"]),
+
+    achievements: defineTable({
+      userId: v.id("users"),
+      key: v.string(),
+      earnedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_key", ["userId", "key"]),
+
+    exams: defineTable({
+      userId: v.id("users"),
+      title: v.string(),
+      subjectId: v.optional(v.id("subjects")),
+      examDate: v.number(),
+      createdAt: v.number(),
+    }).index("by_user_date", ["userId", "examDate"]),
+
+    // ---- flashcards / spaced repetition ----
+
+    flashcards: defineTable({
+      userId: v.id("users"),
+      materialId: v.optional(v.id("materials")),
+      conceptKey: v.optional(v.string()),
+      conceptLabel: v.optional(v.string()),
+      front: v.string(),
+      back: v.string(),
+      ease: v.number(), // 1.3 .. 3.0
+      dueAt: v.number(),
+      reps: v.number(),
+      lapses: v.number(),
+      createdAt: v.number(),
+    })
+      .index("by_user_due", ["userId", "dueAt"])
+      .index("by_material", ["materialId"]),
+
+    reviews: defineTable({
+      userId: v.id("users"),
+      flashcardId: v.id("flashcards"),
+      grade: v.union(
+        v.literal("again"),
+        v.literal("hard"),
+        v.literal("good"),
+        v.literal("easy"),
+      ),
+      reviewedAt: v.number(),
+    }).index("by_user_reviewed", ["userId", "reviewedAt"]),
   },
   {
     schemaValidation: false,
