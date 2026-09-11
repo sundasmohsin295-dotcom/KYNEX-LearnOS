@@ -105,36 +105,11 @@ export default function Flashcards() {
           <CheckCircle2 className="mx-auto size-12 text-success" />
           <p className="mt-4 font-display text-2xl font-bold">Nothing due right now</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            {reviewedThisSession > 0
-              ? `You reviewed ${reviewedThisSession} card${reviewedThisSession === 1 ? "" : "s"} this session. The next batch becomes due over the coming days.`
-              : "Generate flashcards from any material, and the right cards will surface here exactly when you're about to forget them."}
+            Generate flashcards from any material, and the right cards will surface here exactly
+            when you're about to forget them.
           </p>
           <Button asChild className="mt-6 gap-2 rounded-xl">
             <Link to="/library"><Sparkles className="size-4" /> Pick a material</Link>
-          </Button>
-        </div>
-      )}
-
-      {finished && (
-        <div className="mx-auto max-w-2xl rounded-3xl border border-success/30 bg-gradient-to-br from-success/10 via-card to-card p-10 text-center">
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            className="mx-auto grid size-16 place-items-center rounded-2xl bg-success/15 text-success"
-          >
-            <Zap className="size-8 fill-current" />
-          </motion.div>
-          <p className="mt-5 font-display text-2xl font-extrabold">Session complete</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {doneCount} card{doneCount === 1 ? "" : "s"} moved forward in the schedule ·{" "}
-            {reviewedThisSession - doneCount} flagged to see again soon
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            XP was awarded per genuine recall — not for clicking through.
-          </p>
-          <Button asChild variant="outline" className="mt-6 gap-2 rounded-xl">
-            <Link to="/dashboard">Back to dashboard</Link>
           </Button>
         </div>
       )}

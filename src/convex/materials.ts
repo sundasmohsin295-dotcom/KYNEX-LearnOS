@@ -18,6 +18,19 @@ export const list = query({
   },
 });
 
+/** All subjects for the sidebar / library grouping. */
+export const listSubjects = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    return await ctx.db
+      .query("subjects")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+  },
+});
+
 export const get = query({
   args: { id: v.id("materials") },
   handler: async (ctx, { id }) => {

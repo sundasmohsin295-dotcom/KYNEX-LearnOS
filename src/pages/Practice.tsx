@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { motion } from "framer-motion";
 import { Brain, History, Play, Target, TrendingUp, Wrench } from "lucide-react";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { MasteryRings } from "@/components/VisualBits";
-import { QuizRunner } from "@/components/QuizRunner";
 import { cn } from "@/lib/utils";
 import { masteryState } from "@/lib/studyos";
 
@@ -32,7 +31,6 @@ export default function Practice({ materialId: routeMaterialId }: { materialId?:
 function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
   const overview = useQuery(api.profiles.myOverview);
   const attempts = useQuery(api.learning.listQuizAttempts, {});
-  const [concept, setConcept] = useState<string | null>(null);
   const startQuiz = useMutation(api.learning.startQuiz);
   const genQuiz = useAction(api.aiEngine.generateQuiz);
 
@@ -93,7 +91,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
             {weak.map((m) => (
               <button
                 key={m._id}
-                onClick={() => { setConcept(m.conceptKey); void focusPractice(m.conceptKey, m.materialId ?? undefined); }}
+                onClick={() => void focusPractice(m.conceptKey, m.materialId ?? undefined)}
                 className="card-lift rounded-2xl border border-border/70 bg-card p-4 text-left"
               >
                 <p className="font-display font-bold">{m.conceptLabel}</p>
@@ -123,9 +121,6 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <TrendingUp className="size-5 text-primary" /> Your mastery map
           </h3>
-          {concept && (
-            <Button variant="ghost" size="sm" onClick={() => setConcept(null)}>Clear focus</Button>
-          )}
         </div>
         {overview && overview.mastery.length > 0 ? (
           <MasteryRings rows={overview.mastery.slice(0, 9)} className="mt-4" />
@@ -220,7 +215,10 @@ function PracticeSession({
   const overview = useQuery(api.profiles.myOverview);
   const startQuiz = useMutation(api.learning.startQuiz);
   const genQuiz = useAction(api.aiEngine.generateQuiz);
-  const [conceptKey, setConceptKey] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [conceptKey, setConceptKey] = useState<string | null>(
+    () => searchParams.get("concept"),
+  );
   const [count, setCount] = useState(8);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "adaptive">("adaptive");
   const [busy, setBusy] = useState(false);

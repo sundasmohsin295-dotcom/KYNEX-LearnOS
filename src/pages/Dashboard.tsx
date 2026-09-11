@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import {
   Flame, Play, Plus, RefreshCw, Sparkles, Target, TrendingUp, Trophy, Wrench, Zap,
 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -25,8 +26,11 @@ function useMissionAction() {
   const navigate = useNavigate();
   return (m: Mission) => {
     if (m.kind === "review") return navigate("/flashcards");
-    if (m.materialId) return navigate(`/practice/${m.materialId}${m.conceptKey ? `?concept=${encodeURIComponent(m.conceptKey)}` : ""}`);
-    return navigate(m.materialId ? `/practice/${m.materialId}` : "/library");
+    if (m.materialId) {
+      const conceptQs = m.conceptKey ? `?concept=${encodeURIComponent(m.conceptKey)}` : "";
+      return navigate(`/practice/${m.materialId}${conceptQs}`);
+    }
+    return navigate("/library");
   };
 }
 

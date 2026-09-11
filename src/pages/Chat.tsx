@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import {
-  Bot, Check, ChevronDown, MessageSquarePlus, Pencil, Search, Send, Star, Trash2, User,
+  Bot, Check, ChevronDown, Download, MessageSquarePlus, Pencil, Search, Send, Star, Trash2, User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -70,6 +70,8 @@ export default function Chat() {
     if (m && MODES.some((x) => x.key === m)) setMode(m);
   }, [params]);
 
+  const concept = params.get("concept");
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length, waiting]);
@@ -110,6 +112,31 @@ export default function Chat() {
     } finally {
       setWaiting(false);
     }
+  };
+
+  /** Export the active conversation as a readable Markdown file. */
+  const exportConversation = () => {
+    if (!activeConv || !messages || messages.length === 0) {
+      toast.error("Nothing to export yet");
+      return;
+    }
+    const lines = [
+      `# ${activeConv.title}`,
+      ``,
+      `_Exported from STUDYOS AI on ${new Date().toLocaleString()}_`,
+      ``,
+      ...messages.map(
+        (m) => `## ${m.role === "user" ? "You" : "STUDYOS AI"}\n\n${m.content}\n`,
+      ),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeConv.title.replace(/[^\w\d -]/g, "").trim().slice(0, 60) || "conversation"}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Conversation exported");
   };
 
   return (
@@ -248,6 +275,15 @@ export default function Chat() {
                 <option key={m._id} value={m._id}>{m.title}</option>
               ))}
             </select>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8 shrink-0"
+              title="Export conversation as Markdown"
+              onClick={exportConversation}
+            >
+              <Download className="size-4" />
+            </Button>
           </div>
 
           {/* mode chips */}
@@ -282,6 +318,11 @@ export default function Chat() {
                 <p className="mt-4 font-display text-lg font-bold">
                   {MODES.find((m) => m.key === mode)?.label ?? "Your tutor"} is ready
                 </p>
+                {concept && (
+                  <p className="mt-2 text-sm font-semibold text-primary">
+                    Focusing on: {concept}
+                  </p>
+                )}
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   {MODES.find((m) => m.key === mode)?.desc}
                 </p>
@@ -365,7 +406,7 @@ export default function Chat() {
                     void send();
                   }
                 }}
-                placeholder={`Ask anything${material ? ` about ${material.title}` : ""}…`}
+                placeholder={concept ? `Learning ${concept} — tell your tutor what you already know…` : `Ask anything${material ? ` about ${material.title}` : ""}…`}
                 rows={1}
                 className="max-h-36 min-h-11 flex-1 resize-none rounded-xl"
               />

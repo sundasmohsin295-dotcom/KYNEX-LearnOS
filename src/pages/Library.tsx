@@ -18,9 +18,16 @@ const STATUS_META = {
 
 export default function Library() {
   const materials = useQuery(api.materials.list);
+  const subjects = useQuery(api.materials.listSubjects);
   const remove = useMutation(api.materials.remove);
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+
+  const subjectNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of subjects ?? []) map.set(s._id, s.name);
+    return map;
+  }, [subjects]);
 
   const grouped = useMemo(() => {
     const list = (materials ?? []).filter((m) =>
@@ -28,7 +35,6 @@ export default function Library() {
     );
     const map = new Map<string, typeof list>();
     for (const m of list) {
-      // subject names are resolved below via a lightweight label
       const key = m.subjectId ?? "general";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
@@ -87,7 +93,7 @@ export default function Library() {
           {[...grouped.entries()].map(([subject, items]) => (
             <div key={subject}>
               <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                {subject === "general" ? "General" : subject.slice(0, 8) === "subject-" ? "Subject" : subject}
+                {subject === "general" ? "General" : subjectNames.get(subject) ?? "Subject"}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((m, i) => {
