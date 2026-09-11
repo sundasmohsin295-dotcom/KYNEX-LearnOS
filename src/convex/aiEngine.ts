@@ -77,7 +77,7 @@ function sleep(ms: number) {
 // Deep chapter analysis
 // ---------------------------------------------------------------------------
 
-const ANALYSIS_SYSTEM = `You are STUDYOS AI — an expert academic analyst and tutor engine.
+const ANALYSIS_SYSTEM = `You are KYNEX — the analysis engine of an Academic Intelligence OS.
 You receive study material (a chapter, article, transcript or notes) and produce a deep learning analysis.
 Rules:
 - Explain accurately using ONLY the provided material plus well-established background knowledge.
@@ -181,7 +181,7 @@ function guessSubject(materialTitle: string, analysis: LearningAnalysis): string
 // Chat
 // ---------------------------------------------------------------------------
 
-const CHAT_SYSTEM = `You are STUDYOS AI, a warm, structured AI tutor inside a student learning OS.
+const CHAT_SYSTEM = `You are KYNEX Professor, an AI teaching system (not a human) inside an Academic Intelligence OS.
 You always answer in the context of the student's selected learning material when one is provided.
 Guidelines:
 - Use markdown headings, short paragraphs and bullet lists. Never produce walls of text.

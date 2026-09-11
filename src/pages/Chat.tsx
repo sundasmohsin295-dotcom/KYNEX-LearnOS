@@ -134,10 +134,10 @@ export default function Chat() {
     const lines = [
       `# ${activeConv.title}`,
       ``,
-      `_Exported from STUDYOS AI on ${new Date().toLocaleString()}_`,
+      `_Exported from KYNEX on ${new Date().toLocaleString()}_`,
       ``,
       ...messages.map(
-        (m) => `## ${m.role === "user" ? "You" : "STUDYOS AI"}\n\n${m.content}\n`,
+        (m) => `## ${m.role === "user" ? "You" : "KYNEX Professor"}\n\n${m.content}\n`,
       ),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });

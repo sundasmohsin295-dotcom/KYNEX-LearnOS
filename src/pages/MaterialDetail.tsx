@@ -81,7 +81,7 @@ export default function MaterialDetail() {
           </motion.div>
           <h1 className="mt-6 font-display text-2xl font-bold">{material.title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            STUDYOS is reading, structuring and building your learning kit…
+            KYNEX is reading, structuring and building your Subject Brain…
           </p>
           <div className="mt-8">
             <ProcessingPipeline stage={material.processingStage ?? "receiving"} />

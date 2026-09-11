@@ -98,7 +98,7 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // ---- STUDYOS AI ----
+    // ---- KYNEX ----
 
     profiles: defineTable({
       userId: v.id("users"),

@@ -165,7 +165,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
         </motion.div>
         <h2 className="mt-6 font-display text-2xl font-bold">Writing your questions…</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          STUDYOS is crafting questions that test understanding — not trivia.
+          KYNEX is crafting questions that test understanding — not trivia.
         </p>
         <div className="mx-auto mt-6 max-w-xs space-y-2">
           {["Reading the material", "Picking what to test", "Writing questions"].map((s, i) => (
