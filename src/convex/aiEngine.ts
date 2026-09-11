@@ -1,8 +1,8 @@
 "use node";
 
-import { internalAction } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { createVlyIntegrations } from "@vly-ai/integrations";
 
 const vly = createVlyIntegrations({
@@ -345,6 +345,128 @@ JSON shape: [{ "question": string, "options": string[4], "correctIndex": 0-3, "e
 });
 
 // ---------------------------------------------------------------------------
-// Study session logging (unused by the client directly, kept for parity)
+// Public action wrappers (the client's entry points; verify ownership first)
 // ---------------------------------------------------------------------------
+
+/** Kick off deep analysis for a material the caller owns. */
+export const analyze = action({
+  args: { materialId: v.id("materials") },
+  handler: async (ctx, { materialId }) => {
+    const owned = await ctx.runQuery(api.materials.get, { id: materialId });
+    if (!owned) throw new Error("Material not found");
+    await ctx.runAction(internal.aiEngine.analyzeMaterial, { materialId });
+  },
+});
+
+/** Send a chat message: history is read from the DB, reply is stored there. */
+export const chat = action({
+  args: {
+    conversationId: v.id("conversations"),
+    materialId: v.optional(v.id("materials")),
+    mode: v.string(),
+  },
+  handler: async (ctx, { conversationId, materialId, mode }) => {
+    const history = await ctx.runQuery(api.learning.listMessages, { conversationId });
+    const last = history[history.length - 1];
+    if (last && last.role === "assistant") {
+      throw new Error("The tutor is still replying — try again in a moment.");
+    }
+    await ctx.runAction(internal.aiEngine.chatInternal, {
+      conversationId,
+      materialId,
+      mode,
+      history: history.map((m: { role: string; content: string }) => ({
+        role: m.role,
+        content: m.content,
+      })),
+    });
+  },
+});
+
+/** Generate questions for a quiz attempt the caller owns. */
+export const generateQuiz = action({
+  args: { attemptId: v.id("quizAttempts") },
+  handler: async (ctx, { attemptId }) => {
+    const attempt = await ctx.runQuery(api.learning.getQuizAttempt, { id: attemptId });
+    if (!attempt) throw new Error("Quiz attempt not found");
+    await ctx.runAction(internal.aiEngine.quizInternal, {
+      attemptId,
+      materialId: attempt.materialId,
+      conceptKey: attempt.conceptFocus,
+      count: attempt.missionId ? 8 : 10,
+      difficulty: attempt.mode === "diagnostic" ? "adaptive" : "medium",
+    });
+  },
+});
+
+/** Fetch a URL server-side (no CORS), extract readable text, create + analyze. */
+export const ingestUrl = action({
+  args: { url: v.string() },
+  handler: async (ctx, { url }): Promise<string> => {
+    let normalized: URL;
+    try {
+      normalized = new URL(url.startsWith("http") ? url : `https://${url}`);
+    } catch {
+      throw new Error("That doesn't look like a valid URL.");
+    }
+    const isYouTube = /youtube\.com|youtu\.be/.test(normalized.hostname);
+
+    let text = "";
+    let title = normalized.hostname + normalized.pathname;
+    try {
+      const res = await fetch(normalized.toString(), {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; StudyOSBot/1.0)",
+          Accept: "text/html,text/plain,*/*",
+        },
+        signal: AbortSignal.timeout(15000),
+        redirect: "follow",
+      });
+      if (!res.ok) throw new Error(`The site responded with HTTP ${res.status}.`);
+      const html = await res.text();
+      title =
+        html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? title;
+      if (isYouTube) {
+        // pull the video description out of the player JSON when present
+        const desc = html.match(/"shortDescription":"([\s\S]*?)"/)?.[1] ?? "";
+        text = `${title}\n\n${desc
+          .replace(/\\n/g, "\n")
+          .replace(/\\"/g, '"')
+          .replace(/\\u0026/g, "&")}`;
+      } else {
+        text = html
+          .replace(/<script[\s\S]*?<\/script>/gi, " ")
+          .replace(/<style[\s\S]*?<\/style>/gi, " ")
+          .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
+          .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/&nbsp;/g, " ")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+    } catch (e) {
+      throw new Error(
+        `Could not read that link: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+
+    if (text.trim().length < 40) {
+      throw new Error(
+        "We reached the page but couldn't extract readable study text from it (the content may be behind a login or rendered by scripts we can't run).",
+      );
+    }
+
+    const materialId = await ctx.runMutation(api.materials.createText, {
+      title: title.slice(0, 120),
+      text,
+      kind: isYouTube ? "youtube" : "url",
+      sourceUrl: normalized.toString(),
+    });
+    await ctx.runAction(internal.aiEngine.analyzeMaterial, { materialId });
+    return materialId as unknown as string;
+  },
+});
 

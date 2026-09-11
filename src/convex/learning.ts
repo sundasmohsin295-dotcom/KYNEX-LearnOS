@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { query, mutation, MutationCtx } from "./_generated/server";
+import { query, mutation, internalMutation, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import {
@@ -132,7 +132,7 @@ export const appendUserMessage = mutation({
 });
 
 /** Internal: store the assistant reply. */
-export const appendAssistantInternal = mutation({
+export const appendAssistantInternal = internalMutation({
   args: { conversationId: v.id("conversations"), content: v.string() },
   handler: async (ctx, { conversationId, content }) => {
     await ctx.db.insert("messages", {
@@ -202,7 +202,7 @@ export const startQuiz = mutation({
 });
 
 /** Internal: fill in generated questions. */
-export const activateInternal = mutation({
+export const activateInternal = internalMutation({
   args: {
     attemptId: v.id("quizAttempts"),
     questions: v.array(
@@ -224,7 +224,7 @@ export const activateInternal = mutation({
 });
 
 /** Internal: mark quiz generation failed. */
-export const failInternal = mutation({
+export const failInternal = internalMutation({
   args: { attemptId: v.id("quizAttempts"), error: v.string() },
   handler: async (ctx, { attemptId, error }) => {
     await ctx.db.patch(attemptId, {

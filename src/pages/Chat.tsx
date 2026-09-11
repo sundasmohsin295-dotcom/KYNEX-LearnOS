@@ -1,0 +1,390 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useMutation, useAction } from "convex/react";
+import { useNavigate, useSearchParams } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import {
+  Bot, Check, ChevronDown, MessageSquarePlus, Pencil, Search, Send, Star, Trash2, User,
+} from "lucide-react";
+import { toast } from "sonner";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+import { AppShell } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { MODES, MODE_TO_AI, type ModeKey } from "@/lib/studyos";
+
+const QUICK_PROMPTS = [
+  "Explain this simply",
+  "Explain this deeply",
+  "Give me a real-world example",
+  "Why does this work?",
+  "Quiz me",
+  "Teach me from zero",
+  "Find the missing concept I need before learning this",
+  "Ask me questions until you know I understand",
+];
+
+export default function Chat() {
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const conversations = useQuery(api.learning.listConversations);
+  const materials = useQuery(api.materials.listReady);
+  const sendUser = useMutation(api.learning.appendUserMessage);
+  const runChat = useAction(api.aiEngine.chat);
+  const createConv = useMutation(api.learning.createConversation);
+  const starConv = useMutation(api.learning.starConversation);
+  const renameConv = useMutation(api.learning.renameConversation);
+  const deleteConv = useMutation(api.learning.deleteConversation);
+
+  const [activeId, setActiveId] = useState<Id<"conversations"> | null>(null);
+  const [input, setInput] = useState("");
+  const [waiting, setWaiting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [mode, setMode] = useState<ModeKey>("summary");
+  const [renaming, setRenaming] = useState<Id<"conversations"> | null>(null);
+  const [renameVal, setRenameVal] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const messages = useQuery(
+    api.learning.listMessages,
+    activeId ? { conversationId: activeId } : "skip",
+  );
+  const activeConv = useMemo(
+    () => conversations?.find((c) => c._id === activeId) ?? null,
+    [conversations, activeId],
+  );
+
+  const materialId = (params.get("material") as Id<"materials"> | null) ?? activeConv?.materialId ?? null;
+  const material = useQuery(
+    api.materials.get,
+    materialId ? { id: materialId } : "skip",
+  );
+
+  // URL-driven mode / material / new chat
+  useEffect(() => {
+    const m = params.get("mode") as ModeKey | null;
+    if (m && MODES.some((x) => x.key === m)) setMode(m);
+  }, [params]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages?.length, waiting]);
+
+  const filtered = (conversations ?? []).filter((c) =>
+    c.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const newChat = async () => {
+    try {
+      const id = await createConv({ materialId: materialId ?? undefined });
+      setActiveId(id);
+      setShowSidebar(false);
+      setParams((p) => {
+        p.delete("mode");
+        return p;
+      });
+    } catch {
+      toast.error("Couldn't create a new chat");
+    }
+  };
+
+  const send = async (raw?: string) => {
+    const content = (raw ?? input).trim();
+    if (!content || waiting) return;
+    let convId = activeId;
+    try {
+      if (!convId) {
+        convId = await createConv({ materialId: materialId ?? undefined });
+        setActiveId(convId);
+      }
+      setInput("");
+      setWaiting(true);
+      await sendUser({ conversationId: convId, content });
+      await runChat({ conversationId: convId, materialId: materialId ?? undefined, mode: MODE_TO_AI[mode] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "The tutor couldn't reply");
+    } finally {
+      setWaiting(false);
+    }
+  };
+
+  return (
+    <AppShell>
+      <div className="flex h-[calc(100vh-8.5rem)] overflow-hidden rounded-3xl border border-border/70 bg-card lg:h-[calc(100vh-7rem)]">
+        {/* ---------- Conversation sidebar ---------- */}
+        <aside
+          className={cn(
+            "absolute inset-y-0 left-0 z-30 flex w-72 flex-col border-r border-border/70 bg-sidebar transition-transform lg:static lg:translate-x-0",
+            showSidebar ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          <div className="p-3">
+            <Button className="w-full gap-2 rounded-xl" onClick={newChat}>
+              <MessageSquarePlus className="size-4" /> New chat
+            </Button>
+            <div className="relative mt-3">
+              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search conversations"
+                className="h-9 rounded-lg pl-9 text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex-1 space-y-1 overflow-y-auto px-2 pb-3 scrollbar-thin">
+            {filtered.map((c) => (
+              <div
+                key={c._id}
+                className={cn(
+                  "group relative rounded-xl px-3 py-2.5 transition-colors",
+                  activeId === c._id ? "bg-primary/10" : "hover:bg-accent",
+                )}
+              >
+                {renaming === c._id ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      autoFocus
+                      value={renameVal}
+                      onChange={(e) => setRenameVal(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter" && renameVal.trim()) {
+                          await renameConv({ id: c._id, title: renameVal.trim() });
+                          setRenaming(null);
+                        }
+                        if (e.key === "Escape") setRenaming(null);
+                      }}
+                      className="h-7 rounded-md text-xs"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-6"
+                      onClick={async () => {
+                        if (renameVal.trim()) await renameConv({ id: c._id, title: renameVal.trim() });
+                        setRenaming(null);
+                      }}
+                    >
+                      <Check className="size-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <button className="w-full text-left" onClick={() => { setActiveId(c._id); setShowSidebar(false); }}>
+                    <p className="truncate pr-14 text-xs font-semibold">
+                      {c.starred && "⭐ "}{c.title}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(c.updatedAt).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                    </p>
+                  </button>
+                )}
+                <div className="absolute right-1.5 top-1/2 hidden -translate-y-1/2 gap-0.5 group-hover:flex">
+                  <button
+                    className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-xp-foreground"
+                    title={c.starred ? "Unstar" : "Star"}
+                    onClick={() => starConv({ id: c._id })}
+                  >
+                    <Star className={cn("size-3", c.starred && "fill-xp text-xp")} />
+                  </button>
+                  <button
+                    className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
+                    title="Rename"
+                    onClick={() => { setRenaming(c._id); setRenameVal(c.title); }}
+                  >
+                    <Pencil className="size-3" />
+                  </button>
+                  <button
+                    className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-destructive"
+                    title="Delete"
+                    onClick={async () => {
+                      await deleteConv({ id: c._id });
+                      if (activeId === c._id) setActiveId(null);
+                    }}
+                  >
+                    <Trash2 className="size-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-3 py-6 text-center text-xs text-muted-foreground">No conversations yet.</p>
+            )}
+          </div>
+        </aside>
+
+        {/* ---------- Chat column ---------- */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* header */}
+          <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
+            <Button size="icon" variant="ghost" className="size-8 lg:hidden" onClick={() => setShowSidebar((s) => !s)}>
+              <ChevronDown className="size-4 rotate-90" />
+            </Button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold">{activeConv?.title ?? "New conversation"}</p>
+              {material && (
+                <p className="truncate text-[11px] text-muted-foreground">
+                  Context: <span className="font-semibold text-primary">{material.title}</span>
+                </p>
+              )}
+            </div>
+            <select
+              value={materialId ?? ""}
+              onChange={(e) => {
+                const v = e.target.value || null;
+                setParams((p) => {
+                  if (v) p.set("material", v);
+                  else p.delete("material");
+                  return p;
+                });
+              }}
+              className="h-8 max-w-44 rounded-lg border border-border bg-background px-2 text-xs font-medium"
+            >
+              <option value="">No material context</option>
+              {(materials ?? []).map((m) => (
+                <option key={m._id} value={m._id}>{m.title}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* mode chips */}
+          <div className="flex gap-1.5 overflow-x-auto border-b border-border/60 px-4 py-2 scrollbar-thin">
+            {MODES.map((m) => (
+              <button
+                key={m.key}
+                onClick={() => setMode(m.key)}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1 text-[11px] font-bold transition-colors",
+                  mode === m.key
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {/* messages */}
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-5 scrollbar-thin">
+            {(!messages || messages.length === 0) && (
+              <div className="mx-auto mt-8 max-w-lg text-center">
+                <motion.div
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="mx-auto grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground shadow-lg"
+                >
+                  <Bot className="size-7" />
+                </motion.div>
+                <p className="mt-4 font-display text-lg font-bold">
+                  {MODES.find((m) => m.key === mode)?.label ?? "Your tutor"} is ready
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {MODES.find((m) => m.key === mode)?.desc}
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  {QUICK_PROMPTS.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => send(p)}
+                      className="rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50 hover:text-primary"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {messages?.map((msg) => (
+              <motion.div
+                key={msg._id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "justify-start")}
+              >
+                {msg.role === "assistant" && (
+                  <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground">
+                    <Bot className="size-4" />
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[75%]",
+                    msg.role === "user"
+                      ? "rounded-br-md bg-primary text-primary-foreground"
+                      : "rounded-bl-md border border-border/70 bg-background",
+                  )}
+                >
+                  {msg.role === "assistant" ? (
+                    <div className="space-y-2 [&_h3]:font-display [&_h3]:text-sm [&_h3]:font-bold [&_li]:ml-4 [&_li]:list-disc [&_ol]:ml-4 [&_ol]:list-decimal [&_p+p]:mt-2 [&_strong]:text-foreground [&_table]:w-full [&_td]:border [&_td]:border-border/60 [&_td]:px-2 [&_th]:border [&_th]:border-border/60 [&_th]:px-2">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
+                </div>
+                {msg.role === "user" && (
+                  <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-accent">
+                    <User className="size-4" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+            {waiting && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground">
+                  <Bot className="size-4" />
+                </div>
+                <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-border/70 bg-background px-4 py-3.5">
+                  {[0, 1, 2].map((i) => (
+                    <motion.span
+                      key={i}
+                      className="size-1.5 rounded-full bg-primary"
+                      animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                      transition={{ repeat: Infinity, duration: 1, delay: i * 0.18 }}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* composer */}
+          <div className="border-t border-border/70 p-3">
+            <div className="flex items-end gap-2">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void send();
+                  }
+                }}
+                placeholder={`Ask anything${material ? ` about ${material.title}` : ""}…`}
+                rows={1}
+                className="max-h-36 min-h-11 flex-1 resize-none rounded-xl"
+              />
+              <Button
+                size="icon"
+                className="size-11 shrink-0 rounded-xl shadow-md shadow-primary/25"
+                disabled={waiting || !input.trim()}
+                onClick={() => void send()}
+              >
+                <Send className="size-4.5" />
+              </Button>
+            </div>
+            <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
+              Mode: <span className="font-bold text-primary">{MODES.find((m) => m.key === mode)?.label}</span>
+              {" · "}Enter to send, Shift+Enter for a new line
+            </p>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
