@@ -8,6 +8,7 @@ import {
   generateNextMission,
 } from "./gamification";
 import { ACHIEVEMENT_META } from "./achievementMeta";
+import { enforceRateLimit, logAuditEvent } from "./security";
 
 // ---------------------------------------------------------------------------
 // Conversations & messages
@@ -106,6 +107,7 @@ export const deleteConversation = mutation({
       await ctx.db.delete(msg._id);
     }
     await ctx.db.delete(id);
+    await logAuditEvent(ctx, userId, "conversation_deleted", "with_messages");
   },
 });
 
@@ -117,14 +119,22 @@ export const appendUserMessage = mutation({
     if (!userId) throw new Error("Not authenticated");
     const conv = await ctx.db.get(conversationId);
     if (!conv || conv.userId !== userId) throw new Error("Conversation not found");
+
+    // Server-side input validation: hard cap + strip control characters.
+    const text = content.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim();
+    if (text.length === 0) throw new Error("Message cannot be empty.");
+    if (text.length > 4000) {
+      throw new Error("Message is too long (4000 characters maximum).");
+    }
+
     await ctx.db.insert("messages", {
       userId,
       conversationId,
       role: "user",
-      content,
+      content: text,
       createdAt: Date.now(),
     });
-    const title = conv.title === "New chat" ? content.slice(0, 60) : conv.title;
+    const title = conv.title === "New chat" ? text.slice(0, 60) : conv.title;
     await ctx.db.patch(conversationId, { updatedAt: Date.now(), title });
     // small XP for genuine engagement
     await awardXp(ctx, 2, "Asked a question");
@@ -187,6 +197,30 @@ export const startQuiz = mutation({
   handler: async (ctx, { materialId, conceptKey, count, difficulty, mode, missionId }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    // IDOR FIX: the material must exist AND belong to the caller.
+    const material = await ctx.db.get(materialId);
+    if (!material || material.userId !== userId) {
+      throw new Error("Material not found");
+    }
+    // IDOR FIX: an attached mission must belong to the caller — never accept a
+    // client-supplied mission id to attach XP/progress to someone else's goal.
+    if (missionId) {
+      const mission = await ctx.db.get(missionId);
+      if (!mission || mission.userId !== userId) {
+        throw new Error("Mission not found");
+      }
+    }
+    if (count < 1 || count > 20 || !Number.isInteger(count)) {
+      throw new Error("Question count must be between 1 and 20.");
+    }
+    if (!["easy", "medium", "hard", "adaptive"].includes(difficulty)) {
+      throw new Error("Invalid difficulty.");
+    }
+    if (conceptKey && conceptKey.length > 120) {
+      throw new Error("Concept filter is too long.");
+    }
+
     const id = await ctx.db.insert("quizAttempts", {
       userId,
       materialId,
@@ -250,6 +284,7 @@ export const answerQuestion = mutation({
   handler: async (ctx, { attemptId, index, selectedIndex, confidence }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    await enforceRateLimit(ctx, "quizAnswer", userId);
     const q = await ctx.db.get(attemptId);
     if (!q || q.userId !== userId) throw new Error("Quiz not found");
     if (q.status !== "active") throw new Error("Quiz is not active");
@@ -257,6 +292,13 @@ export const answerQuestion = mutation({
 
     const question = q.questions[index];
     if (!question) throw new Error("Question not found");
+    if (
+      !Number.isInteger(selectedIndex) ||
+      selectedIndex < 0 ||
+      selectedIndex >= question.options.length
+    ) {
+      throw new Error("Invalid answer selection.");
+    }
     const correct = selectedIndex === question.correctIndex;
     const nextAnswers = [...q.answers, { selectedIndex, confidence, correct }];
     await ctx.db.patch(attemptId, { answers: nextAnswers });
@@ -394,6 +436,7 @@ export const reviewFlashcard = mutation({
     if (!userId) throw new Error("Not authenticated");
     const card = await ctx.db.get(cardId);
     if (!card || card.userId !== userId) throw new Error("Card not found");
+    await enforceRateLimit(ctx, "review", userId);
 
     const now = Date.now();
     const DAY = 86400000;

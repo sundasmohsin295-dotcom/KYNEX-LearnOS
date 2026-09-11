@@ -4,6 +4,10 @@ import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { materialKindValidator } from "./schema";
 import { awardXp, generateNextMission } from "./gamification";
+import { enforceRateLimit, logAuditEvent } from "./security";
+
+/** Hard server-side content ceiling — protects the DB and the AI wallet. */
+export const MAX_MATERIAL_CHARS = 400_000;
 
 export const list = query({
   args: {},
@@ -69,18 +73,31 @@ export const createText = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    await enforceRateLimit(ctx, "textIngest", userId);
 
     const text = args.text.trim();
     if (text.length < 40) {
       throw new Error("Content is too short to analyze (need at least a paragraph).");
+    }
+    if (text.length > MAX_MATERIAL_CHARS) {
+      throw new Error(
+        "That document is too large to process. Please split it into smaller sections.",
+      );
+    }
+
+    // The optional subject must belong to the caller — never trust a client id.
+    let subjectId: typeof args.subjectId = undefined;
+    if (args.subjectId) {
+      const subject = await ctx.db.get(args.subjectId);
+      if (subject && subject.userId === userId) subjectId = args.subjectId;
     }
 
     const now = Date.now();
     const words = text.split(/\s+/).filter(Boolean).length;
     const id = await ctx.db.insert("materials", {
       userId,
-      subjectId: args.subjectId,
-      title: args.title.slice(0, 120) || "Untitled material",
+      subjectId,
+      title: (args.title.trim().slice(0, 200) || "Untitled material").slice(0, 120),
       kind: args.kind,
       sourceUrl: args.sourceUrl,
       status: "processing",
@@ -129,6 +146,8 @@ export const markFailed = mutation({
   },
 });
 
+/** Delete a material the caller owns, cascading to chunks, conversations,
+ *  messages, quiz attempts and flashcards. Audited. */
 export const remove = mutation({
   args: { id: v.id("materials") },
   handler: async (ctx, { id }) => {
@@ -169,6 +188,7 @@ export const remove = mutation({
       await ctx.db.delete(f._id);
     }
     await ctx.db.delete(id);
+    await logAuditEvent(ctx, userId, "material_deleted", "cascade");
   },
 });
 

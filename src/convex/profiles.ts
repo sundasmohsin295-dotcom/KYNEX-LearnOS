@@ -3,6 +3,7 @@ import { query, mutation, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { ensureProfiles, levelForXp, todayKey, XP_PER_LEVEL } from "./gamification";
+import { enforceRateLimit, logAuditEvent } from "./security";
 
 /** Full app bootstrap for the signed-in user: profile, game stats, missions.
  *  Read-only: if the profile rows don't exist yet (no mutation has run), returns
@@ -344,7 +345,6 @@ export const myInsights = query({
 
 /** Seeds one demo subject + material with a pre-baked analysis so a brand-new
  *  account has something to explore immediately. Returns the material id. */
-export const seedDemoData = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);

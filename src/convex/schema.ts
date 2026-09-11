@@ -340,6 +340,26 @@ const schema = defineSchema(
       ),
       reviewedAt: v.number(),
     }).index("by_user_reviewed", ["userId", "reviewedAt"]),
+
+    // ---- security ----
+
+    // Fixed-window server-side rate limiting for expensive/sensitive ops.
+    // One row per (key) — key embeds userId + operation.
+    rateLimits: defineTable({
+      key: v.string(),
+      windowStart: v.number(),
+      count: v.number(),
+    }).index("by_key", ["key"]),
+
+    // Security-relevant event log (deletions, rate-limit hits, auth-adjacent
+    // failures). Contains NO personal content — only actor id + action type.
+    // Not exposed through any public query: read access is ops-only.
+    auditLogs: defineTable({
+      userId: v.optional(v.id("users")),
+      action: v.string(),
+      detail: v.optional(v.string()),
+      createdAt: v.number(),
+    }).index("by_action_time", ["action", "createdAt"]),
   },
   {
     schemaValidation: false,
