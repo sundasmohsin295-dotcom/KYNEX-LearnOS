@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { MODES, MODE_TO_AI, type ModeKey } from "@/lib/studyos";
 
 const QUICK_PROMPTS = [
+  // KYNEX Professor quick intents
   "Explain this simply",
   "Explain this deeply",
   "Give me a real-world example",
@@ -261,12 +262,19 @@ export default function Chat() {
               <ChevronDown className="size-4 rotate-90" />
             </Button>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">{activeConv?.title ?? "New conversation"}</p>
-              {material && (
-                <p className="truncate text-[11px] text-muted-foreground">
-                  Context: <span className="font-semibold text-primary">{material.title}</span>
-                </p>
-              )}
+              <p className="truncate text-sm font-bold">
+                KYNEX Professor
+                <span className="ml-2 hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-extrabold text-primary sm:inline">
+                  {MODES.find((m) => m.key === mode)?.depth ?? "CORE"}
+                </span>
+              </p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                {material ? (
+                  <>Context: <span className="font-semibold text-primary">{material.title}</span></>
+                ) : (
+                  "AI teaching system — not a human professor"
+                )}
+              </p>
             </div>
             <select
               value={materialId ?? ""}
@@ -326,7 +334,7 @@ export default function Chat() {
                   <Bot className="size-7" />
                 </motion.div>
                 <p className="mt-4 font-display text-lg font-bold">
-                  {MODES.find((m) => m.key === mode)?.label ?? "Your tutor"} is ready
+                  KYNEX Professor · {MODES.find((m) => m.key === mode)?.label ?? "ready"}
                 </p>
                 {concept && (
                   <p className="mt-2 text-sm font-semibold text-primary">
@@ -430,7 +438,7 @@ export default function Chat() {
               </Button>
             </div>
             <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
-              Mode: <span className="font-bold text-primary">{MODES.find((m) => m.key === mode)?.label}</span>
+              {MODES.find((m) => m.key === mode)?.depth} depth · {MODES.find((m) => m.key === mode)?.label}
               {" · "}Enter to send, Shift+Enter for a new line
             </p>
           </div>

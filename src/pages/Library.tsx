@@ -54,9 +54,9 @@ export default function Library() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Your knowledge base" title="Library">
+      <PageHeader eyebrow="KYNEX Brain · your subjects" title="Vault">
         <Button onClick={() => navigate("/add")} className="gap-2 rounded-xl shadow-lg shadow-primary/25">
-          <Plus className="size-4" /> Add material
+          <Plus className="size-4" /> Add to Vault
         </Button>
       </PageHeader>
 
@@ -79,13 +79,13 @@ export default function Library() {
       ) : materials.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-border p-14 text-center">
           <BookOpen className="mx-auto size-10 text-muted-foreground/50" />
-          <p className="mt-4 font-display text-xl font-bold">Your library is empty</p>
+          <p className="mt-4 font-display text-xl font-bold">Your Vault is empty</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            Add a PDF, a YouTube link, an article or paste your notes — STUDYOS turns it into a
-            full learning kit in under a minute.
+            Add a PDF, a YouTube link, an article or paste your notes — KYNEX turns it into a
+            Subject Brain with concepts, practice and Recall in under a minute.
           </p>
           <Button size="lg" className="mt-6 gap-2 rounded-xl" onClick={() => navigate("/add")}>
-            <Plus className="size-4" /> Add your first material
+            <Plus className="size-4" /> Add your first source
           </Button>
         </div>
       ) : (
@@ -93,7 +93,7 @@ export default function Library() {
           {[...grouped.entries()].map(([subject, items]) => (
             <div key={subject}>
               <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                {subject === "general" ? "General" : subjectNames.get(subject) ?? "Subject"}
+                {subject === "general" ? "Unsorted" : `KYNEX Brain · ${subjectNames.get(subject) ?? "Subject"}`}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((m, i) => {

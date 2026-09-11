@@ -140,7 +140,7 @@ export default function MaterialDetail() {
           {/* Quick actions */}
           <div className="flex flex-row flex-wrap gap-2 lg:flex-col">
             <Button className="gap-2 rounded-xl shadow-lg shadow-primary/25" onClick={() => navigate(`/chat?material=${material._id}`)}>
-              <MessageSquareText className="size-4" /> Ask the tutor
+              <MessageSquareText className="size-4" /> Ask the Professor
             </Button>
             <Button
               variant="outline"
@@ -183,7 +183,10 @@ export default function MaterialDetail() {
 
       {/* ---------- Learning modes ---------- */}
       <section className="mt-9">
-        <h2 className="font-display text-lg font-bold">Learning modes</h2>
+        <h2 className="font-display text-lg font-bold">
+          KYNEX Professor · modes
+          <span className="ml-2 rounded-full bg-muted px-2.5 py-0.5 align-middle text-[10px] font-bold text-muted-foreground">AI teaching system</span>
+        </h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {MODES.map((m, i) => {
             const Icon = MODE_ICON[m.icon] ?? Zap;
@@ -211,7 +214,7 @@ export default function MaterialDetail() {
       <section className="mt-9 rounded-3xl border border-border/70 bg-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold">
-            <Network className="size-5 text-primary" /> Visual engine
+            <Network className="size-5 text-primary" /> KYNEX Map
           </h2>
           <div className="flex gap-1 rounded-xl bg-muted p-1">
             {(

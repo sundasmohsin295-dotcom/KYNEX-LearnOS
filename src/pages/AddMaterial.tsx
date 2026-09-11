@@ -135,9 +135,9 @@ export default function AddMaterial() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Universal input" title="Add learning material">
+      <PageHeader eyebrow="KYNEX Vault · Knowledge ingestion" title="Add to your Vault">
         <p className="max-w-md text-sm text-muted-foreground">
-          Any source becomes a full learning kit — analysis, tutor, quizzes and flashcards.
+          Any source becomes structured knowledge — concepts, questions, Recall cards and mastery tracking.
         </p>
       </PageHeader>
 
@@ -213,7 +213,7 @@ export default function AddMaterial() {
               <Textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Paste your notes, a chapter, a transcript — anything you need to learn…"
+                placeholder="Paste your notes, a chapter, a transcript — anything you need to master…"
                 disabled={busy}
                 className="min-h-56 rounded-xl text-sm leading-relaxed"
               />

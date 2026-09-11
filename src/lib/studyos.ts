@@ -31,8 +31,6 @@ export const MODES = [
 export type ModeKey = (typeof MODES)[number]["key"];
 export type Depth = (typeof MODES)[number]["depth"];
 
-export type ModeKey = (typeof MODES)[number]["key"];
-
 /** Mode → the AI mode instruction key consumed by the chat action. */
 export const MODE_TO_AI: Record<ModeKey, string> = {
   summary: "explain",

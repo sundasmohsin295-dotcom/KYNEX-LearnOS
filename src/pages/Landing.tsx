@@ -3,70 +3,71 @@ import { Link, Navigate } from "react-router";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { KynexMark } from "@/components/AppShell";
 import {
-  BookOpen, Brain, CheckCircle2, FileText, Flame, GraduationCap,
-  Link2, ListChecks, MessageSquareText, Network, Quote, Sparkles,
-  Target, Trophy, Upload, Zap,
+  ArrowRight, BookOpen, Brain, CheckCircle2, FileText, Fingerprint,
+  Link2, ListChecks, MessageSquareText, Network, Quote, ScanSearch,
+  Sparkles, Target, Upload, Zap,
 } from "lucide-react";
 
 const FEATURES = [
   {
-    icon: Upload,
-    title: "Upload anything",
-    desc: "PDFs, YouTube, articles, slides, notes, images — even messy handwriting. STUDYOS reads it all and builds a structured learning kit from it.",
-  },
-  {
-    icon: Brain,
-    title: "Deep chapter analysis",
-    desc: "Simple + deep explanations, ranked concepts, definitions, formulas, misconceptions, prerequisites and examiner-style questions — generated per material.",
-  },
-  {
-    icon: Network,
-    title: "See how ideas connect",
-    desc: "Mind maps, flowcharts and knowledge graphs animate your material into visual structures, so relationships click instead of blur.",
+    icon: Fingerprint,
+    title: "KYNEX Twin",
+    desc: "A living model of your academic state — degree, GPA targets, mastery, weak concepts and study patterns — updated every time you learn.",
   },
   {
     icon: Target,
-    title: "Know your next move",
-    desc: "One dominant mission, always. Targeted at your weakest concept, sized to fit in one sitting, and retired the moment you beat it.",
+    title: "KYNEX Move",
+    desc: "One highest-impact action, always. Chosen from your accuracy, mistakes and prerequisites — with the evidence shown, never a generic to-do list.",
+  },
+  {
+    icon: Upload,
+    title: "KYNEX Vault",
+    desc: "PDFs, YouTube, articles, slides, notes, images. KYNEX reads it all and builds structured knowledge: concepts, questions, Recall cards, exam topics.",
   },
   {
     icon: MessageSquareText,
-    title: "A tutor with 10 modes",
-    desc: "Socratic questioning, Feynman checks, teach-me loops, exam drills. It never dumps answers — it builds understanding.",
+    title: "KYNEX Professor",
+    desc: "An AI teaching system with real depth: STARTER to RESEARCH. Socratic questioning, Feynman checks and teach-me loops — never answer dumps.",
   },
   {
-    icon: Flame,
-    title: "Progress that rewards real learning",
-    desc: "XP from correct answers and genuine mastery — never from screen time. Streaks encourage consistency, not guilt.",
+    icon: Brain,
+    title: "Mastery Engine",
+    desc: "Every answer updates a per-concept mastery model. KYNEX distinguishes what you know from what you've merely seen.",
+  },
+  {
+    icon: ScanSearch,
+    title: "Exam Radar",
+    desc: "Preparation priority built from your mastery, recency and uploaded materials. Evidence-based — never a prediction of what will appear.",
   },
 ];
 
 const PIPELINE = [
-  { icon: Upload, label: "Upload" },
+  { icon: Upload, label: "Vault" },
   { icon: FileText, label: "Read" },
   { icon: Brain, label: "Understand" },
   { icon: ListChecks, label: "Structure" },
-  { icon: Zap, label: "Generate" },
-  { icon: CheckCircle2, label: "Ready" },
+  { icon: Target, label: "Next Move" },
+  { icon: CheckCircle2, label: "Master" },
 ];
 
 const FAQS = [
   {
-    q: "What can I upload?",
-    a: "Website and article URLs, YouTube links, PDFs, Word documents, slide decks, plain text, pasted notes, images and screenshots. The AI extracts, structures and analyzes whatever you give it.",
+    q: "What can I put in the Vault?",
+    a: "Website and article URLs, YouTube links, PDFs, Word documents, slide decks, plain text, pasted notes, images and screenshots. KYNEX extracts, structures and analyzes whatever you give it — and tells you honestly when a format fails.",
   },
   {
-    q: "How does the AI tutor work?",
-    a: "Every conversation is grounded in your uploaded material. Pick a mode — Socratic, Feynman, Teach Me — and the tutor adapts: one probing question at a time, no answer dumps, difficulty that follows your performance.",
+    q: "How does the Professor work?",
+    a: "Every conversation is grounded in your Vault material and your mastery data. Pick a mode and depth — from STARTER explanations to EXAM drills — and the Professor adapts: one probing question at a time, no answer dumps, difficulty that follows your performance.",
   },
   {
-    q: "What is a mastery score?",
-    a: "Each concept tracks your accuracy and confidence across practice. Above 85% with repeated evidence = mastered. Below 60% = flagged weak, and missions automatically target it.",
+    q: "What is the Mastery Engine?",
+    a: "Each concept tracks your accuracy and confidence across practice. Above 85% with repeated evidence = mastered. Below 60% = flagged weak, and Missions automatically target it. The same data powers Exam Radar and your Twin.",
   },
   {
-    q: "Is the gamification ethical?",
-    a: "XP and rewards come from genuine learning events: correct answers, concept mastery, completed reviews. Miss a day and there's no shaming — just 'Welcome back, your progress is still here.'",
+    q: "Does KYNEX predict my exam?",
+    a: "No. Exam Radar shows preparation priority from real evidence — your accuracy, recency and materials. It never claims a topic will appear. Where marks are estimated, they're clearly labelled as modelled or provisional.",
   },
 ];
 
@@ -93,14 +94,12 @@ export default function Landing() {
       <header className="fixed inset-x-0 top-0 z-50 border-b border-border/50 glass">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <a href="#top" className="flex items-center gap-2.5">
-            <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground shadow-md">
-              <GraduationCap className="size-5" />
-            </div>
-            <span className="font-display text-lg font-bold">STUDYOS <span className="text-primary">AI</span></span>
+            <KynexMark className="size-9" />
+            <span className="font-display text-lg font-extrabold tracking-tight">KYNEX</span>
           </a>
           <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
-            <a href="#features" className="transition-colors hover:text-foreground">Features</a>
-            <a href="#how" className="transition-colors hover:text-foreground">How it works</a>
+            <a href="#system" className="transition-colors hover:text-foreground">The system</a>
+            <a href="#features" className="transition-colors hover:text-foreground">Intelligence</a>
             <a href="#faq" className="transition-colors hover:text-foreground">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
@@ -108,7 +107,7 @@ export default function Landing() {
               <Link to="/auth">Sign in</Link>
             </Button>
             <Button asChild className="shadow-lg shadow-primary/25">
-              <Link to="/auth">Start learning free</Link>
+              <Link to="/auth">Launch KYNEX</Link>
             </Button>
           </div>
         </div>
@@ -129,45 +128,51 @@ export default function Landing() {
             className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary"
           >
             <Sparkles className="size-3.5" />
-            Your Student Learning Operating System
+            A new category: the Academic Intelligence OS
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.08 }}
-            className="font-display text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl"
+            className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl"
           >
-            Upload anything.
-            <br />
-            <span className="text-gradient">Understand everything.</span>
+            KYNEX
           </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.14 }}
+            className="mt-3 font-display text-lg font-bold text-gradient sm:text-xl"
+          >
+            Your Academic Intelligence OS
+          </motion.p>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.16 }}
+            transition={{ duration: 0.55, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg"
           >
-            STUDYOS AI turns any PDF, lecture, article or messy notes into a complete interactive
-            learning experience — deep analysis, a personal tutor, adaptive practice, visual maps
-            and mastery tracking that shows exactly what to do next.
+            KYNEX builds a living model of your academic journey and continuously determines the
+            highest-impact action you should take next. Not another chatbot — an operating system
+            that knows where you are, where you're going, and the gap between.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.24 }}
+            transition={{ duration: 0.55, delay: 0.26 }}
             className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
             <Button asChild size="lg" className="h-13 gap-2 rounded-2xl px-8 text-base shadow-xl shadow-primary/30">
               <Link to="/auth">
-                <Zap className="size-4.5" /> Start learning free
+                <Zap className="size-4.5" /> Launch KYNEX free
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-13 gap-2 rounded-2xl px-8 text-base">
-              <a href="#how">
-                See how it works <BookOpen className="size-4.5" />
+              <a href="#system">
+                See the core loop <ArrowRight className="size-4.5" />
               </a>
             </Button>
           </motion.div>
@@ -175,13 +180,13 @@ export default function Landing() {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.45 }}
             className="mt-4 text-xs text-muted-foreground"
           >
             No credit card. Guest mode available. Your first analysis takes ~30 seconds.
           </motion.p>
 
-          {/* Hero mastery card */}
+          {/* Hero Command Center card */}
           <motion.div
             initial={{ opacity: 0, y: 40, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -192,21 +197,20 @@ export default function Landing() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Next Move</p>
-                  <p className="mt-1 font-display text-lg font-bold">Practice 8 questions on Subnetting</p>
+                  <p className="mt-1 font-display text-lg font-bold">Fix: Subnetting</p>
                 </div>
-                <span className="flex items-center gap-1.5 rounded-full bg-xp/20 px-3 py-1 text-xs font-bold text-xp-foreground">
-                  <Trophy className="size-3.5" /> +120 XP
-                </span>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">22 min mission</span>
               </div>
               <div className="mt-4 rounded-xl bg-muted/70 p-3 text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">Why?</span> Your accuracy dropped to{" "}
-                <span className="font-bold text-chart-5">46%</span> on this concept.
+                <span className="font-semibold text-foreground">Why:</span> 2 repeated mistakes ·{" "}
+                <span className="font-bold text-chart-5">61%</span> recent accuracy · prerequisite
+                for 3 upcoming topics.
               </div>
               <div className="mt-5 grid grid-cols-3 gap-3">
                 {[
                   { label: "Mastery", pct: 68, cls: "bg-primary" },
-                  { label: "Confidence", pct: 61, cls: "bg-chart-4" },
-                  { label: "Retention", pct: 83, cls: "bg-success" },
+                  { label: "Recall", pct: 58, cls: "bg-chart-4" },
+                  { label: "Readiness", pct: 67, cls: "bg-success" },
                 ].map((b) => (
                   <div key={b.label}>
                     <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
@@ -226,7 +230,9 @@ export default function Landing() {
               </div>
             </div>
             <div aria-hidden className="absolute -right-6 -top-6 hidden rotate-6 rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-xl sm:block">
-              <p className="text-xs font-bold text-xp-foreground">🔥 7-day streak</p>
+              <p className="flex items-center gap-1.5 text-xs font-bold text-xp-foreground">
+                <Fingerprint className="size-3.5" /> Twin updated
+              </p>
             </div>
             <div aria-hidden className="absolute -left-8 bottom-8 hidden -rotate-6 rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-xl sm:block">
               <p className="text-xs font-bold text-success">✓ Concept mastered</p>
@@ -235,12 +241,15 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* ---------- Pipeline strip ---------- */}
-      <section id="how" className="relative border-y border-border/60 bg-sidebar/50 py-14">
+      {/* ---------- Core loop ---------- */}
+      <section id="system" className="relative border-y border-border/60 bg-sidebar/50 py-14">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <motion.p {...fadeUp} transition={{ duration: 0.5 }} className="text-center text-xs font-bold uppercase tracking-[0.25em] text-primary">
-            From raw content to mastery
+            The KYNEX core loop
           </motion.p>
+          <motion.h2 {...fadeUp} transition={{ duration: 0.5, delay: 0.05 }} className="mt-3 text-center font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
+            KNOW → UNDERSTAND → ACT → MASTER → ADVANCE
+          </motion.h2>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-0">
             {PIPELINE.map((step, i) => (
               <motion.div
@@ -262,8 +271,8 @@ export default function Landing() {
             ))}
           </div>
           <motion.p {...fadeUp} transition={{ duration: 0.5, delay: 0.4 }} className="mx-auto mt-8 max-w-xl text-center text-sm text-muted-foreground">
-            If a step fails, you'll know — STUDYOS never pretends a broken upload was analyzed.
-            Clear error states, honest results.
+            Student data feeds the Twin → gaps are detected → the highest-impact action is chosen →
+            you execute → KYNEX measures the result → a smarter Next Move follows.
           </motion.p>
         </div>
       </section>
@@ -272,12 +281,12 @@ export default function Landing() {
       <section id="features" className="py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary">Everything in one OS</p>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary">One intelligence, many organs</p>
             <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Built like a game. Serious like a degree.
+              Serious like a degree. Fast like a game.
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Curiosity → discovery → small win → progress → challenge → mastery → reward → return.
+              Every part of KYNEX reads from the same academic model — so nothing you do is ever disconnected.
             </p>
           </motion.div>
 
@@ -305,10 +314,9 @@ export default function Landing() {
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
           <Quote className="mx-auto size-8 text-primary/40" />
           <motion.blockquote {...fadeUp} transition={{ duration: 0.6 }} className="mt-6 font-display text-2xl font-bold leading-snug sm:text-3xl">
-            "I don't study <span className="text-gradient">harder</span> anymore.
-            <br /> I study <span className="text-gradient">exactly where I'm weak</span>."
+            "Finally, something actually <span className="text-gradient">understands my academic situation</span>."
           </motion.blockquote>
-          <p className="mt-4 text-sm text-muted-foreground">— every student, eventually</p>
+          <p className="mt-4 text-sm text-muted-foreground">— the moment the category clicks</p>
         </div>
       </section>
 
@@ -352,12 +360,12 @@ export default function Landing() {
         </div>
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="relative mx-auto max-w-2xl px-4 text-center sm:px-6">
           <h2 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
-            Your next exam
+            KYNEX knows where you are.
             <br />
-            starts <span className="text-gradient">tonight</span>.
+            <span className="text-gradient">Now find out what's next.</span>
           </h2>
           <p className="mt-5 text-muted-foreground">
-            Upload one chapter. Let the OS find your gaps. Walk in ready.
+            Add one chapter to the Vault. Let the OS find your gaps. Walk in ready.
           </p>
           <Button asChild size="lg" className="mt-8 h-13 gap-2 rounded-2xl px-10 text-base shadow-xl shadow-primary/30">
             <Link to="/auth">
@@ -370,12 +378,10 @@ export default function Landing() {
       <footer className="border-t border-border/60 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <div className="grid size-7 place-items-center rounded-lg bg-gradient-to-br from-primary to-chart-4 text-primary-foreground">
-              <GraduationCap className="size-4" />
-            </div>
-            <span className="font-semibold text-foreground">STUDYOS AI</span>
+            <KynexMark className="size-7" />
+            <span className="font-semibold text-foreground">KYNEX</span>
           </div>
-          <p>Upload anything. Understand everything. Master every subject.</p>
+          <p>Your Academic Intelligence OS · KNOW → UNDERSTAND → ACT → MASTER → ADVANCE</p>
         </div>
       </footer>
     </div>
