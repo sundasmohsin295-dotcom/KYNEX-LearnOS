@@ -1,3 +1,4 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { api } from "./_generated/api";
@@ -64,8 +65,9 @@ export async function ensureProfiles(
   return { profile, game };
 }
 
+/** Get the current user id inside mutations — throws if unauthenticated. */
 export async function getAuthUserIdStrict(ctx: MutationCtx) {
-  const userId = await (ctx as MutationCtx).auth.getUserId();
+  const userId = await getAuthUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
   return userId;
 }

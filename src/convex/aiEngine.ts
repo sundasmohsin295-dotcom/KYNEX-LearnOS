@@ -1,12 +1,9 @@
 "use node";
 
 import { internalAction } from "./_generated/server";
-import type { ActionCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { createVlyIntegrations } from "@vly-ai/integrations";
-import { ensureProfiles, logSession } from "./gamification";
 
 const vly = createVlyIntegrations({
   deploymentToken: process.env.VLY_INTEGRATION_KEY,
@@ -111,11 +108,11 @@ JSON shape:
 /** Deep chapter analysis. Marks the material failed on any error — never fake success. */
 export const analyzeMaterial = internalAction({
   args: { materialId: v.id("materials") },
-  handler: async (ctx, { materialId }: { materialId: Id<"materials"> }) => {
+  handler: async (ctx, { materialId }) => {
     try {
-      const material = await ctx.runQuery(api.materials.getInternal, { id: materialId });
+      const material = await ctx.runQuery(internal.materials.getInternal, { id: materialId });
       if (!material) throw new Error("Material not found");
-      const chunks = await ctx.runQuery(api.materials.getChunksInternal, { materialId });
+      const chunks = await ctx.runQuery(internal.materials.getChunksInternal, { materialId });
       const text = chunks
         .slice(0, 12)
         .map((c: { text: string }) => c.text)
@@ -125,11 +122,11 @@ export const analyzeMaterial = internalAction({
         throw new Error("Extracted content was too short to analyze.");
       }
 
-      await ctx.runMutation(api.materials.setStageInternal, { id: materialId, stage: "reading" });
+      await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "reading" });
       await sleep(500);
-      await ctx.runMutation(api.materials.setStageInternal, { id: materialId, stage: "understanding" });
+      await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "understanding" });
       await sleep(500);
-      await ctx.runMutation(api.materials.setStageInternal, { id: materialId, stage: "structuring" });
+      await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "structuring" });
 
       const res = await vly.ai.completion({
         model: MODEL,
@@ -148,23 +145,23 @@ export const analyzeMaterial = internalAction({
         throw new Error("The AI analysis was incomplete. Please try again.");
       }
 
-      await ctx.runMutation(api.materials.setStageInternal, { id: materialId, stage: "generating" });
+      await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "generating" });
       await sleep(400);
-      await ctx.runMutation(api.materials.completeInternal, { id: materialId, analysis });
+      await ctx.runMutation(internal.materials.completeInternal, { id: materialId, analysis });
       if (analysis.title) {
-        await ctx.runMutation(api.materials.setSubjectInternal, {
+        await ctx.runMutation(internal.materials.setSubjectInternal, {
           id: materialId,
           subjectName: guessSubject(material.title, analysis),
         });
       }
-      await ctx.runMutation(api.materials.awardXpInternal, {
+      await ctx.runMutation(internal.materials.awardXpInternal, {
         amount: 60,
         reason: `Analyzed "${analysis.title}"`,
       });
-      await ctx.runMutation(api.materials.generateMissionInternal, {});
+      await ctx.runMutation(internal.materials.generateMissionInternal, {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      await ctx.runMutation(api.materials.markFailedInternal, { id: materialId, error: msg });
+      await ctx.runMutation(internal.materials.markFailedInternal, { id: materialId, error: msg });
     }
   },
 });
@@ -218,7 +215,7 @@ export const chatInternal = internalAction({
       { role: "system", content: CHAT_SYSTEM },
     ];
     if (materialId) {
-      const chunks = await ctx.runQuery(api.materials.getChunksInternal, { materialId });
+      const chunks = await ctx.runQuery(internal.materials.getChunksInternal, { materialId });
       const text = chunks
         .slice(0, 6)
         .map((c: { text: string }) => c.text)
@@ -239,13 +236,13 @@ export const chatInternal = internalAction({
 
     try {
       const reply = await callAI(messages, 1600);
-      await ctx.runMutation(api.learning.appendAssistantInternal, {
+      await ctx.runMutation(internal.learning.appendAssistantInternal, {
         conversationId,
         content: reply,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      await ctx.runMutation(api.learning.appendAssistantInternal, {
+      await ctx.runMutation(internal.learning.appendAssistantInternal, {
         conversationId,
         content: `⚠️ Sorry — the AI service failed to respond (${msg}). Please try again.`,
       });
@@ -267,9 +264,9 @@ export const quizInternal = internalAction({
   },
   handler: async (ctx, { attemptId, materialId, conceptKey, count, difficulty }) => {
     try {
-      const material = await ctx.runQuery(api.materials.getInternal, { id: materialId });
+      const material = await ctx.runQuery(internal.materials.getInternal, { id: materialId });
       if (!material) throw new Error("Material not found");
-      const chunks = await ctx.runQuery(api.materials.getChunksInternal, { materialId });
+      const chunks = await ctx.runQuery(internal.materials.getChunksInternal, { materialId });
       const text = chunks
         .slice(0, 8)
         .map((c: { text: string }) => c.text)
@@ -339,28 +336,15 @@ JSON shape: [{ "question": string, "options": string[4], "correctIndex": 0-3, "e
         .filter((q) => q.question && q.options.length === 4);
 
       if (questions.length === 0) throw new Error("Generated questions were invalid");
-      await ctx.runMutation(api.quiz.activateInternal, { attemptId, questions });
+      await ctx.runMutation(internal.learning.activateInternal, { attemptId, questions });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      await ctx.runMutation(api.quiz.failInternal, { attemptId, error: msg });
+      await ctx.runMutation(internal.learning.failInternal, { attemptId, error: msg });
     }
   },
 });
 
 // ---------------------------------------------------------------------------
-// Study session logging
+// Study session logging (unused by the client directly, kept for parity)
 // ---------------------------------------------------------------------------
 
-export const logStudyInternal = internalAction({
-  args: { kind: v.string(), minutes: v.number() },
-  handler: async (ctx, { kind, minutes }) => {
-    await logSession(ctx as never as Parameters<typeof logSession>[0], kind, minutes);
-    const { game } = await ensureProfiles(ctx as never as Parameters<typeof ensureProfiles>[0]);
-    return { xp: game.xp, level: game.level };
-  },
-});
-
-export const noopInternal = internalAction({
-  args: {},
-  handler: async (_ctx: ActionCtx) => true,
-});

@@ -1,8 +1,9 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { materialKindValidator } from "./schema";
+import { awardXp, generateNextMission } from "./gamification";
 
 export const list = query({
   args: {},
@@ -155,6 +156,55 @@ export const remove = mutation({
       await ctx.db.delete(f._id);
     }
     await ctx.db.delete(id);
+  },
+});
+
+/** Internal: fetch a material (for server-side actions). */
+export const getInternal = internalQuery({
+  args: { id: v.id("materials") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+
+/** Internal: fetch the text chunks of a material (for AI actions). */
+export const getChunksInternal = internalQuery({
+  args: { materialId: v.id("materials") },
+  handler: async (ctx, { materialId }) => {
+    return await ctx.db
+      .query("materialChunks")
+      .withIndex("by_material", (q) => q.eq("materialId", materialId))
+      .order("asc")
+      .collect();
+  },
+});
+
+/** Internal: mark a material as failed from a server-side action. */
+export const markFailedInternal = internalMutation({
+  args: { id: v.id("materials"), error: v.string() },
+  handler: async (ctx, { id, error }) => {
+    await ctx.db.patch(id, {
+      status: "failed",
+      error: error.slice(0, 500),
+      processingStage: undefined,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/** Internal: award XP after successful analysis (from AI action). */
+export const awardXpInternal = internalMutation({
+  args: { amount: v.number(), reason: v.string() },
+  handler: async (ctx, { amount, reason }) => {
+    await awardXp(ctx, amount, reason);
+  },
+});
+
+/** Internal: generate the next best mission (from AI action). */
+export const generateMissionInternal = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    await generateNextMission(ctx);
   },
 });
 

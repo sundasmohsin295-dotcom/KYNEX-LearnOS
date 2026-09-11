@@ -4,45 +4,24 @@ import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { ensureProfiles, levelForXp, todayKey, XP_PER_LEVEL } from "./gamification";
 
-/** Full app bootstrap for the signed-in user: profile, game stats, missions. */
+/** Full app bootstrap for the signed-in user: profile, game stats, missions.
+ *  Read-only: if the profile rows don't exist yet (no mutation has run), returns
+ *  null and the client shows onboarding — updateProfile/seedDemoData create them. */
 export const myOverview = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    let profile = await ctx.db
+    const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
-    if (!profile) {
-      const id = await ctx.db.insert("profiles", {
-        userId,
-        name: "Learner",
-        onboardingComplete: false,
-        seededDemo: false,
-      });
-      profile = (await ctx.db.get(id)) as Doc<"profiles">;
-    }
-
-    let game = await ctx.db
+    const game = await ctx.db
       .query("gameProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
-    if (!game) {
-      const now = Date.now();
-      const id = await ctx.db.insert("gameProfiles", {
-        userId,
-        xp: 0,
-        level: 1,
-        streakCount: 0,
-        longestStreak: 0,
-        goalMinutesPerDay: 30,
-        createdAt: now,
-        updatedAt: now,
-      });
-      game = (await ctx.db.get(id)) as Doc<"gameProfiles">;
-    }
+    if (!profile || !game) return null;
 
     // today's study minutes
     const dayStart = new Date();

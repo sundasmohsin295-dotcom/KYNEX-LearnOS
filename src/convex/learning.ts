@@ -189,7 +189,7 @@ export const startQuiz = mutation({
     const id = await ctx.db.insert("quizAttempts", {
       userId,
       materialId,
-      conceptKey,
+      conceptFocus: conceptKey,
       mode,
       status: "generating",
       questions: [],
@@ -544,7 +544,7 @@ export const ACHIEVEMENT_META: Record<string, { title: string; description: stri
 };
 
 /** Log a study session (shared helper). */
-async function logStudySessionInternal(ctx: MutationCtx, minutes: number, kind: string) {
+async function logStudySession(ctx: MutationCtx, minutes: number, kind: string) {
   const userId = await getAuthUserId(ctx);
   if (!userId) return;
   await ctx.db.insert("studySessions", {
@@ -555,5 +555,10 @@ async function logStudySessionInternal(ctx: MutationCtx, minutes: number, kind: 
   });
 }
 
-// Exported so gamification can use it — same pattern as ensureProfiles
-export { logStudySessionInternal };
+/** Create profile + game profile rows if they don't exist yet (used on first load). */
+export const ensureGameProfile = mutation({
+  args: { name: v.optional(v.string()) },
+  handler: async (ctx, { name }) => {
+    await ensureProfiles(ctx, name);
+  },
+});
