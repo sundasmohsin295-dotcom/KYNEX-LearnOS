@@ -57,10 +57,17 @@ export const createConversation = mutation({
   handler: async (ctx, { materialId, title }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    // The optional material must belong to the caller — never store a client
+    // supplied reference to someone else's study material.
+    let ownedMaterialId: typeof materialId = undefined;
+    if (materialId) {
+      const material = await ctx.db.get(materialId);
+      if (material && material.userId === userId) ownedMaterialId = materialId;
+    }
     const now = Date.now();
     const id = await ctx.db.insert("conversations", {
       userId,
-      materialId,
+      materialId: ownedMaterialId,
       title: title ?? "New chat",
       starred: false,
       archived: false,

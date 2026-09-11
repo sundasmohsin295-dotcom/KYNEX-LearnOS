@@ -345,6 +345,7 @@ export const myInsights = query({
 
 /** Seeds one demo subject + material with a pre-baked analysis so a brand-new
  *  account has something to explore immediately. Returns the material id. */
+export const seedDemoData = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
