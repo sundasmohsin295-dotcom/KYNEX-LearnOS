@@ -70,6 +70,16 @@ export default function Chat() {
     if (m && MODES.some((x) => x.key === m)) setMode(m);
   }, [params]);
 
+  // Command-bar handoff: /chat?q=… pre-fills the composer
+  useEffect(() => {
+    const q = params.get("q");
+    if (q) {
+      setInput(q);
+      setParams((p) => { p.delete("q"); return p; });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const concept = params.get("concept");
 
   useEffect(() => {

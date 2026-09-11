@@ -13,19 +13,23 @@ export type MasteryRow = Doc<"masteryScores">;
 export type GameProfile = Doc<"gameProfiles">;
 export type Profile = Doc<"profiles">;
 
-/** The 10 learning modes (used on the material page + chat). */
+/** KYNEX Professor modes with learning depth. Keys are stable — they feed
+ *  MODE_TO_AI and the /chat?mode= deep links. */
 export const MODES = [
-  { key: "summary", label: "Quick Summary", desc: "The essentials in 60 seconds", icon: "zap" },
-  { key: "beginner", label: "Beginner Mode", desc: "From zero, every term defined", icon: "sprout" },
-  { key: "deep", label: "Deep Dive", desc: "Mechanisms, reasoning, connections", icon: "microscope" },
-  { key: "exam", label: "Exam Mode", desc: "Examiner-style questions & traps", icon: "graduation" },
-  { key: "feynman", label: "Feynman Mode", desc: "Explain it back, find your gaps", icon: "lightbulb" },
-  { key: "socratic", label: "Socratic Mode", desc: "One probing question at a time", icon: "help" },
-  { key: "visual", label: "Visual Mode", desc: "Maps, flows and structures", icon: "map" },
-  { key: "practice", label: "Practice Mode", desc: "Adaptive questions with feedback", icon: "target" },
-  { key: "revision", label: "Revision Mode", desc: "Recall drills & memory hooks", icon: "refresh" },
-  { key: "teach", label: "Teach Me Mode", desc: "A tutor loop: step → check → advance", icon: "present" },
+  { key: "summary", label: "Explain", depth: "CORE", desc: "The essentials, clearly structured", icon: "zap" },
+  { key: "beginner", label: "From Zero", depth: "STARTER", desc: "Every term defined, no prior knowledge", icon: "sprout" },
+  { key: "deep", label: "Deep Dive", depth: "ADVANCED", desc: "Mechanisms, reasoning, connections", icon: "microscope" },
+  { key: "exam", label: "Exam Prep", depth: "EXAM", desc: "Examiner-style questions & traps", icon: "graduation" },
+  { key: "feynman", label: "Feynman Check", depth: "CORE", desc: "Explain it back, find your gaps", icon: "lightbulb" },
+  { key: "socratic", label: "Question", depth: "CORE", desc: "One probing question at a time", icon: "help" },
+  { key: "visual", label: "Visual", depth: "CORE", desc: "Maps, flows and structures", icon: "map" },
+  { key: "practice", label: "Practice", depth: "EXAM", desc: "Adaptive questions with feedback", icon: "target" },
+  { key: "revision", label: "Recall Drill", depth: "CORE", desc: "Retrieval practice & memory hooks", icon: "refresh" },
+  { key: "teach", label: "Teach Me", depth: "CORE", desc: "Tutor loop: step → check → advance", icon: "present" },
 ] as const;
+
+export type ModeKey = (typeof MODES)[number]["key"];
+export type Depth = (typeof MODES)[number]["depth"];
 
 export type ModeKey = (typeof MODES)[number]["key"];
 

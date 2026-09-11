@@ -108,6 +108,20 @@ const schema = defineSchema(
       studyGoal: v.optional(v.string()),
       onboardingComplete: v.boolean(),
       seededDemo: v.boolean(), // has demo/sample content been added
+      // ---- KYNEX academic identity (Twin) ----
+      degree: v.optional(v.string()),
+      department: v.optional(v.string()),
+      university: v.optional(v.string()),
+      semester: v.optional(v.number()),
+      creditHours: v.optional(v.number()),
+      gradingScale: v.optional(v.union(
+        v.literal("4.0"),
+        v.literal("5.0"),
+      )),
+      currentGpa: v.optional(v.number()),
+      currentCgpa: v.optional(v.number()),
+      targetGpa: v.optional(v.number()),
+      targetCgpa: v.optional(v.number()),
     }).index("by_user", ["userId"]),
 
     gameProfiles: defineTable({

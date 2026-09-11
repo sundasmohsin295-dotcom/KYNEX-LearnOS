@@ -5,8 +5,8 @@ import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
-  BookOpen, Flame, GraduationCap, LayoutDashboard, LogOut,
-  Moon, Plus, Sun, Swords, Target, Zap, RefreshCw,
+  BarChart3, BookOpen, Flame, GraduationCap, LayoutDashboard, LogOut,
+  Moon, Plus, Sun, Target, Zap, RefreshCw, Fingerprint,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,16 +16,17 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
-import { XP_PER_LEVEL } from "@/lib/game";
-import { STREAK_MESSAGES } from "@/lib/game";
+import { XP_PER_LEVEL, STREAK_MESSAGES } from "@/lib/game";
+import { CommandBar } from "@/components/CommandBar";
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/library", label: "Library", icon: BookOpen },
-  { to: "/chat", label: "Tutor Chat", icon: GraduationCap },
+  { to: "/dashboard", label: "Command Center", icon: LayoutDashboard },
+  { to: "/twin", label: "Twin", icon: Fingerprint },
+  { to: "/library", label: "Vault", icon: BookOpen },
+  { to: "/chat", label: "Professor", icon: GraduationCap },
   { to: "/practice", label: "Practice", icon: Target },
-  { to: "/flashcards", label: "Review", icon: RefreshCw },
-  { to: "/achievements", label: "Achievements", icon: Swords },
+  { to: "/flashcards", label: "Recall", icon: RefreshCw },
+  { to: "/insights", label: "Insights", icon: BarChart3 },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -69,12 +70,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="flex items-center gap-2.5 px-5 pt-6 pb-5 text-left"
           onClick={() => navigate("/dashboard")}
         >
-          <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground shadow-md">
-            <GraduationCap className="size-5" />
-          </div>
+          <KynexMark className="size-9" />
           <div>
-            <p className="font-display text-base font-bold leading-none">STUDYOS</p>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">AI Learning OS</p>
+            <p className="font-display text-base font-extrabold leading-none tracking-tight">KYNEX</p>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Academic Intelligence OS</p>
           </div>
         </button>
 
@@ -103,7 +102,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Level card */}
+        {/* Command bar + level card */}
+        <div className="mx-3 mb-3">
+          <CommandBar />
+        </div>
+
         <div className="mx-3 mb-3 rounded-2xl border border-border/70 bg-card/70 p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">LEVEL {game?.level ?? 1}</span>
@@ -121,7 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onClick={() => navigate("/add")}
           className="mx-3 mb-4 gap-2 rounded-xl shadow-lg shadow-primary/25"
         >
-          <Plus className="size-4" /> Add Material
+          <Plus className="size-4" /> Add to Vault
         </Button>
 
         <UserFooter />
@@ -130,12 +133,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ---------- Topbar (mobile) ---------- */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <button className="flex items-center gap-2" onClick={() => navigate("/dashboard")}>
-          <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-chart-4 text-primary-foreground">
-            <GraduationCap className="size-4" />
-          </div>
-          <span className="font-display text-sm font-bold">STUDYOS</span>
+          <KynexMark className="size-8" />
+          <span className="font-display text-sm font-extrabold tracking-tight">KYNEX</span>
         </button>
         <div className="flex items-center gap-2">
+          <CommandBar />
           <span title={streakTitle} className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-bold">
             <Flame className={cn("size-3.5", streakAlive ? "fill-chart-5/30 text-chart-5" : "text-muted-foreground")} />
             {streak}
@@ -154,7 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ---------- Bottom nav (mobile) ---------- */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border/70 bg-background/90 py-1.5 backdrop-blur-xl lg:hidden">
-        {NAV.slice(0, 5).map(({ to, label, icon: Icon }) => (
+        {NAV.filter((n) => n.to !== "/twin").slice(0, 5).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -168,7 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {({ isActive }) => (
               <>
                 <Icon className={cn("size-5", isActive && "drop-shadow-[0_0_6px_var(--primary)]")} />
-                {label.split(" ")[0]}
+                {label === "Command Center" ? "Home" : label.split(" ")[0]}
               </>
             )}
           </NavLink>
@@ -190,6 +192,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <DropdownMenuContent align={mobile ? "end" : "start"} className="w-52">
           <DropdownMenuLabel className="truncate">{user?.name ?? "Learner"}</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/twin")}>
+            <Fingerprint className="mr-2 size-4" /> KYNEX Twin
+          </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -210,6 +215,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </DropdownMenu>
     );
   }
+}
+
+/** KYNEX wordmark glyph — a geometric "K" node mark. */
+export function KynexMark({ className }: { className?: string }) {
+  return (
+    <span className={cn("relative grid shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary via-primary to-chart-4 text-primary-foreground shadow-md", className)}>
+      <svg viewBox="0 0 24 24" fill="none" className="size-[58%]">
+        <path d="M7 4v16" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M17 4l-7.5 8L17 20" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="17" cy="12" r="2.1" fill="currentColor" />
+      </svg>
+    </span>
+  );
 }
 
 /** Page header used across app pages. */

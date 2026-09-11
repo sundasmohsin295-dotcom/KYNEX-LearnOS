@@ -21,6 +21,8 @@ const Practice = lazy(() => import("./pages/Practice.tsx"));
 const QuizPage = lazy(() => import("./pages/QuizPage.tsx"));
 const Flashcards = lazy(() => import("./pages/Flashcards.tsx"));
 const Achievements = lazy(() => import("./pages/Achievements.tsx"));
+const Twin = lazy(() => import("./pages/Twin.tsx"));
+const Insights = lazy(() => import("./pages/Insights.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -137,6 +139,22 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Dashboard />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/twin"
+                element={
+                  <RequireAuth>
+                    <Twin />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/insights"
+                element={
+                  <RequireAuth>
+                    <Insights />
                   </RequireAuth>
                 }
               />
