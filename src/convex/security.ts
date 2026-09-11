@@ -1,6 +1,14 @@
-import { internalMutation, MutationCtx } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import {
+  internalMutation,
+  internalQuery,
+  query,
+  MutationCtx,
+  QueryCtx,
+} from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
+import { todayKey } from "./gamification";
 
 /**
  * Server-side security primitives.
@@ -130,3 +138,256 @@ export async function logAuditEvent(
     createdAt: Date.now(),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Security event system — structured, content-free event names for the
+// observability layer. Every helper below never logs message content,
+// tokens, secrets, or unnecessary personal information.
+// ---------------------------------------------------------------------------
+
+/** Canonical security event names (keep additive — never rename existing). */
+export const SECURITY_EVENTS = {
+  ACCESS_DENIED: "access_denied",
+  CROSS_USER_ACCESS_ATTEMPT: "cross_user_access_attempt",
+  RATE_LIMIT_TRIGGERED: "rate_limit_triggered",
+  AI_QUOTA_EXHAUSTED: "ai_quota_exhausted",
+  FILE_REJECTED: "file_rejected",
+  AI_INPUT_REJECTED: "ai_input_rejected",
+  AI_OUTPUT_REJECTED: "ai_output_rejected",
+  ACCOUNT_DELETED: "account_deleted",
+  SESSION_REVOKED: "session_revoked",
+} as const;
+
+/** Generic internal event writer for "use node" actions (which cannot import
+ *  mutation-context helpers directly). Content-free by contract. */
+export const securityEventInternal = internalMutation({
+  args: {
+    userId: v.optional(v.id("users")),
+    action: v.string(),
+    detail: v.optional(v.string()),
+  },
+  handler: async (ctx, { userId, action, detail }) => {
+    await ctx.db.insert("auditLogs", {
+      userId,
+      action: action.slice(0, 60),
+      detail: detail?.slice(0, 120),
+      createdAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Log a failed authorization / ownership check. This is the single choke
+ * point for "deny" paths so cross-user probing shows up in one queryable
+ * stream. `detail` carries only an operation tag — never resource content.
+ */
+export async function logAccessDenied(
+  ctx: MutationCtx,
+  userId: string | null,
+  operation: string,
+  opts?: { crossUser?: boolean },
+): Promise<void> {
+  await logAuditEvent(
+    ctx,
+    userId,
+    opts?.crossUser
+      ? SECURITY_EVENTS.CROSS_USER_ACCESS_ATTEMPT
+      : SECURITY_EVENTS.ACCESS_DENIED,
+    operation.slice(0, 60),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Server-authoritative plan + daily AI quotas (denial-of-wallet defense)
+// ---------------------------------------------------------------------------
+
+/** Daily AI quota per plan. Tuned so a free account cannot run the wallet
+ *  hot even with scripted automation on top of the short-window rate limits. */
+export const PLAN_LIMITS = {
+  free: { dailyAnalysis: 10, dailyChat: 40, dailyQuiz: 8 },
+  pro: { dailyAnalysis: 100, dailyChat: 500, dailyQuiz: 60 },
+} as const;
+
+export type PlanId = keyof typeof PLAN_LIMITS;
+
+/**
+ * Read the caller's authoritative plan. Creates the free-tier row lazily.
+ * ALWAYS derived from the server session — never from client input.
+ */
+export async function getAuthoritativePlan(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+): Promise<PlanId> {
+  const row = await ctx.db
+    .query("plans")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .first();
+  if (row) {
+    // An expired/canceled paid period silently downgrades to free —
+    // fail closed rather than fail open.
+    if (
+      row.plan === "pro" &&
+      row.periodEnd !== undefined &&
+      row.periodEnd < Date.now()
+    ) {
+      return "free";
+    }
+    return row.plan;
+  }
+  await ctx.db.insert("plans", {
+    userId,
+    plan: "free",
+    updatedAt: Date.now(),
+  });
+  return "free";
+}
+
+function dayKeyUtc(now: number): string {
+  return todayKey(now); // gamification.todayKey is already UTC YYYY-MM-DD
+}
+
+interface DailyUsageRow {
+  _id: Id<"aiUsageDaily">;
+  analysisCount: number;
+  chatCount: number;
+  quizCount: number;
+}
+
+/** Quota key -> usage row field. */
+function quotaField(key: "dailyAnalysis" | "dailyChat" | "dailyQuiz") {
+  return key === "dailyAnalysis" ? "analysisCount" : key === "dailyChat" ? "chatCount" : "quizCount";
+}
+
+/** Load-or-create today's usage row for the user. */
+async function getDailyUsage(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+): Promise<DailyUsageRow> {
+  const dayKey = dayKeyUtc(Date.now());
+  const existing = await ctx.db
+    .query("aiUsageDaily")
+    .withIndex("by_user_day", (q) => q.eq("userId", userId).eq("dayKey", dayKey))
+    .first();
+  if (existing) return existing as DailyUsageRow;
+  const id = await ctx.db.insert("aiUsageDaily", {
+    userId,
+    dayKey,
+    analysisCount: 0,
+    chatCount: 0,
+    quizCount: 0,
+    updatedAt: Date.now(),
+  });
+  return (await ctx.db.get(id)) as DailyUsageRow;
+}
+
+/**
+ * Atomically consume one unit of daily AI quota. Throws a safe, generic
+ * error when the plan's daily cap is exhausted — AFTER logging a security
+ * event. Safe against concurrent bursts: the read-modify-write is a single
+ * Convex transaction (mutations are serializable by design).
+ */
+export async function consumeDailyAiQuota(
+  ctx: MutationCtx,
+  key: "dailyAnalysis" | "dailyChat" | "dailyQuiz",
+  userId: Id<"users">,
+): Promise<void> {
+  const plan = await getAuthoritativePlan(ctx, userId);
+  const cap = PLAN_LIMITS[plan][key];
+  const usage = await getDailyUsage(ctx, userId);
+  const field = quotaField(key);
+  const current = usage[field];
+  if (current >= cap) {
+    await logAuditEvent(ctx, userId, SECURITY_EVENTS.AI_QUOTA_EXHAUSTED, key);
+    throw new Error(
+      `You've reached today's ${key === "dailyChat" ? "chat" : key === "dailyQuiz" ? "quiz" : "analysis"} limit on the ${plan === "pro" ? "Pro" : "Free"} plan. It resets at midnight UTC.`,
+    );
+  }
+  await ctx.db.patch(usage._id, { [field]: current + 1, updatedAt: Date.now() });
+}
+
+/**
+ * Read a user's plan WITHOUT creating a row (safe from query contexts).
+ * Same fail-closed rule as getAuthoritativePlan: unknown/expired => free.
+ */
+export async function readPlanOnly(
+  ctx: QueryCtx | MutationCtx,
+  userId: Id<"users">,
+): Promise<PlanId> {
+  const row = await ctx.db
+    .query("plans")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .first();
+  if (!row) return "free";
+  if (
+    row.plan === "pro" &&
+    row.periodEnd !== undefined &&
+    row.periodEnd < Date.now()
+  ) {
+    return "free";
+  }
+  return row.plan;
+}
+
+/** Read-only quota status for UI display (safe from query contexts). */
+export async function readDailyQuota(
+  ctx: QueryCtx | MutationCtx,
+  userId: Id<"users">,
+): Promise<{
+  plan: PlanId;
+  analysisUsed: number;
+  chatUsed: number;
+  quizUsed: number;
+  analysisCap: number;
+  chatCap: number;
+  quizCap: number;
+}> {
+  const plan = await readPlanOnly(ctx, userId);
+  const caps = PLAN_LIMITS[plan];
+  const dayKey = dayKeyUtc(Date.now());
+  const usage = await ctx.db
+    .query("aiUsageDaily")
+    .withIndex("by_user_day", (q) => q.eq("userId", userId).eq("dayKey", dayKey))
+    .first();
+  return {
+    plan,
+    analysisUsed: usage?.analysisCount ?? 0,
+    chatUsed: usage?.chatCount ?? 0,
+    quizUsed: usage?.quizCount ?? 0,
+    analysisCap: caps.dailyAnalysis,
+    chatCap: caps.dailyChat,
+    quizCap: caps.dailyQuiz,
+  };
+}
+
+// --- internal wrappers so "use node" actions and mutation layers can call ---
+
+/** Consume one unit of daily AI quota (called from action/mutation code). */
+export const consumeQuotaInternal = internalMutation({
+  args: {
+    key: v.union(
+      v.literal("dailyAnalysis"),
+      v.literal("dailyChat"),
+      v.literal("dailyQuiz"),
+    ),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, { key, userId }) => {
+    await consumeDailyAiQuota(ctx, key, userId);
+  },
+});
+
+/** Quota status for UI display (internal; public wrapper below scopes to caller). */
+export const quotaStatusInternal = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => readDailyQuota(ctx, userId),
+});
+
+/** The caller's own daily AI quota status (for honest UI meters). */
+export const myQuotaStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    return await readDailyQuota(ctx, userId);
+  },
+});

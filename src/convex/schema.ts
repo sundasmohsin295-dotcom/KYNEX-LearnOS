@@ -89,6 +89,19 @@ const schema = defineSchema(
     // default auth tables using convex auth.
     ...authTables, // do not remove or modify
 
+    // Server-side session management. The default auth table is REPLACED
+    // with an identical field set plus a raw expiration index so the app can
+    // (a) list a user's active sessions and (b) purge expired rows. The
+    // original "userId" index is preserved exactly as convex-auth defines it
+    // so auth internals keep working unchanged.
+    authSessions: defineTable({
+      userId: v.id("users"),
+      expirationTime: v.number(),
+    })
+      // Convex appends _creationTime automatically — it must not be listed.
+      .index("userId", ["userId"])
+      .index("by_expiration", ["expirationTime"]),
+
     users: defineTable({
       name: v.optional(v.string()), // name of the user. do not remove
       image: v.optional(v.string()), // image of the user. do not remove
@@ -360,6 +373,28 @@ const schema = defineSchema(
       detail: v.optional(v.string()),
       createdAt: v.number(),
     }).index("by_action_time", ["action", "createdAt"]),
+
+    // Server-AUTHORITATIVE plan + AI quota state. The client never sends or
+    // caches any of this — every premium check reads it here, fail closed.
+    plans: defineTable({
+      userId: v.id("users"),
+      plan: v.union(v.literal("free"), v.literal("pro")),
+      // Set only by billing webhooks / ops. Never by client input.
+      status: v.optional(v.string()), // e.g. "active", "past_due", "canceled"
+      periodEnd: v.optional(v.number()),
+      updatedAt: v.number(),
+    }).index("by_user", ["userId"]),
+
+    // Daily AI usage for denial-of-wallet protection. Reset is computed from
+    // dayKey (UTC "YYYY-MM-DD") — no cron needed, no drift.
+    aiUsageDaily: defineTable({
+      userId: v.id("users"),
+      dayKey: v.string(), // "YYYY-MM-DD" (UTC)
+      analysisCount: v.number(),
+      chatCount: v.number(),
+      quizCount: v.number(),
+      updatedAt: v.number(),
+    }).index("by_user_day", ["userId", "dayKey"]),
   },
   {
     schemaValidation: false,

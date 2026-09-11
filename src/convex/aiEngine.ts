@@ -116,9 +116,9 @@ const vly = createVlyIntegrations({
 const MODEL = "gpt-4o-mini";
 
 export interface LearningAnalysis {
-  title: string;
+  title?: string;
   summary: string;
-  deepExplanation: string;
+  deepExplanation?: string;
   keyPoints: string[];
   concepts: { name: string; explanation: string; difficulty: "easy" | "medium" | "hard" }[];
   definitions: { term: string; definition: string }[];
@@ -133,6 +133,8 @@ export interface LearningAnalysis {
   applySkills: string[];
   examinerQuestions: string[];
   practiceAreas: { name: string; reason: string }[];
+  model?: string;
+  analyzedAt?: number;
 }
 
 /** One LLM call with retries and plain-error extraction. */
@@ -174,6 +176,239 @@ function parseJson<T>(raw: string): T {
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+// ---------------------------------------------------------------------------
+// AI output validation — NEVER save unvalidated model output. Every field is
+// type-checked, length-capped, and range-checked. Malformed content is
+// rejected safely (the material/quiz is marked failed, never half-saved).
+// ---------------------------------------------------------------------------
+
+const MAX = {
+  title: 120,
+  paragraph: 4000,
+  bullet: 400,
+  question: 600,
+  option: 300,
+  explanation: 900,
+  term: 160,
+  definition: 600,
+  name: 160,
+  concept: 120,
+} as const;
+
+function asBoundedString(v: unknown, max: number): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  if (s.length === 0) return null;
+  return s.slice(0, max);
+}
+
+function asBoundedStringArray(v: unknown, maxLen: number, maxItems: number): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((item) => asBoundedString(item, maxLen))
+    .filter((s): s is string => s !== null)
+    .slice(0, maxItems);
+}
+
+function asDifficulty(v: unknown): "easy" | "medium" | "hard" {
+  return v === "easy" || v === "hard" ? v : "medium";
+}
+
+/**
+ * Validate + sanitize a full LearningAnalysis. Throws on structurally invalid
+ * output so the caller marks the material failed instead of storing garbage.
+ */
+function validateAnalysis(raw: unknown): LearningAnalysis {
+  if (typeof raw !== "object" || raw === null) {
+    throw new Error("The AI analysis was incomplete. Please try again.");
+  }
+  const r = raw as Record<string, unknown>;
+
+  const summary = asBoundedString(r.summary, MAX.paragraph);
+  if (!summary) throw new Error("The AI analysis was incomplete. Please try again.");
+
+  if (!Array.isArray(r.concepts) || r.concepts.length === 0) {
+    throw new Error("The AI analysis was incomplete. Please try again.");
+  }
+  const concepts = (r.concepts as unknown[])
+    .map((c) => {
+      if (typeof c !== "object" || c === null) return null;
+      const o = c as Record<string, unknown>;
+      const name = asBoundedString(o.name, MAX.name);
+      const explanation = asBoundedString(o.explanation, MAX.paragraph);
+      if (!name || !explanation) return null;
+      return { name, explanation, difficulty: asDifficulty(o.difficulty) };
+    })
+    .filter((c): c is LearningAnalysis["concepts"][number] => c !== null)
+    .slice(0, 8);
+  if (concepts.length === 0) {
+    throw new Error("The AI analysis was incomplete. Please try again.");
+  }
+
+  const definitions = Array.isArray(r.definitions)
+    ? (r.definitions as unknown[])
+        .map((d) => {
+          if (typeof d !== "object" || d === null) return null;
+          const o = d as Record<string, unknown>;
+          const term = asBoundedString(o.term, MAX.term);
+          const definition = asBoundedString(o.definition, MAX.definition);
+          return term && definition ? { term, definition } : null;
+        })
+        .filter((d): d is { term: string; definition: string } => d !== null)
+        .slice(0, 8)
+    : [];
+
+  const formulas = Array.isArray(r.formulas)
+    ? (r.formulas as unknown[])
+        .map((f) => {
+          if (typeof f !== "object" || f === null) return null;
+          const o = f as Record<string, unknown>;
+          const name = asBoundedString(o.name, MAX.name);
+          const expression = asBoundedString(o.expression, MAX.bullet);
+          const note = asBoundedString(o.note, MAX.bullet);
+          return name && expression ? { name, expression, note: note ?? "" } : null;
+        })
+        .filter((f): f is { name: string; expression: string; note: string } => f !== null)
+        .slice(0, 8)
+    : [];
+
+  const examples = Array.isArray(r.examples)
+    ? (r.examples as unknown[])
+        .map((e) => {
+          if (typeof e !== "object" || e === null) return null;
+          const o = e as Record<string, unknown>;
+          const title = asBoundedString(o.title, MAX.name);
+          const walkthrough = asBoundedString(o.walkthrough, MAX.paragraph);
+          return title && walkthrough ? { title, walkthrough } : null;
+        })
+        .filter((e): e is { title: string; walkthrough: string } => e !== null)
+        .slice(0, 4)
+    : [];
+
+  const misconceptions = Array.isArray(r.misconceptions)
+    ? (r.misconceptions as unknown[])
+        .map((m) => {
+          if (typeof m !== "object" || m === null) return null;
+          const o = m as Record<string, unknown>;
+          const wrong = asBoundedString(o.wrong, MAX.bullet);
+          const why = asBoundedString(o.why, MAX.bullet);
+          const correct = asBoundedString(o.correct, MAX.bullet);
+          return wrong && why && correct ? { wrong, why, correct } : null;
+        })
+        .filter((m): m is { wrong: string; why: string; correct: string } => m !== null)
+        .slice(0, 4)
+    : [];
+
+  const causeEffect = Array.isArray(r.causeEffect)
+    ? (r.causeEffect as unknown[])
+        .map((c) => {
+          if (typeof c !== "object" || c === null) return null;
+          const o = c as Record<string, unknown>;
+          const cause = asBoundedString(o.cause, MAX.bullet);
+          const effect = asBoundedString(o.effect, MAX.bullet);
+          return cause && effect ? { cause, effect } : null;
+        })
+        .filter((c): c is { cause: string; effect: string } => c !== null)
+        .slice(0, 5)
+    : [];
+
+  const practiceAreas = Array.isArray(r.practiceAreas)
+    ? (r.practiceAreas as unknown[])
+        .map((p) => {
+          if (typeof p !== "object" || p === null) return null;
+          const o = p as Record<string, unknown>;
+          const name = asBoundedString(o.name, MAX.name);
+          const reason = asBoundedString(o.reason, MAX.bullet);
+          return name && reason ? { name, reason } : null;
+        })
+        .filter((p): p is { name: string; reason: string } => p !== null)
+        .slice(0, 4)
+    : [];
+
+  return {
+    title: asBoundedString(r.title, MAX.title) ?? undefined,
+    summary,
+    deepExplanation: asBoundedString(r.deepExplanation, MAX.paragraph * 2) ?? undefined,
+    keyPoints: asBoundedStringArray(r.keyPoints, MAX.bullet, 8),
+    concepts,
+    definitions,
+    formulas,
+    examples,
+    applications: asBoundedStringArray(r.applications, MAX.bullet, 5),
+    misconceptions,
+    commonMistakes: asBoundedStringArray(r.commonMistakes, MAX.bullet, 5),
+    prerequisites: asBoundedStringArray(r.prerequisites, MAX.bullet, 5),
+    causeEffect,
+    remember: asBoundedStringArray(r.remember, MAX.bullet, 5),
+    applySkills: asBoundedStringArray(r.applySkills, MAX.bullet, 4),
+    examinerQuestions: asBoundedStringArray(r.examinerQuestions, MAX.question, 5),
+    practiceAreas,
+    model: "gpt-4o-mini",
+    analyzedAt: Date.now(),
+  };
+}
+
+/** Validated quiz question shape stored in the DB. */
+interface ValidatedQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  whyWrong: string[];
+  concept: string;
+  difficulty: "easy" | "medium" | "hard";
+  type: string;
+}
+
+/**
+ * Validate generated MCQs. A question is kept ONLY if every field is valid;
+ * invalid items are dropped, and an empty result is a hard failure so the
+ * attempt is marked failed rather than served broken.
+ */
+function validateQuizQuestions(raw: unknown, count: number, fallbackConcept: string): ValidatedQuestion[] {
+  if (!Array.isArray(raw)) {
+    throw new Error("Generated questions were invalid");
+  }
+  const out: ValidatedQuestion[] = [];
+  for (const item of raw.slice(0, count)) {
+    if (typeof item !== "object" || item === null) continue;
+    const q = item as Record<string, unknown>;
+    const question = asBoundedString(q.question, MAX.question);
+    if (!question) continue;
+
+    if (!Array.isArray(q.options) || q.options.length !== 4) continue;
+    const options = (q.options as unknown[])
+      .map((o) => asBoundedString(o, MAX.option))
+      .filter((o): o is string => o !== null);
+    if (options.length !== 4) continue;
+
+    const correctIndex = q.correctIndex;
+    if (
+      typeof correctIndex !== "number" ||
+      !Number.isInteger(correctIndex) ||
+      correctIndex < 0 ||
+      correctIndex > 3
+    ) {
+      continue;
+    }
+
+    out.push({
+      question,
+      options,
+      correctIndex,
+      explanation: asBoundedString(q.explanation, MAX.explanation) ?? "",
+      whyWrong: asBoundedStringArray(q.whyWrong, 200, 3),
+      concept: asBoundedString(q.concept, MAX.concept) ?? fallbackConcept,
+      difficulty: asDifficulty(q.difficulty),
+      type: asBoundedString(q.type, 20) ?? "recall",
+    });
+  }
+  if (out.length === 0) {
+    throw new Error("Generated questions were invalid");
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -283,23 +518,20 @@ export const analyzeMaterial = internalAction({
       if (!res.success || !res.data?.choices?.[0]?.message?.content) {
         throw new Error(res.error ? safeAiError("internal") : "The AI service returned an empty response.");
       }
-      const analysis = parseJson<LearningAnalysis>(res.data.choices[0].message.content);
-      if (!analysis.summary || !Array.isArray(analysis.concepts) || analysis.concepts.length === 0) {
-        throw new Error("The AI analysis was incomplete. Please try again.");
-      }
+      const analysis = validateAnalysis(parseJson<unknown>(res.data.choices[0].message.content));
 
       await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "generating" });
       await sleep(400);
       await ctx.runMutation(internal.materials.completeInternal, { id: materialId, analysis });
       if (analysis.title) {
-        await ctx.runMutation(internal.materials.setSubjectInternal, {
-          id: materialId,
-          subjectName: guessSubject(material.title, analysis),
-        });
+      await ctx.runMutation(internal.materials.setSubjectInternal, {
+        id: materialId,
+        subjectName: guessSubject(material.title, analysis.title ?? material.title),
+      });
       }
       await ctx.runMutation(internal.materials.awardXpInternal, {
         amount: 60,
-        reason: `Analyzed "${analysis.title}"`,
+        reason: `Analyzed "${analysis.title ?? material.title}"`,
       });
       await ctx.runMutation(internal.materials.generateMissionInternal, {});
     } catch (e) {
@@ -312,15 +544,15 @@ export const analyzeMaterial = internalAction({
   },
 });
 
-function guessSubject(materialTitle: string, analysis: LearningAnalysis): string {
-  const hay = `${materialTitle} ${analysis.title}`.toLowerCase();
+function guessSubject(materialTitle: string, analysisTitle: string): string {
+  const hay = `${materialTitle} ${analysisTitle}`.toLowerCase();
   if (/ip |subnet|network|tcp|dns|router/.test(hay)) return "Computer Networks";
   if (/calculus|integral|derivative|matrix|algebra/.test(hay)) return "Mathematics";
   if (/cell|enzyme|dna|photosynthesis|organism/.test(hay)) return "Biology";
   if (/atom|molecule|reaction|acid|thermodynamic/.test(hay)) return "Chemistry";
   if (/market|demand|supply|inflation|gdp/.test(hay)) return "Economics";
   if (/histor|war|revolution|empire|treaty/.test(hay)) return "History";
-  return analysis.title.split(/[—:-]/)[0].trim().slice(0, 40) || "General Studies";
+  return analysisTitle.split(/[—:-]/)[0].trim().slice(0, 40) || "General Studies";
 }
 
 // ---------------------------------------------------------------------------
@@ -389,6 +621,11 @@ export const chatInternal = internalAction({
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      await ctx.runMutation(internal.security.securityEventInternal, {
+        userId: undefined,
+        action: "ai_chat_failed",
+        detail: "chat_generation_error",
+      });
       await ctx.runMutation(internal.learning.appendAssistantInternal, {
         conversationId,
         content: `⚠️ Sorry — the Professor couldn't respond right now. Please try again in a moment.`,
@@ -454,37 +691,8 @@ JSON shape: [{ "question": string, "options": string[4], "correctIndex": 0-3, "e
       if (!res.success || !res.data?.choices?.[0]?.message?.content) {
         throw new Error(res.error ?? "Empty AI response");
       }
-      const parsed = parseJson<
-        Array<{
-          question: string;
-          options: string[];
-          correctIndex: number;
-          explanation: string;
-          whyWrong: string[];
-          concept: string;
-          difficulty: string;
-          type: string;
-        }>
-      >(res.data.choices[0].message.content);
-      if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("No questions generated");
-
-      const questions = parsed
-        .slice(0, count)
-        .map((q) => ({
-          question: String(q.question ?? ""),
-          options: (q.options ?? []).map(String).slice(0, 4),
-          correctIndex: Number(q.correctIndex ?? 0),
-          explanation: String(q.explanation ?? ""),
-          whyWrong: (q.whyWrong ?? []).map(String).slice(0, 3),
-          concept: String(q.concept ?? material.title),
-          difficulty: (["easy", "medium", "hard"].includes(q.difficulty)
-            ? q.difficulty
-            : "medium") as "easy" | "medium" | "hard",
-          type: String(q.type ?? "recall"),
-        }))
-        .filter((q) => q.question && q.options.length === 4);
-
-      if (questions.length === 0) throw new Error("Generated questions were invalid");
+      const parsed = parseJson<unknown>(res.data.choices[0].message.content);
+      const questions = validateQuizQuestions(parsed, count, material.title);
       await ctx.runMutation(internal.learning.activateInternal, { attemptId, questions });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -509,6 +717,10 @@ export const analyze = action({
     const owned = await ctx.runQuery(api.materials.get, { id: materialId });
     if (!owned) throw new Error("Material not found");
     await rateLimitAction(ctx, "aiAnalyze", userId);
+    await ctx.runMutation(internal.security.consumeQuotaInternal, {
+      key: "dailyAnalysis",
+      userId: userId as Id<"users">,
+    });
     await ctx.runAction(internal.aiEngine.analyzeMaterial, { materialId });
   },
 });
@@ -542,6 +754,10 @@ export const chat = action({
       : "explain";
 
     await rateLimitAction(ctx, "aiChat", userId);
+    await ctx.runMutation(internal.security.consumeQuotaInternal, {
+      key: "dailyChat",
+      userId: userId as Id<"users">,
+    });
 
     const history = await ctx.runQuery(api.learning.listMessages, { conversationId });
     const last = history[history.length - 1];
@@ -574,6 +790,10 @@ export const generateQuiz = action({
       throw new Error("This quiz has already been prepared.");
     }
     await rateLimitAction(ctx, "aiQuiz", userId);
+    await ctx.runMutation(internal.security.consumeQuotaInternal, {
+      key: "dailyQuiz",
+      userId: userId as Id<"users">,
+    });
     await ctx.runAction(internal.aiEngine.quizInternal, {
       attemptId,
       materialId: attempt.materialId,
@@ -593,6 +813,10 @@ export const ingestUrl = action({
     const userId = await ctx.runQuery(api.securityGet.userId);
     if (!userId) throw new Error("Not authenticated");
     await rateLimitAction(ctx, "urlIngest", userId);
+    await ctx.runMutation(internal.security.consumeQuotaInternal, {
+      key: "dailyAnalysis",
+      userId: userId as Id<"users">,
+    });
 
     if (typeof url !== "string" || url.length > 2048) {
       throw new Error("That doesn't look like a valid URL.");
