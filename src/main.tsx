@@ -13,6 +13,14 @@ import "./index.css";
 const Landing = lazy(() => import("./pages/Landing.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const Library = lazy(() => import("./pages/Library.tsx"));
+const AddMaterial = lazy(() => import("./pages/AddMaterial.tsx"));
+const MaterialDetail = lazy(() => import("./pages/MaterialDetail.tsx"));
+const Chat = lazy(() => import("./pages/Chat.tsx"));
+const Practice = lazy(() => import("./pages/Practice.tsx"));
+const QuizPage = lazy(() => import("./pages/QuizPage.tsx"));
+const Flashcards = lazy(() => import("./pages/Flashcards.tsx"));
+const Achievements = lazy(() => import("./pages/Achievements.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -129,6 +137,78 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Dashboard />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/library"
+                element={
+                  <RequireAuth>
+                    <Library />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/add"
+                element={
+                  <RequireAuth>
+                    <AddMaterial />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/material/:id"
+                element={
+                  <RequireAuth>
+                    <MaterialDetail />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <RequireAuth>
+                    <Chat />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/practice"
+                element={
+                  <RequireAuth>
+                    <Practice />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/practice/:materialId"
+                element={
+                  <RequireAuth>
+                    <Practice />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/quiz/:attemptId"
+                element={
+                  <RequireAuth>
+                    <QuizPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/flashcards"
+                element={
+                  <RequireAuth>
+                    <Flashcards />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/achievements"
+                element={
+                  <RequireAuth>
+                    <Achievements />
                   </RequireAuth>
                 }
               />
