@@ -409,7 +409,6 @@ test("B cannot revoke A's session; the attempt is audit-logged as cross-user", a
 
   // Foreign session id → denial result, no state change, no existence oracle.
   const deny = await asBob.mutation(api.account.revokeSession, { sessionId: w.sessionA });
-  console.log("DEBUG deny result:", JSON.stringify(deny));
   expect(deny.ok).toBe(false);
 
   // The session still belongs to Alice.
@@ -420,10 +419,8 @@ test("B cannot revoke A's session; the attempt is audit-logged as cross-user", a
 
   // Deny path commits a content-free cross_user_access_attempt audit event
   // (denials return a result instead of throwing, so the audit row survives).
-  // The write is scheduled — drain the scheduler before asserting.
-  await w.t.finishInProgressScheduledFunctions();
   const allAudit = await w.t.run(async (ctx) => ctx.db.query("auditLogs").collect());
-  expect(allAudit.length).toBeGreaterThanOrEqual(1);
+  expect(allAudit.map((a) => a.action)).toContain("cross_user_access_attempt");
 });
 
 // ---------------------------------------------------------------------------
