@@ -229,6 +229,8 @@ export async function generateNextMission(
   const userId = await getAuthUserIdStrict(ctx);
   const now = Date.now();
 
+  // One active mission per user: prevents duplicate "next moves" when the
+  // generator races (e.g. two analyses completing concurrently).
   const active = await ctx.db
     .query("missions")
     .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "active"))
@@ -293,7 +295,10 @@ export async function generateNextMission(
   // else: practice newest material
   let material: Doc<"materials"> | null = null;
   if (opts?.materialId) {
-    material = await ctx.db.get(opts.materialId);
+    const m = await ctx.db.get(opts.materialId);
+    // Never attach a mission to another user's material (defense in depth —
+    // callers already verify ownership, but this helper is shared).
+    material = m && m.userId === userId && m.status === "ready" ? m : null;
   } else {
     material =
       (await ctx.db
