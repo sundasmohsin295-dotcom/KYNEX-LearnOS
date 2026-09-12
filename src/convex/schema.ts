@@ -280,10 +280,6 @@ const schema = defineSchema(
       confidenceSum: v.number(), // sum of confidence weights 0..1
       confidenceCount: v.number(),
       retentionDecay: v.optional(v.number()), // 0..1, decays over time
-      // "Explain it" evidence — incremented when the learner attempts a
-      // teach-back of this concept (KYNEX Prove It pillar). Never set by
-      // reading; only by an actual explanation attempt.
-      explained: v.optional(v.number()),
       lastPracticedAt: v.number(),
     })
       .index("by_user", ["userId"])

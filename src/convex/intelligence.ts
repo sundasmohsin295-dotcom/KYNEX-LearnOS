@@ -157,7 +157,6 @@ async function loadIntel(ctx: QueryCtx | MutationCtx, userId: Id<"users">): Prom
       subjectId: m.subjectId ?? null,
       correct: m.correct,
       attempts: m.attempts,
-      explained: m.explained ?? 0,
       lastPracticedAt: m.lastPracticedAt,
     })),
     attempts: attempts as AttemptRecord[],

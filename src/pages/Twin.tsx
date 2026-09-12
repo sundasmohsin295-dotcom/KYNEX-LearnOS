@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { motion } from "framer-motion";
 import {
   ArrowRight, ArrowUpRight, ArrowDownRight, Brain, Check, CheckCircle2, Circle,
-  Fingerprint, Pencil, ShieldCheck, Siren, Target, TrendingUp, Zap,
+  Fingerprint, Pencil, Scale, ShieldCheck, Target, TrendingUp, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -334,7 +334,7 @@ export default function Twin() {
 
               <div className="rounded-3xl border border-border/70 bg-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-bold">
-                  <Siren className="size-5 text-primary" /> Confidence Calibration
+                  <Scale className="size-5 text-primary" /> Confidence Calibration
                 </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Does your confidence match your actual accuracy?

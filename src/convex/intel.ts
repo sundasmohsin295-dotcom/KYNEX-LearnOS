@@ -43,7 +43,6 @@ export interface MasteryLike {
   subjectId: string | null;
   correct: number;
   attempts: number;
-  explained: number | undefined;
   lastPracticedAt: number;
 }
 

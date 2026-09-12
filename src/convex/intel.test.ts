@@ -36,7 +36,6 @@ function mastery(overrides: Partial<MasteryLike> = {}): MasteryLike {
     conceptLabel: "Concept A",
     materialId: "m1",
     subjectId: null,
-    explained: undefined,
     correct: 3,
     attempts: 4,
     lastPracticedAt: NOW - DAY,

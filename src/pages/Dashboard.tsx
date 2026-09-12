@@ -25,6 +25,11 @@ function useMissionAction() {
       const conceptQs = m.conceptKey ? `?concept=${encodeURIComponent(m.conceptKey)}` : "";
       return navigate(`/practice/${m.materialId}${conceptQs}`);
     }
+    // Rescue-plan / general missions without a specific material open the
+    // practice picker so the student stays in a learning flow.
+    if (m.kind === "practice" || m.kind === "fix_gap" || m.kind === "master") {
+      return navigate("/practice");
+    }
     return navigate("/library");
   };
 }
