@@ -2,7 +2,12 @@ import { getAuthUserId, getAuthSessionId } from "@convex-dev/auth/server";
 import { query, mutation, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { logAuditEvent, logAccessDenied, SECURITY_EVENTS } from "./security";
+import {
+  logAuditEvent,
+  logAccessDenied,
+  enforceRateLimit,
+  SECURITY_EVENTS,
+} from "./security";
 
 // ---------------------------------------------------------------------------
 // Account security: sessions, security events, account deletion.
@@ -138,6 +143,9 @@ export const deleteMyAccount = mutation({
     if (confirm !== "DELETE") throw new Error("Confirmation required.");
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
+    // Rate-limit the destructive path (abuse containment). Generic error only.
+    await enforceRateLimit(ctx, "accountDelete", userId);
 
     const counts = {
       materials: 0,
