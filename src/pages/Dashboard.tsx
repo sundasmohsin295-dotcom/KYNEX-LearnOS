@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, ArrowUpRight, ArrowDownRight, Brain, ChevronDown, Flame, Play, Plus,
-  RefreshCw, Sparkles, Target, Trophy, Wrench, Zap, Info,
+  RefreshCw, Rocket, Siren, Sparkles, Target, Timer, Trophy, Wrench, Zap, Info,
+  ShieldCheck, TrendingUp, X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -32,8 +34,15 @@ export default function Dashboard() {
   const overview = useQuery(api.profiles.myOverview);
   const insights = useQuery(api.profiles.myInsights);
   const materials = useQuery(api.materials.list);
+  const intel = useQuery(api.intelligence.dailyBriefQuery);
+  const startQuick = useMutation(api.intelligence.startQuickMission);
+  const startRescue = useMutation(api.intelligence.startRescuePlan);
   const act = useMissionAction();
   const [showWhy, setShowWhy] = useState(false);
+  const [rescueOpen, setRescueOpen] = useState(false);
+  const [rescueHours, setRescueHours] = useState(4);
+  const [rescueWhy, setRescueWhy] = useState("");
+  const [rescueBusy, setRescueBusy] = useState(false);
 
   if (!overview) {
     return (
@@ -175,6 +184,97 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ---------- Daily Brief + Oracle ---------- */}
+      {intel && (
+        <div className="mt-6 grid gap-5 lg:grid-cols-3">
+          <div className="rounded-3xl border border-border/70 bg-card p-6 lg:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+                <Sparkles className="size-5 text-primary" /> Your Academic Brief
+              </h3>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">What matters today</span>
+            </div>
+            <div className="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+              <BriefTile item={intel.brief.biggestRisk} navigate={navigate} tone="text-chart-5" icon={Siren} />
+              <BriefTile item={intel.brief.biggestImprovement} navigate={navigate} tone="text-success" icon={TrendingUp} />
+              <BriefTile item={intel.brief.conceptToStrengthen} navigate={navigate} tone="text-primary" icon={Brain} />
+              <BriefTile item={intel.brief.examPriority} navigate={navigate} tone="text-chart-4" icon={Trophy} />
+              <BriefTile item={intel.brief.quickMission} navigate={navigate} tone="text-xp-foreground" icon={Timer} />
+              <BriefTile item={intel.brief.personalBest} navigate={navigate} tone="text-success" icon={ShieldCheck} />
+            </div>
+            {/* 20-minute mission CTA — creates a REAL mission from real state */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-bold">{intel.quickMission.title}</p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{intel.quickMission.description}</p>
+              </div>
+              <Button
+                size="sm"
+                className="gap-1.5 rounded-lg"
+                onClick={async () => {
+                  try {
+                    await startQuick({ minutes: 20 });
+                    toast.success("Quick mission ready — it's your Next Move now");
+                    navigate("/dashboard");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Couldn't start the mission");
+                  }
+                }}
+              >
+                <Rocket className="size-3.5" /> Start 20-min mission
+              </Button>
+            </div>
+          </div>
+
+          {/* KYNEX Oracle */}
+          <div className="rounded-3xl border border-border/70 bg-card p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+                <Info className="size-5 text-primary" /> KYNEX Oracle
+              </h3>
+              <RiskBadge level={intel.oracle.level} />
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+              Based on your available data — never a certainty.
+            </p>
+            <div className="mt-3 space-y-2">
+              {intel.oracle.reasons.length === 0 ? (
+                <p className="rounded-xl bg-muted/50 px-3.5 py-3 text-xs text-muted-foreground">
+                  KYNEX needs practice evidence before it can assess academic risk.
+                </p>
+              ) : (
+                intel.oracle.reasons.map((r, i) => (
+                  <p key={i} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+                    <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" /> {r}
+                  </p>
+                ))
+              )}
+            </div>
+            {intel.oracle.enoughData && (
+              <div className="mt-4 rounded-xl bg-primary/5 px-3.5 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary">One action</p>
+                <p className="mt-1 text-xs font-medium leading-relaxed">{intel.oracle.action}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ---------- Rescue mode bar ---------- */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-destructive/25 bg-gradient-to-r from-destructive/5 via-card to-card px-6 py-4">
+        <div>
+          <p className="flex items-center gap-2 font-display text-sm font-bold text-destructive">
+            <Siren className="size-4" /> Behind on material?
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Tell KYNEX how much time you actually have — get a realistic recovery plan, never an all-nighter.
+          </p>
+        </div>
+        <Button variant="outline" className="gap-2 rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setRescueOpen(true)}>
+          <Siren className="size-4" /> I'm behind — plan my recovery
+        </Button>
+      </div>
+
       {/* ---------- Academic Pulse ---------- */}
       <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -224,6 +324,9 @@ export default function Dashboard() {
           </p>
         )}
       </div>
+
+      {/* ---------- GPA Command Center strip ---------- */}
+      <GpaStrip navigate={navigate} />
 
       {/* ---------- Rhythm + mastery ---------- */}
       <div className="mt-6 grid gap-5 lg:grid-cols-5">
@@ -367,6 +470,30 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <RescueModal
+        open={rescueOpen}
+        onClose={() => setRescueOpen(false)}
+        hours={rescueHours}
+        setHours={setRescueHours}
+        why={rescueWhy}
+        setWhy={setRescueWhy}
+        busy={rescueBusy}
+        onSubmit={async () => {
+          setRescueBusy(true);
+          try {
+            const res = await startRescue({ hours: rescueHours, situation: rescueWhy });
+            toast.success(res.summary, { description: res.honestNote });
+            setRescueOpen(false);
+            setRescueWhy("");
+            navigate("/dashboard");
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Couldn't build the plan");
+          } finally {
+            setRescueBusy(false);
+          }
+        }}
+      />
     </AppShell>
   );
 }
@@ -377,6 +504,206 @@ function Evidence({ children }: { children: React.ReactNode }) {
       <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
       {children}
     </li>
+  );
+}
+
+/** Compact GPA Command Center — real numbers from the student's own GPA Lab. */
+function GpaStrip({ navigate }: { navigate: (to: string) => void }) {
+  const gpa = useQuery(api.gpa.overview);
+  if (!gpa || (gpa.currentCgpa == null && !gpa.targetCgpa)) {
+    return (
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/70 bg-card px-6 py-4">
+        <div>
+          <p className="font-display text-sm font-bold">GPA Command Center</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Add your graded semesters in the GPA Lab to unlock CGPA projections, required GPA and scenarios.
+          </p>
+        </div>
+        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => navigate("/gpa")}>
+          Set up GPA Lab <ArrowRight className="size-3.5" />
+        </Button>
+      </div>
+    );
+  }
+  const gap =
+    gpa.currentCgpa != null && gpa.targetCgpa != null
+      ? +(gpa.targetCgpa - gpa.currentCgpa).toFixed(2)
+      : null;
+  return (
+    <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 font-display text-lg font-bold">GPA Command Center</h3>
+        <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/gpa")}>
+          Simulate <ArrowRight className="size-3.5" />
+        </Button>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <PulseTile label="Current CGPA" value={gpa.currentCgpa != null ? String(gpa.currentCgpa) : "—"} tone="text-primary" />
+        <PulseTile label="Target" value={gpa.targetCgpa != null ? String(gpa.targetCgpa) : "—"} tone="text-foreground" />
+        <PulseTile label="Projected" value={gpa.projected != null ? String(gpa.projected) : "—"} tone="text-chart-4" note="current in-progress courses at entered expected grades" />
+        <PulseTile
+          label="Gap to target"
+          value={gap != null ? (gap > 0 ? `+${gap}` : "0") : "—"}
+          sub={gap != null && gap > 0 ? "required GPA computed in the Lab" : "on or above target"}
+          tone={gap != null && gap > 0 ? "text-chart-5" : "text-success"}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** One line of the Daily Brief — navigates to the relevant subsystem. */
+function BriefTile({
+  item, navigate, tone, icon: Icon,
+}: {
+  item: {
+    label: string; value: string; sub?: string; to?: string;
+    materialId?: string | null; conceptKey?: string; empty: boolean;
+  };
+  navigate: (to: string) => void;
+  tone: string;
+  icon: typeof Target;
+}) {
+  const go = () => {
+    if (item.empty || !item.to) return;
+    if (item.to === "practice" && item.materialId) {
+      const q = item.conceptKey ? `?concept=${encodeURIComponent(item.conceptKey)}` : "";
+      navigate(`/practice/${item.materialId}${q}`);
+    } else if (item.to === "flashcards") navigate("/flashcards");
+    else if (item.to === "mistakes") navigate("/mistakes");
+    else if (item.to === "twin") navigate("/twin");
+    else navigate("/practice");
+  };
+  return (
+    <button
+      onClick={go}
+      disabled={item.empty}
+      className={cn(
+        "rounded-2xl border border-border/60 bg-muted/30 p-4 text-left transition-colors",
+        !item.empty && "hover:border-primary/40 hover:bg-accent/50",
+      )}
+    >
+      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <Icon className={cn("size-3.5", tone)} /> {item.label}
+      </p>
+      <p className={cn("mt-1.5 truncate font-display text-sm font-extrabold", item.empty ? "text-muted-foreground" : tone)} title={item.value}>
+        {item.value}
+      </p>
+      {item.sub && <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{item.sub}</p>}
+    </button>
+  );
+}
+
+const RISK_STYLES: Record<string, string> = {
+  LOW: "bg-success/15 text-success",
+  MEDIUM: "bg-xp/20 text-xp-foreground",
+  HIGH: "bg-chart-5/15 text-chart-5",
+  CRITICAL: "bg-destructive/15 text-destructive",
+};
+
+function RiskBadge({ level }: { level: string }) {
+  return (
+    <span className={cn("rounded-full px-3 py-1 text-xs font-extrabold tracking-wide", RISK_STYLES[level] ?? "bg-muted text-muted-foreground")}>
+      {level} RISK
+    </span>
+  );
+}
+
+/** Rescue Mode modal — creates a REAL multi-mission recovery plan. */
+function RescueModal({
+  open, onClose, hours, setHours, why, setWhy, busy, onSubmit,
+}: {
+  open: boolean; onClose: () => void;
+  hours: number; setHours: (h: number) => void;
+  why: string; setWhy: (v: string) => void;
+  busy: boolean;
+  onSubmit: () => void;
+}) {
+  if (!open) return null;
+  const situations = [
+    "Exam tomorrow",
+    "Missed several classes",
+    "Too many chapters",
+    "Don't understand the basics",
+    "Failed previous test",
+    "Don't know where to start",
+  ];
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-background/70 px-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-3xl border border-border/70 bg-card p-6 shadow-2xl"
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="flex items-center gap-2 font-display text-lg font-bold text-destructive">
+              <Siren className="size-5" /> Rescue Mode
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              A realistic plan from your actual weak spots — prerequisite repair first, always.
+            </p>
+          </div>
+          <Button size="icon" variant="ghost" className="size-8" onClick={onClose} aria-label="Close">
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <p className="mt-5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">How much time do you have?</p>
+        <div className="mt-2 grid grid-cols-5 gap-1.5">
+          {[1, 2, 4, 6, 8].map((h) => (
+            <button
+              key={h}
+              onClick={() => setHours(h)}
+              className={cn(
+                "rounded-xl border px-2 py-2.5 text-sm font-bold transition-colors",
+                hours === h
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border/70 bg-muted/50 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {h}h
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">What happened? (optional)</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {situations.map((s) => (
+            <button
+              key={s}
+              onClick={() => setWhy(why === s ? "" : s)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors",
+                why === s
+                  ? "bg-destructive/15 text-destructive"
+                  : "bg-muted text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-4 rounded-xl bg-muted/60 px-3.5 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
+          Plans are paced with breaks in mind. Sleep beats cramming — retention collapses without it.
+        </p>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button className="gap-2" disabled={busy} onClick={onSubmit}>
+            <Siren className="size-4" /> {busy ? "Building plan…" : "Build my recovery plan"}
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

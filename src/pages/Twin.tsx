@@ -3,8 +3,8 @@ import { useQuery, useMutation } from "convex/react";
 import { useNavigate, useSearchParams } from "react-router";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, ArrowUpRight, ArrowDownRight, Brain, Check, Fingerprint,
-  Pencil, Target, TrendingUp, Zap,
+  ArrowRight, ArrowUpRight, ArrowDownRight, Brain, Check, CheckCircle2, Circle,
+  Fingerprint, Pencil, ShieldCheck, Siren, Target, TrendingUp, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -19,6 +19,7 @@ export default function Twin() {
   const [params, setParams] = useSearchParams();
   const overview = useQuery(api.profiles.myOverview);
   const insights = useQuery(api.profiles.myInsights);
+  const intel = useQuery(api.intelligence.snapshot);
   const save = useMutation(api.profiles.setAcademicProfile);
 
   const [editing, setEditing] = useState(false);
@@ -257,6 +258,235 @@ export default function Twin() {
             </Panel>
           </div>
 
+          {/* ---------- MASTER SCORE ---------- */}
+          {intel && (
+            <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+                  <ShieldCheck className="size-5 text-primary" /> Master Score
+                </h3>
+                <div className="flex items-center gap-2">
+                  {intel.master.overall != null && (
+                    <Ring pct={intel.master.overall} size={52} stroke={6} colorClass="text-primary" label="overall" />
+                  )}
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Eight dimensions · never one number
+                  </span>
+                </div>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Every dimension is computed from real practice, review and exam evidence.
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {intel.master.dimensions.map((d) => (
+                  <div key={d.key} className="rounded-2xl border border-border/60 bg-muted/30 p-4" title={d.note}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{d.label}</p>
+                    <p className={cn("mt-1.5 font-display text-2xl font-extrabold", d.value == null ? "text-muted-foreground" : "text-foreground")}>
+                      {d.value != null ? `${d.value}%` : "—"}
+                    </p>
+                    <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{d.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ---------- GAP RADAR + CONFIDENCE CALIBRATION ---------- */}
+          {intel && (
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
+              <div className="rounded-3xl border border-border/70 bg-card p-6">
+                <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+                  <Target className="size-5 text-chart-5" /> Gap Radar
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Eight gap types — what kind of “don't know” this actually is.
+                </p>
+                {intel.gaps.length === 0 ? (
+                  <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
+                    No gaps detected yet. Practice sessions feed the radar — and gaps are useful signal, not failure.
+                  </p>
+                ) : (
+                  <div className="mt-4 space-y-2.5">
+                    {intel.gaps.slice(0, 6).map((g, i) => (
+                      <motion.button
+                        key={`${g.type}-${g.conceptKey}`}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                        onClick={() => {
+                          if (g.conceptKey === "__exam_pacing__") return navigate("/practice");
+                          if (g.materialId) navigate(`/practice/${g.materialId}?concept=${encodeURIComponent(g.conceptKey)}`);
+                        }}
+                        className="flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+                      >
+                        <span className="mt-0.5 shrink-0 rounded-full bg-chart-5/15 px-2.5 py-1 text-[10px] font-extrabold uppercase text-chart-5">
+                          {g.type}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold">{g.conceptLabel}</span>
+                          <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{g.evidence}</span>
+                        </span>
+                      </motion.button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-3xl border border-border/70 bg-card p-6">
+                <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+                  <Siren className="size-5 text-primary" /> Confidence Calibration
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Does your confidence match your actual accuracy?
+                </p>
+                {intel.calibration.verdict === "insufficient" ? (
+                  <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
+                    {intel.calibration.note}
+                  </p>
+                ) : (
+                  <>
+                    <div className="mt-4 flex items-center gap-2">
+                      <span className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-extrabold",
+                        intel.calibration.verdict === "overconfident" && "bg-destructive/15 text-destructive",
+                        intel.calibration.verdict === "underconfident" && "bg-chart-4/15 text-chart-4",
+                        intel.calibration.verdict === "calibrated" && "bg-success/15 text-success",
+                      )}>
+                        {intel.calibration.verdict.toUpperCase()}
+                      </span>
+                      <span className="text-[11px] font-semibold text-muted-foreground">
+                        mean drift {intel.calibration.meanError} pts · {intel.calibration.total} answers
+                      </span>
+                    </div>
+                    <div className="mt-4 space-y-2.5">
+                      {intel.calibration.bands.filter((b) => b.count > 0).map((b) => (
+                        <div key={b.key} className="rounded-xl bg-muted/40 px-3.5 py-2.5">
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span>{b.label}</span>
+                            <span className={b.error <= 10 ? "text-success" : b.error <= 25 ? "text-warning-foreground" : "text-destructive"}>
+                              {b.accuracy}% actual · ~{b.expectedAccuracy}% expected
+                            </span>
+                          </div>
+                          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                            <div className={cn("h-full rounded-full", b.accuracy >= b.expectedAccuracy ? "bg-success" : "bg-chart-5")} style={{ width: `${b.accuracy}%` }} />
+                          </div>
+                          <p className="mt-1 text-[10px] text-muted-foreground">{b.count} answers</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-4 rounded-xl bg-primary/5 px-3.5 py-2.5 text-xs font-medium leading-relaxed text-primary">
+                      {intel.calibration.note}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ---------- PROVE IT + MEMORY + YOU vs YOU ---------- */}
+          {intel && (
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
+              {/* PROVE IT — verified mastery */}
+              <div className="rounded-3xl border border-border/70 bg-card p-6">
+                <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+                  <ShieldCheck className="size-5 text-success" /> Prove It
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Knowledge is not mastery. Verified = accurate + applied + novel + recalled.
+                </p>
+                {intel.proveIt.length === 0 ? (
+                  <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
+                    No practice evidence yet — mastery claims start with real answers.
+                  </p>
+                ) : (
+                  <div className="mt-4 space-y-2">
+                    {intel.proveIt.slice(0, 8).map((p) => (
+                      <div key={p.conceptKey} className={cn("rounded-2xl border px-4 py-3", p.verified ? "border-success/40 bg-success/5" : "border-border/60 bg-muted/20")}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-sm font-bold">{p.conceptLabel}</p>
+                          {p.verified ? (
+                            <span className="flex shrink-0 items-center gap-1 rounded-full bg-success/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-success">
+                              <CheckCircle2 className="size-3" /> verified
+                            </span>
+                          ) : (
+                            <span className="shrink-0 text-[11px] font-bold text-muted-foreground">{p.accuracy}%</span>
+                          )}
+                        </div>
+                        {!p.verified && p.missing.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {p.missing.map((m) => (
+                              <li key={m} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                                <Circle className="mt-0.5 size-2.5 shrink-0 text-border" /> {m}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-5">
+                {/* MEMORY ENGINE */}
+                <div className="rounded-3xl border border-border/70 bg-card p-6">
+                  <h3 className="flex items-center gap-2 font-display text-lg font-bold">Memory Engine</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Review recommendations based on your recent performance — not medical certainty.
+                  </p>
+                  {intel.memory.length === 0 ? (
+                    <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
+                      Memory tracking starts after your first practice session.
+                    </p>
+                  ) : (
+                    <div className="mt-4 space-y-1.5">
+                      {intel.memory.slice(0, 6).map((m) => (
+                        <div key={m.conceptKey} className="flex items-center gap-3 rounded-xl bg-muted/30 px-3.5 py-2.5">
+                          <span className={cn(
+                            "size-2.5 shrink-0 rounded-full",
+                            m.status === "stable" && "bg-success",
+                            m.status === "review_soon" && "bg-warning",
+                            m.status === "at_risk" && "bg-destructive",
+                            m.status === "new" && "bg-primary",
+                          )} aria-hidden />
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{m.conceptLabel}</span>
+                          <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                            {m.status.replace("_", " ")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* YOU vs YOU */}
+                <div className="rounded-3xl border border-xp/40 bg-gradient-to-br from-xp/10 to-card p-6">
+                  <h3 className="flex items-center gap-2 font-display text-lg font-bold">You vs You</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Your only competition is your past self.
+                  </p>
+                  {!intel.you.enoughData ? (
+                    <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
+                      Finish 4+ practice sessions to unlock your personal trends.
+                    </p>
+                  ) : (
+                    <div className="mt-4 grid grid-cols-3 gap-3">
+                      <Delta label="Accuracy" delta={intel.you.accuracy?.delta ?? null} now={intel.you.accuracy?.now ?? null} />
+                      <Delta label="Recall" delta={intel.you.recall?.delta ?? null} now={intel.you.recall?.now ?? null} />
+                      <Delta label="Careless" delta={intel.you.careless?.delta ?? null} now={intel.you.careless?.now ?? null} invert />
+                      {intel.you.personalBest != null && (
+                        <div className="col-span-3 rounded-xl bg-card/70 px-3.5 py-2.5 text-center">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Personal best session</p>
+                          <p className="font-display text-xl font-extrabold text-success">{intel.you.personalBest}%</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ---------- Pulse detail ---------- */}
           <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
             <h3 className="font-display text-lg font-bold">Academic Pulse</h3>
@@ -315,6 +545,26 @@ function Signal({
       <p className={cn("mt-1.5 font-display text-2xl font-extrabold", tone)}>
         {value != null ? value : "—"}{value != null ? "%" : ""}
       </p>
+    </div>
+  );
+}
+
+function Delta({
+  label, delta, now, invert = false,
+}: {
+  label: string; delta: number | null; now: number | null; invert?: boolean;
+}) {
+  const good = delta == null ? false : invert ? delta <= 0 : delta >= 0;
+  return (
+    <div className="rounded-2xl bg-card/70 p-3.5 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={cn(
+        "mt-1 font-display text-xl font-extrabold",
+        delta == null ? "text-muted-foreground" : good ? "text-success" : "text-chart-5",
+      )}>
+        {delta == null ? "—" : `${delta > 0 ? "+" : ""}${delta}`}
+      </p>
+      <p className="text-[10px] text-muted-foreground">now {now != null ? now : "—"}</p>
     </div>
   );
 }
