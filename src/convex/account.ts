@@ -48,7 +48,15 @@ export const listMySessions = query({
   },
 });
 
-/** Revoke one of YOUR OWN sessions. Cross-user ids are denied and logged. */
+/**
+ * Revoke one of YOUR OWN sessions. Cross-user ids are denied and audited.
+ *
+ * The deny path RETURNS a denial result instead of throwing: a thrown
+ * mutation rolls back its entire transaction, which would also erase the
+ * audit event recording the attempt. Committing the denial lets the audit
+ * trail survive while the attacker still learns nothing (no existence
+ * oracle: owned-but-invalid and foreign ids both yield `ok: false`).
+ */
 export const revokeSession = mutation({
   args: { sessionId: v.id("authSessions") },
   handler: async (ctx, { sessionId }) => {
@@ -59,10 +67,11 @@ export const revokeSession = mutation({
       await logAccessDenied(ctx, userId, "revoke_session", {
         crossUser: !!session,
       });
-      throw new Error("Session not found.");
+      return { ok: false as const };
     }
     await deleteSessionWithTokens(ctx, session);
     await logAuditEvent(ctx, userId, SECURITY_EVENTS.SESSION_REVOKED);
+    return { ok: true as const };
   },
 });
 

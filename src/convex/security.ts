@@ -7,6 +7,7 @@ import {
   QueryCtx,
 } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { todayKey } from "./gamification";
 
@@ -180,6 +181,12 @@ export const securityEventInternal = internalMutation({
  * Log a failed authorization / ownership check. This is the single choke
  * point for "deny" paths so cross-user probing shows up in one queryable
  * stream. `detail` carries only an operation tag — never resource content.
+ *
+ * Deny paths THROW immediately after this call, and a thrown mutation rolls
+ * back its whole transaction — so the audit insert is SCHEDULED (own
+ * transaction) instead of written inline. Without this, every denied access
+ * attempt would be rolled back together with the throw and the audit trail
+ * would silently record nothing.
  */
 export async function logAccessDenied(
   ctx: MutationCtx,
@@ -187,14 +194,13 @@ export async function logAccessDenied(
   operation: string,
   opts?: { crossUser?: boolean },
 ): Promise<void> {
-  await logAuditEvent(
-    ctx,
-    userId,
-    opts?.crossUser
+  await ctx.scheduler.runAfter(0, internal.security.securityEventInternal, {
+    userId: userId ? (userId as Id<"users">) : undefined,
+    action: opts?.crossUser
       ? SECURITY_EVENTS.CROSS_USER_ACCESS_ATTEMPT
       : SECURITY_EVENTS.ACCESS_DENIED,
-    operation.slice(0, 60),
-  );
+    detail: operation.slice(0, 60),
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -322,7 +322,10 @@ export const completeQuiz = mutation({
     if (!userId) throw new Error("Not authenticated");
     const q = await ctx.db.get(attemptId);
     if (!q || q.userId !== userId) throw new Error("Quiz not found");
-    if (q.status === "completed") return { xp: 0, leveledUp: false, newLevel: 0, accuracy: 0 };
+    if (q.status === "completed") {
+      // Idempotent replay: same result shape as the normal path, zeroed.
+      return { xp: 0, leveledUp: false, newLevel: 0, accuracy: 0, correctCount: 0, total: 0 };
+    }
     if (q.status !== "active") throw new Error("Quiz is not active");
 
     const material = await ctx.db.get(q.materialId);
@@ -536,7 +539,8 @@ export const listMissions = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    // Same shape as the authenticated path — keeps the client contract stable.
+    if (!userId) return { active: [], recent: [] };
     const active = await ctx.db
       .query("missions")
       .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "active"))
