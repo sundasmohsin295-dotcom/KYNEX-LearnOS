@@ -130,6 +130,12 @@ const schema = defineSchema(
       gradingScale: v.optional(v.union(
         v.literal("4.0"),
         v.literal("5.0"),
+        v.literal("custom"),
+      )),
+      // Custom university grading scale: [{min, point}] percent→points bands.
+      // Only set through gpa.setScale which validates + sanitizes.
+      customBands: v.optional(v.array(
+        v.object({ min: v.number(), point: v.number() }),
       )),
       currentGpa: v.optional(v.number()),
       currentCgpa: v.optional(v.number()),
@@ -243,6 +249,17 @@ const schema = defineSchema(
       ),
       conceptFocus: v.optional(v.string()),
       missionId: v.optional(v.id("missions")),
+      // ---- Exam Simulator ----
+      examMode: v.optional(v.boolean()),
+      examDurationSec: v.optional(v.number()), // total time budget
+      examStartedAt: v.optional(v.number()), // server-side clock start
+      examEndsAt: v.optional(v.number()), // server-side deadline
+      // flags[i] = true → question i marked for review
+      examFlags: v.optional(v.array(v.boolean())),
+      // per-question seconds spent (parallel to answers; -1 = unanswered)
+      examTiming: v.optional(v.array(v.number())),
+      negativeMarking: v.optional(v.boolean()),
+      examSubmitted: v.optional(v.boolean()),
       createdAt: v.number(),
       completedAt: v.optional(v.number()),
     })
@@ -323,6 +340,68 @@ const schema = defineSchema(
       examDate: v.number(),
       createdAt: v.number(),
     }).index("by_user_date", ["userId", "examDate"]),
+
+    // ---- GPA / CGPA Lab ----
+
+    // One row per user semester. Courses live in gpaCourses (child rows).
+    gpaSemesters: defineTable({
+      userId: v.id("users"),
+      name: v.string(), // "Semester 1", "Fall 2025", "Year 2 · Sem B"
+      order: v.number(), // sort order; new semesters append
+      status: v.union(v.literal("completed"), v.literal("in_progress")),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_order", ["userId", "order"]),
+
+    gpaCourses: defineTable({
+      userId: v.id("users"), // denormalized ownership + index; verified server-side
+      semesterId: v.id("gpaSemesters"),
+      name: v.string(),
+      code: v.optional(v.string()),
+      creditHours: v.number(),
+      gradePoint: v.optional(v.number()), // null while in progress / ungraded
+    })
+      .index("by_semester", ["semesterId"])
+      .index("by_user", ["userId"]),
+
+    // ---- Mistake Bank: durable per-mistake records from real quiz answers ----
+    mistakes: defineTable({
+      userId: v.id("users"),
+      materialId: v.optional(v.id("materials")),
+      attemptId: v.id("quizAttempts"),
+      questionIndex: v.number(),
+      question: v.string(),
+      yourAnswer: v.string(), // option text
+      correctAnswer: v.string(), // option text
+      explanation: v.string(),
+      conceptKey: v.string(),
+      conceptLabel: v.string(),
+      // classification: derives from question type + confidence + difficulty
+      category: v.union(
+        v.literal("conceptual"),
+        v.literal("calculation"),
+        v.literal("careless"),
+        v.literal("memory"),
+        v.literal("misreading"),
+        v.literal("time_pressure"),
+        v.literal("reasoning"),
+        v.literal("application"),
+      ),
+      difficulty: v.union(
+        v.literal("easy"),
+        v.literal("medium"),
+        v.literal("hard"),
+      ),
+      timesMissed: v.number(), // increments when the same (user, concept, question-ish) mistake repeats
+      resolved: v.boolean(), // set when the concept is later answered correctly in a later quiz
+      resolvedAt: v.optional(v.number()),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_resolved", ["userId", "resolved"])
+      .index("by_user_concept", ["userId", "conceptKey"]),
 
     // ---- flashcards / spaced repetition ----
 

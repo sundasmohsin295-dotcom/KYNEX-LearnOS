@@ -8,7 +8,7 @@ import {
   generateNextMission,
 } from "./gamification";
 import { ACHIEVEMENT_META } from "./achievementMeta";
-import { enforceRateLimit, logAuditEvent } from "./security";
+import { enforceRateLimit, logAuditEvent, logAccessDenied } from "./security";
 
 // ---------------------------------------------------------------------------
 // Conversations & messages
@@ -200,8 +200,12 @@ export const startQuiz = mutation({
     difficulty: v.string(),
     mode: v.union(v.literal("diagnostic"), v.literal("practice")),
     missionId: v.optional(v.id("missions")),
+    // ---- Exam Simulator options (validated server-side below) ----
+    examMode: v.optional(v.boolean()),
+    examMinutes: v.optional(v.number()),
+    negativeMarking: v.optional(v.boolean()),
   },
-  handler: async (ctx, { materialId, conceptKey, count, difficulty, mode, missionId }) => {
+  handler: async (ctx, { materialId, conceptKey, count, difficulty, mode, missionId, examMode, examMinutes, negativeMarking }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
@@ -228,6 +232,15 @@ export const startQuiz = mutation({
       throw new Error("Concept filter is too long.");
     }
 
+    // Exam settings are validated server-side — the client cannot set an
+    // arbitrary clock or change scoring rules the server enforces.
+    const now = Date.now();
+    const isExam = examMode === true;
+    const minutes = isExam
+      ? Math.min(180, Math.max(5, Math.round(examMinutes ?? count * 1.5)))
+      : undefined;
+    const durationSec = minutes !== undefined ? minutes * 60 : undefined;
+
     const id = await ctx.db.insert("quizAttempts", {
       userId,
       materialId,
@@ -237,7 +250,12 @@ export const startQuiz = mutation({
       questions: [],
       answers: [],
       missionId,
-      createdAt: Date.now(),
+      examMode: isExam,
+      examDurationSec: durationSec,
+      negativeMarking: isExam ? negativeMarking === true : undefined,
+      examFlags: isExam ? [] : undefined,
+      examTiming: isExam ? [] : undefined,
+      createdAt: now,
     });
     return id;
   },
@@ -262,6 +280,71 @@ export const activateInternal = internalMutation({
   },
   handler: async (ctx, { attemptId, questions }) => {
     await ctx.db.patch(attemptId, { status: "active", questions });
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Exam Simulator — server-authoritative clock, flags, timing telemetry
+// ---------------------------------------------------------------------------
+
+/**
+ * Start the exam clock. The deadline is stored server-side on first call so a
+ * manipulated client clock cannot extend an exam. Called automatically by the
+ * UI when the attempt becomes active.
+ */
+export const startExam = mutation({
+  args: { attemptId: v.id("quizAttempts") },
+  handler: async (ctx, { attemptId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const q = await ctx.db.get(attemptId);
+    if (!q || q.userId !== userId) throw new Error("Quiz not found");
+    if (!q.examMode || q.status !== "active") return { ok: false as const };
+    if (q.examStartedAt) return { ok: true as const }; // idempotent
+    const now = Date.now();
+    const endsAt = now + (q.examDurationSec ?? 0) * 1000;
+    await ctx.db.patch(attemptId, { examStartedAt: now, examEndsAt: endsAt });
+    return { ok: true as const, endsAt };
+  },
+});
+
+/** Toggle the review flag on a question (exam mode only). */
+export const toggleExamFlag = mutation({
+  args: { attemptId: v.id("quizAttempts"), index: v.number() },
+  handler: async (ctx, { attemptId, index }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const q = await ctx.db.get(attemptId);
+    if (!q || q.userId !== userId) throw new Error("Quiz not found");
+    if (!q.examMode || q.status !== "active") return { ok: false as const };
+    if (!q.examFlags || index < 0 || index >= q.questions.length) {
+      return { ok: false as const };
+    }
+    const flags = [...q.examFlags];
+    while (flags.length <= index) flags.push(false);
+    flags[index] = !flags[index];
+    await ctx.db.patch(attemptId, { examFlags: flags });
+    return { ok: true as const };
+  },
+});
+
+/**
+ * Record how long a question took (seconds, integer). Appends in order so
+ * examTiming stays parallel to answers. Clamped to the exam duration.
+ */
+export const recordTiming = mutation({
+  args: { attemptId: v.id("quizAttempts"), seconds: v.number() },
+  handler: async (ctx, { attemptId, seconds }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const q = await ctx.db.get(attemptId);
+    if (!q || q.userId !== userId) throw new Error("Quiz not found");
+    if (!q.examMode || q.status !== "active") return { ok: false as const };
+    if (!q.examTiming) return { ok: false as const };
+    const s = Math.max(0, Math.min(q.examDurationSec ?? 10800, Math.round(seconds)));
+    const timings = [...q.examTiming, s];
+    await ctx.db.patch(attemptId, { examTiming: timings });
+    return { ok: true as const };
   },
 });
 
@@ -295,6 +378,15 @@ export const answerQuestion = mutation({
     const q = await ctx.db.get(attemptId);
     if (!q || q.userId !== userId) throw new Error("Quiz not found");
     if (q.status !== "active") throw new Error("Quiz is not active");
+    // Server-authoritative exam clock: late answers are rejected and the
+    // attempt is closed. The client cannot argue with this timestamp.
+    if (q.examMode && q.examEndsAt && Date.now() > q.examEndsAt) {
+      const material2 = await ctx.db.get(q.materialId);
+      await ctx.db.patch(attemptId, { status: "completed", completedAt: Date.now() });
+      await logStudySession(ctx, 1, "exam");
+      void material2;
+      throw new Error("Time is up — this exam has been submitted automatically.");
+    }
     if (q.answers.length !== index) throw new Error("Answer out of order");
 
     const question = q.questions[index];
@@ -369,11 +461,107 @@ export const completeQuiz = mutation({
     }
 
     const correctCount = q.answers.filter((a) => a.correct).length;
-    const accuracy = q.answers.length > 0 ? correctCount / q.answers.length : 0;
-    const xpEarned = Math.round(correctCount * 12 + (accuracy === 1 && q.answers.length >= 5 ? 60 : 0));
+    const answeredCount = q.answers.length;
+    const accuracy = answeredCount > 0 ? correctCount / answeredCount : 0;
+
+    // ---- Negative marking (exam mode only, server-decided) ----
+    const negatives = q.negativeMarking
+      ? q.answers.filter((a) => !a.correct).length
+      : 0;
+    const rawScore = correctCount - negatives;
+
+    // XP rewards genuine learning — never modified by negative marking
+    // (penalties affect exam score display, not the mastery reward loop).
+    const xpEarned = Math.max(
+      0,
+      Math.round(correctCount * 12 + (accuracy === 1 && answeredCount >= 5 ? 60 : 0)),
+    );
 
     const { leveledUp, newLevel } = await awardXp(ctx, xpEarned, `Quiz: ${material?.title ?? "practice"}`);
-    await logStudySession(ctx, Math.max(3, Math.round(q.answers.length * 0.75)), "quiz");
+    await logStudySession(ctx, Math.max(3, Math.round(answeredCount * 0.75)), q.examMode ? "exam" : "quiz");
+
+    // ---- Mistake Bank: durable records for every wrong answer ----
+    for (let i = 0; i < q.answers.length; i++) {
+      const question = q.questions[i];
+      const answer = q.answers[i];
+      if (!question || !answer || answer.correct) continue;
+      const key = question.concept.toLowerCase().trim();
+      // classification heuristic — transparent, not magic:
+      // confident wrong answer on an easy question => careless; hard question
+      // => conceptual; low-confidence on hard => reasoning/application.
+      const conf = answer.confidence;
+      let category: "conceptual" | "calculation" | "careless" | "memory" | "misreading" | "time_pressure" | "reasoning" | "application";
+      if (question.difficulty === "easy" && conf === "sure") {
+        category = "careless";
+      } else if (question.difficulty === "hard" && conf === "guess") {
+        category = "reasoning";
+      } else if (conf === "guess") {
+        category = "memory";
+      } else if (question.type === "application") {
+        category = "application";
+      } else if (question.difficulty === "hard") {
+        category = "conceptual";
+      } else {
+        category = "memory";
+      }
+
+      // Merge repeated misses on the same concept+question-ish text.
+      const existingMistakes = await ctx.db
+        .query("mistakes")
+        .withIndex("by_user_concept", (mq) =>
+          mq.eq("userId", userId).eq("conceptKey", key),
+        )
+        .collect();
+      const twin = existingMistakes.find(
+        (m) => !m.resolved && m.question === question.question,
+      );
+      if (twin) {
+        await ctx.db.patch(twin._id, { timesMissed: twin.timesMissed + 1, createdAt: now });
+      } else {
+        await ctx.db.insert("mistakes", {
+          userId,
+          materialId: q.materialId,
+          attemptId: attemptId,
+          questionIndex: i,
+          question: question.question.slice(0, 500),
+          yourAnswer: (question.options[answer.selectedIndex] ?? "").slice(0, 300),
+          correctAnswer: (question.options[question.correctIndex] ?? "").slice(0, 300),
+          explanation: question.explanation.slice(0, 1000),
+          conceptKey: key,
+          conceptLabel: question.concept.slice(0, 120),
+          category,
+          difficulty: question.difficulty,
+          timesMissed: 1,
+          resolved: false,
+          createdAt: now,
+        });
+      }
+    }
+
+    // ---- Resolve past mistakes that this quiz just proved fixed ----
+    const wrongKeys = new Set(
+      q.answers
+        .filter((a) => !a.correct)
+        .map((a, i) => q.questions[i]?.concept.toLowerCase().trim())
+        .filter((k): k is string => !!k),
+    );
+    if (correctCount > 0) {
+      const openMistakes = await ctx.db
+        .query("mistakes")
+        .withIndex("by_user_resolved", (mq) =>
+          mq.eq("userId", userId).eq("resolved", false),
+        )
+        .collect();
+      for (const m of openMistakes) {
+        const wasAnsweredCorrectly = q.answers.some((a, i) => {
+          const concept = q.questions[i]?.concept.toLowerCase().trim();
+          return a.correct && concept === m.conceptKey && !wrongKeys.has(m.conceptKey);
+        });
+        if (wasAnsweredCorrectly) {
+          await ctx.db.patch(m._id, { resolved: true, resolvedAt: now });
+        }
+      }
+    }
 
     // mission progress
     if (q.missionId) {
@@ -390,7 +578,11 @@ export const completeQuiz = mutation({
       }
     }
 
-    await ctx.db.patch(attemptId, { status: "completed", completedAt: now });
+    await ctx.db.patch(attemptId, {
+      status: "completed",
+      completedAt: now,
+      examSubmitted: true,
+    });
     const next = await generateNextMission(ctx, { materialId: q.materialId });
     void next;
     return {
@@ -399,8 +591,170 @@ export const completeQuiz = mutation({
       newLevel,
       accuracy: Math.round(accuracy * 100),
       correctCount,
-      total: q.answers.length,
+      total: answeredCount,
+      // exam extras (undefined for practice mode)
+      rawScore,
+      negatives,
+      negativeMarking: q.negativeMarking === true,
     };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Mistake Bank — every wrong answer, classified and resolvable
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Mistake Bank — every wrong answer, classified and resolvable
+// ---------------------------------------------------------------------------
+
+/** The caller's mistake bank, unresolved first, then most recently fixed. */
+export const listMistakes = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { unresolved: [], resolved: [] };
+    const all = await ctx.db
+      .query("mistakes")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const unresolved = all
+      .filter((m) => !m.resolved)
+      .sort((a, b) => b.timesMissed - a.timesMissed || b.createdAt - a.createdAt);
+    const resolved = all
+      .filter((m) => m.resolved)
+      .sort((a, b) => (b.resolvedAt ?? 0) - (a.resolvedAt ?? 0));
+    return { unresolved, resolved: resolved.slice(0, 50) };
+  },
+});
+
+/** Manually mark a mistake fixed (owner-checked). */
+export const resolveMistake = mutation({
+  args: { id: v.id("mistakes") },
+  handler: async (ctx, { id }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const m = await ctx.db.get(id);
+    if (!m || m.userId !== userId) {
+      await logAccessDenied(ctx, userId, "mistake.resolve", { crossUser: true });
+      return { ok: false as const };
+    }
+    await ctx.db.patch(id, { resolved: true, resolvedAt: Date.now() });
+    return { ok: true as const };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Knowledge Graph — concept nodes with mastery states + prerequisite edges
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds the caller's knowledge graph from real data: analysis concepts
+ * (nodes) + analysis prerequisites (edges) + mastery scores (states).
+ * Root-cause diagnosis: a failed concept with weak prerequisites points at
+ * the root, not just the symptom.
+ */
+export const knowledgeGraph = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { nodes: [], edges: [], weakRoots: [] };
+
+    const materials = await ctx.db
+      .query("materials")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const mastery = await ctx.db
+      .query("masteryScores")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const byKey = new Map(mastery.map((m) => [m.conceptKey, m]));
+
+    // Node per unique concept across the Vault
+    const nodes: Array<{
+      key: string;
+      label: string;
+      state: "mastered" | "learning" | "weak" | "new";
+      accuracy: number | null;
+      materialId: Id<"materials">;
+      materialTitle: string;
+      difficulty: string;
+    }> = [];
+    const edges: Array<{ from: string; to: string; kind: "prereq" }> = [];
+
+    for (const m of materials) {
+      const a = m.analysis;
+      if (!a) continue;
+      for (const c of a.concepts) {
+        const key = c.name.toLowerCase().trim();
+        const row = byKey.get(key);
+        const acc = row && row.attempts > 0 ? Math.round((row.correct / row.attempts) * 100) : null;
+        const state: "mastered" | "learning" | "weak" | "new" =
+          !row || row.attempts === 0
+            ? "new"
+            : acc !== null && acc >= 85 && row.attempts >= 3
+              ? "mastered"
+              : acc !== null && acc < 60
+                ? "weak"
+                : "learning";
+        nodes.push({
+          key,
+          label: c.name,
+          state,
+          accuracy: acc,
+          materialId: m._id,
+          materialTitle: m.title,
+          difficulty: c.difficulty,
+        });
+      }
+      // prerequisite edges between concepts that both exist as nodes
+      for (const p of a.prerequisites ?? []) {
+        const pk = p.toLowerCase().trim();
+        if (!pk) continue;
+        // ALSO: prereq → each concept of this material (root-cause edge)
+        for (const c of a.concepts) {
+          const ck = c.name.toLowerCase().trim();
+          if (ck !== pk) {
+            edges.push({ from: pk, to: ck, kind: "prereq" });
+          }
+        }
+      }
+    }
+
+    // Weak roots: weak nodes whose prerequisites (in-graph) are also weak or new.
+    const weakKeys = new Set(nodes.filter((n) => n.state === "weak").map((n) => n.key));
+    const nodeKeys = new Set(nodes.map((n) => n.key));
+    const weakRoots: Array<{ key: string; label: string; blockedBy: string[] }> = [];
+    for (const n of nodes) {
+      if (n.state !== "weak") continue;
+      const blockedBy = edges
+        .filter((e) => e.to === n.key && nodeKeys.has(e.from))
+        .map((e) => e.from)
+        .filter(
+          (k) => {
+            const state = nodes.find((x) => x.key === k)?.state;
+            return state === "weak" || state === "new";
+          },
+        );
+      if (blockedBy.length > 0) {
+        weakRoots.push({
+          key: n.key,
+          label: n.label,
+          blockedBy: [...new Set(blockedBy)].slice(0, 4),
+        });
+      }
+    }
+    weakRoots.sort((a, b) => b.blockedBy.length - a.blockedBy.length);
+
+    // Deduplicate nodes across materials (same concept in two materials = one node)
+    const seen = new Set<string>();
+    const deduped = nodes.filter((n) => {
+      if (seen.has(n.key)) return false;
+      seen.add(n.key);
+      return true;
+    });
+
+    return { nodes: deduped, edges, weakRoots: weakRoots.slice(0, 5) };
   },
 });
 
