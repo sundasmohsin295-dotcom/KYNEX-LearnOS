@@ -6,7 +6,7 @@ import { NavLink, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
   BarChart3, BookOpen, Flame, GraduationCap, LayoutDashboard, LogOut,
-  Moon, Plus, Sun, Target, Zap, RefreshCw, Fingerprint,
+  Moon, Network, Plus, Sun, Target, Wrench, Zap, RefreshCw, Fingerprint, Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,9 @@ const NAV = [
   { to: "/chat", label: "Professor", icon: GraduationCap },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/flashcards", label: "Recall", icon: RefreshCw },
+  { to: "/mistakes", label: "Mistake Bank", icon: Wrench },
+  { to: "/graph", label: "KYNEX Map", icon: Network },
+  { to: "/gpa", label: "GPA Lab", icon: Calculator },
   { to: "/insights", label: "Insights", icon: BarChart3 },
 ] as const;
 
@@ -156,7 +159,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ---------- Bottom nav (mobile) ---------- */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border/70 bg-background/90 py-1.5 backdrop-blur-xl lg:hidden">
-        {NAV.filter((n) => n.to !== "/twin").slice(0, 5).map(({ to, label, icon: Icon }) => (
+        {NAV.filter((n) => [
+          "/dashboard", "/practice", "/flashcards", "/mistakes", "/chat",
+        ].includes(n.to)).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

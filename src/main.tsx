@@ -23,6 +23,9 @@ const Flashcards = lazy(() => import("./pages/Flashcards.tsx"));
 const Achievements = lazy(() => import("./pages/Achievements.tsx"));
 const Twin = lazy(() => import("./pages/Twin.tsx"));
 const Insights = lazy(() => import("./pages/Insights.tsx"));
+const GpaLab = lazy(() => import("./pages/GpaLab.tsx"));
+const MistakeBank = lazy(() => import("./pages/MistakeBank.tsx"));
+const KnowledgeGraph = lazy(() => import("./pages/KnowledgeGraph.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -155,6 +158,30 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Insights />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/gpa"
+                element={
+                  <RequireAuth>
+                    <GpaLab />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/mistakes"
+                element={
+                  <RequireAuth>
+                    <MistakeBank />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/graph"
+                element={
+                  <RequireAuth>
+                    <KnowledgeGraph />
                   </RequireAuth>
                 }
               />

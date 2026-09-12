@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { motion } from "framer-motion";
-import { Brain, History, Play, Target, TrendingUp, Wrench } from "lucide-react";
+import { Brain, History, Play, Target, Timer, TrendingUp, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
@@ -221,6 +221,9 @@ function PracticeSession({
   );
   const [count, setCount] = useState(8);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "adaptive">("adaptive");
+  const [examMode, setExamMode] = useState(false);
+  const [examMinutes, setExamMinutes] = useState(20);
+  const [negativeMarking, setNegativeMarking] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const conceptRows = (material?.analysis?.concepts ?? []).map((c) => {
@@ -239,6 +242,9 @@ function PracticeSession({
         count,
         difficulty,
         mode: "practice",
+        examMode,
+        examMinutes: examMode ? examMinutes : undefined,
+        negativeMarking: examMode ? negativeMarking : undefined,
       });
       await genQuiz({ attemptId });
       navigate(`/quiz/${attemptId}`);
@@ -317,13 +323,78 @@ function PracticeSession({
           ))}
         </div>
 
+        {/* ---- Exam Simulator ---- */}
+        <div className="mt-6 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+          <button
+            className="flex w-full items-center justify-between gap-3 text-left"
+            onClick={() => setExamMode((v) => !v)}
+            aria-pressed={examMode}
+          >
+            <span>
+              <span className="flex items-center gap-2 text-sm font-bold">
+                <Timer className="size-4 text-primary" /> Exam Simulator
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                Server-timed clock, question flags, negative marking and a full Exam Autopsy.
+              </span>
+            </span>
+            <span
+              className={cn(
+                "grid h-6 w-11 shrink-0 place-items-center rounded-full px-1 transition-colors",
+                examMode ? "bg-primary" : "bg-muted",
+              )}
+              aria-hidden
+            >
+              <span
+                className={cn(
+                  "size-4 rounded-full bg-white shadow transition-transform",
+                  examMode && "translate-x-5",
+                )}
+              />
+            </span>
+          </button>
+          {examMode && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
+              <div className="mt-4 space-y-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Time limit</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[10, 20, 30, 45, 60].map((m) => (
+                      <Chip key={m} active={examMinutes === m} onClick={() => setExamMinutes(m)}>{m} min</Chip>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold">Negative marking (−1 per wrong answer)</span>
+                  <button
+                    role="switch"
+                    aria-checked={negativeMarking}
+                    aria-label="Toggle negative marking"
+                    onClick={() => setNegativeMarking((v) => !v)}
+                    className={cn(
+                      "grid h-6 w-11 shrink-0 place-items-center rounded-full px-1 transition-colors",
+                      negativeMarking ? "bg-chart-5" : "bg-muted",
+                    )}
+                  >
+                    <span className={cn("size-4 rounded-full bg-white shadow transition-transform", negativeMarking && "translate-x-5")} />
+                  </button>
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  The countdown is enforced server-side — closing the tab doesn't stop the clock.
+                  Score = correct − penalties. XP rewards stay tied to what you got right.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
         <Button
           size="lg"
           className="mt-8 w-full gap-2 rounded-xl text-base font-bold shadow-lg shadow-primary/25"
           disabled={busy}
           onClick={launch}
         >
-          <Play className="size-4.5 fill-current" /> {busy ? "Writing questions…" : "Start session"}
+          <Play className="size-4.5 fill-current" /> {busy ? "Writing questions…" : examMode ? "Start exam" : "Start session"}
         </Button>
       </div>
 

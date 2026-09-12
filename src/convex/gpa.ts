@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { query, mutation, MutationCtx } from "./_generated/server";
+import { query, mutation, MutationCtx, QueryCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import {
@@ -75,8 +75,12 @@ const COURSE_NAME_MAX = 120;
 const SEM_NAME_MAX = 80;
 const CODE_MAX = 30;
 
-/** Load full semester + course tree, already ownership-checked. */
-async function loadTree(ctx: MutationCtx, userId: Id<"users">) {
+/** Load full semester + course tree, already ownership-checked (rows come
+ *  from by-user indices so no other user's rows are ever visible). */
+async function loadTree(
+  ctx: QueryCtx | MutationCtx,
+  userId: Id<"users">,
+) {
   const semesters = await ctx.db
     .query("gpaSemesters")
     .withIndex("by_user_order", (q) => q.eq("userId", userId))
@@ -188,7 +192,6 @@ export const overview = query({
                   }),
                 )
                 .filter((g): g is number => g != null)[0] ?? 0,
-            currentCredits,
           })
         : null;
 
@@ -196,7 +199,7 @@ export const overview = query({
 
     // per-semester GPA series for the chart
     const series = tree.map((s) => ({
-      id: s._id,
+      id: s.id,
       name: s.name,
       status: s.status,
       gpa: semesterGpa({
@@ -228,6 +231,22 @@ export const overview = query({
       semesters: series,
       max,
     };
+  },
+});
+
+/** Courses of one semester (caller-owned only). */
+export const courses = query({
+  args: { semesterId: v.id("gpaSemesters") },
+  handler: async (ctx, { semesterId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    // Ownership first: the semester must belong to the caller.
+    const sem = await ctx.db.get(semesterId);
+    if (!sem || sem.userId !== userId) return [];
+    return await ctx.db
+      .query("gpaCourses")
+      .withIndex("by_semester", (q) => q.eq("semesterId", semesterId))
+      .collect();
   },
 });
 

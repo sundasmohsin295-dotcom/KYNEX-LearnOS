@@ -3,7 +3,8 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  AlertTriangle, ArrowRight, Brain, Check, CheckCircle2, Home, RotateCcw, X, XCircle, Zap,
+  AlertTriangle, ArrowRight, Brain, Check, CheckCircle2, Clock, Flag,
+  Home, RotateCcw, Stethoscope, Timer, TrendingDown, TrendingUp, X, XCircle, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -27,6 +28,9 @@ const LETTERS = ["A", "B", "C", "D"];
  * The attempt is created by the caller; this component owns generation + flow.
  * A local cursor keeps the visible question stable while Convex's live query
  * updates `answers` underneath us.
+ *
+ * Exam mode adds: server-synced countdown, per-question time tracking,
+ * flag-for-review, a navigable question palette, and the Exam Autopsy.
  */
 export function QuizRunner({ attemptId }: { attemptId: string }) {
   const navigate = useNavigate();
@@ -34,6 +38,9 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   const genQuiz = useAction(api.aiEngine.generateQuiz);
   const answerQuestion = useMutation(api.learning.answerQuestion);
   const completeQuiz = useMutation(api.learning.completeQuiz);
+  const startExam = useMutation(api.learning.startExam);
+  const toggleFlag = useMutation(api.learning.toggleExamFlag);
+  const recordTiming = useMutation(api.learning.recordTiming);
 
   const kicked = useRef(false);
   const finishedRef = useRef(false);
@@ -43,7 +50,19 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   const [feedback, setFeedback] = useState<{ correct: boolean; idx: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [finishing, setFinishing] = useState(false);
-  const [result, setResult] = useState<{ xp: number; leveledUp: boolean; newLevel: number; accuracy: number } | null>(null);
+  const [result, setResult] = useState<{
+    xp: number; leveledUp: boolean; newLevel: number; accuracy: number;
+    rawScore?: number; negatives?: number; negativeMarking?: boolean;
+  } | null>(null);
+
+  // per-question timer (exam mode): seconds on the current question
+  const questionStartRef = useRef<number>(Date.now());
+
+  // ---- Exam clock (server-synced) ----
+  const isExam = attempt?.examMode === true;
+  const examActive = isExam && attempt?.status === "active";
+  const endsAt = attempt?.examEndsAt;
+  const [remaining, setRemaining] = useState<number | null>(null);
 
   // Kick AI generation exactly once while the attempt is generating.
   useEffect(() => {
@@ -55,6 +74,32 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     }
   }, [attempt, genQuiz, attemptId]);
 
+  // Start the server clock exactly once when the exam becomes active.
+  const examStarted = useRef(false);
+  useEffect(() => {
+    if (examActive && !attempt?.examStartedAt && !examStarted.current) {
+      examStarted.current = true;
+      startExam({ attemptId: attemptId as never }).catch(() => {});
+    }
+  }, [examActive, attempt?.examStartedAt, startExam, attemptId]);
+
+  // Local countdown driven by the SERVER deadline (not the client clock).
+  useEffect(() => {
+    if (!examActive || !endsAt) {
+      setRemaining(null);
+      return;
+    }
+    const tick = () => {
+      const left = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+      setRemaining(left);
+      if (left === 0) void finish();
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examActive, endsAt]);
+
   const active = attempt?.status === "active";
 
   // Re-sync cursor with server truth whenever no feedback panel is showing
@@ -64,6 +109,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     const serverLen = attempt.answers.length;
     if (cursor !== serverLen && serverLen <= attempt.questions.length) {
       setCursor(serverLen);
+      questionStartRef.current = Date.now();
     }
   }, [attempt, active, feedback, cursor]);
 
@@ -101,11 +147,18 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   const total = attempt?.questions.length ?? 0;
   const question = attempt?.questions[idx];
   const done = attempt?.status === "completed";
+  const flags = attempt?.examFlags ?? [];
+  const answered = attempt?.answers ?? [];
 
   const submit = async () => {
     if (selected === null || !confidence || submitting || !attempt || !question) return;
     setSubmitting(true);
     try {
+      // exam mode: log seconds spent on this question first (best effort)
+      if (isExam) {
+        const secs = Math.round((Date.now() - questionStartRef.current) / 1000);
+        void recordTiming({ attemptId: attempt._id, seconds: secs }).catch(() => {});
+      }
       const res = await answerQuestion({
         attemptId: attempt._id,
         index: idx,
@@ -126,11 +179,23 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     setFeedback(null);
     setSelected(null);
     setConfidence(null);
+    questionStartRef.current = Date.now();
     if (nextIdx >= total) {
       void finish();
     } else {
       setCursor(nextIdx);
     }
+  };
+
+  const jumpTo = (i: number) => {
+    if (!attempt || !active || feedback) return;
+    // Palette navigation: only the next unanswered question is reachable
+    // (answers are append-only and the server enforces order).
+    if (i !== attempt.answers.length) return;
+    setCursor(i);
+    setSelected(null);
+    setConfidence(null);
+    questionStartRef.current = Date.now();
   };
 
   // ---------------------------------------------------------------- loading
@@ -163,7 +228,9 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
         >
           <Brain className="size-8" />
         </motion.div>
-        <h2 className="mt-6 font-display text-2xl font-bold">Writing your questions…</h2>
+        <h2 className="mt-6 font-display text-2xl font-bold">
+          {isExam ? "Preparing your exam…" : "Writing your questions…"}
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           KYNEX is crafting questions that test understanding — not trivia.
         </p>
@@ -200,10 +267,43 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
 
   // ------------------------------------------------------------- completed
   if (done) {
-    const answered = attempt.answers;
-    const correctCount = answered.filter((a) => a.correct).length;
-    const accuracy = answered.length > 0 ? Math.round((correctCount / answered.length) * 100) : 0;
-    const shown = result ?? { xp: null as number | null, leveledUp: false, newLevel: 0, accuracy };
+    const answeredList = attempt.answers;
+    const correctCount = answeredList.filter((a) => a.correct).length;
+    const accuracy = answeredList.length > 0 ? Math.round((correctCount / answeredList.length) * 100) : 0;
+    const shown = result ?? {
+      xp: null as number | null, leveledUp: false, newLevel: 0, accuracy,
+      rawScore: undefined as number | undefined, negatives: undefined as number | undefined,
+      negativeMarking: attempt.negativeMarking === true,
+    };
+
+    // ---- Exam Autopsy computations (from the real attempt) ----
+    const timings = attempt.examTiming ?? [];
+    const answeredTimings = timings.filter((t) => t >= 0);
+    const avgSec = answeredTimings.length > 0
+      ? Math.round(answeredTimings.reduce((a, b) => a + b, 0) / answeredTimings.length)
+      : null;
+    const slowWrong = answeredList
+      .map((a, i) => ({ a, i, t: timings[i] ?? -1 }))
+      .filter((x) => x.a && !x.a.correct && x.t >= 0 && avgSec != null && x.t > avgSec * 1.5)
+      .map((x) => x.i);
+    const careless = answeredList
+      .map((a, i) => ({ a, i }))
+      .filter((x) => x.a && !x.a.correct && x.a.confidence === "sure" && attempt.questions[x.i]?.difficulty === "easy")
+      .map((x) => x.i);
+    const guessedWrong = answeredList
+      .map((a, i) => ({ a, i }))
+      .filter((x) => x.a && !x.a.correct && x.a.confidence === "guess")
+      .map((x) => x.i);
+    const weakConcepts = [...new Set(
+      answeredList
+        .map((a, i) => (a && !a.correct ? attempt.questions[i]?.concept : undefined))
+        .filter((c): c is string => !!c),
+    )];
+    const flaggedUnanswered = attempt.questions
+      .map((_, i) => i)
+      .filter((i) => flags[i] && !answeredList[i]);
+    const skipped = attempt.questions.length - answeredList.length;
+
     return (
       <div className="mx-auto max-w-3xl">
         <motion.div
@@ -224,7 +324,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
               {accuracy === 100 ? "Flawless run! 🏆" : accuracy >= 80 ? "Strong work! 🔥" : accuracy >= 50 ? "Good progress 👏" : "Found your gaps 🔍"}
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {correctCount} of {answered.length} correct
+              {correctCount} of {answeredList.length} correct
               {shown.xp !== null && (
                 <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-xp/20 px-2 py-0.5 text-xs font-bold text-xp-foreground">
                   <Zap className="size-3" /> +{shown.xp} XP
@@ -236,12 +336,84 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 </span>
               )}
             </p>
+            {isExam && (
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-bold">
+                <span className="rounded-full bg-muted px-3 py-1.5 text-muted-foreground">
+                  Raw score: {shown.rawScore ?? correctCount}
+                  {shown.negativeMarking && shown.negatives ? ` (${correctCount} − ${shown.negatives} penalty)` : ""}
+                </span>
+                {attempt.examDurationSec && (
+                  <span className="flex items-center gap-1 rounded-full bg-muted px-3 py-1.5 text-muted-foreground">
+                    <Timer className="size-3.5" />
+                    {Math.round(attempt.examDurationSec / 60)} min · {avgSec != null ? `${avgSec}s/question avg` : "no timing"}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
 
+        {/* ---------- EXAM AUTOPSY ---------- */}
+        {isExam && (
+          <div className="edge-glow mt-5 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/5 via-card to-card p-6">
+            <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+              <Stethoscope className="size-5 text-primary" /> Exam Autopsy
+            </h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              What went wrong and why — computed from your answers, timing and confidence signals.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <AutopsyCard
+                icon={TrendingDown}
+                tone="text-chart-5"
+                title="Weak concepts"
+                body={weakConcepts.length > 0
+                  ? `${weakConcepts.slice(0, 4).join(", ")} — these cost you the most marks.`
+                  : "No concept cost you marks this time."}
+              />
+              <AutopsyCard
+                icon={Zap}
+                tone="text-warning"
+                title="Careless mistakes"
+                body={careless.length > 0
+                  ? `${careless.length} question${careless.length === 1 ? "" : "s"} you were sure about on easy material. Slow down on the obvious ones.`
+                  : "None detected — your confident answers held."}
+              />
+              <AutopsyCard
+                icon={Clock}
+                tone="text-chart-2"
+                title="Time management"
+                body={slowWrong.length > 0
+                  ? `${slowWrong.length} wrong answer${slowWrong.length === 1 ? "" : "s"} took over 1.5× your average time — you ground on them too long.`
+                  : avgSec != null
+                    ? `Pacing was healthy (~${avgSec}s per question).`
+                    : "No timing data recorded."}
+              />
+              <AutopsyCard
+                icon={Flag}
+                tone="text-primary"
+                title="Gaps vs. guesses"
+                body={guessedWrong.length > 0
+                  ? `${guessedWrong.length} were honest guesses — that's a knowledge gap to fill, not a mistake to fix.`
+                  : skipped > 0 || flaggedUnanswered.length > 0
+                    ? `${skipped} skipped, ${flaggedUnanswered.length} flagged and never answered.`
+                    : "Every answer was deliberate — good exam discipline."}
+              />
+            </div>
+            <div className="mt-4 rounded-xl bg-primary/5 px-4 py-3">
+              <p className="flex items-start gap-2 text-sm font-medium text-primary">
+                <TrendingUp className="mt-0.5 size-4 shrink-0" />
+                {weakConcepts.length > 0
+                  ? `Next move: run targeted practice on ${weakConcepts[0]} — the mission engine will pick this up automatically.`
+                  : "All clear — keep the streak going with Recall review."}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mt-5 space-y-3">
           {attempt.questions.map((q, i) => {
-            const a = answered[i];
+            const a = answeredList[i];
             const { from, to } = conceptColor(q.concept);
             return (
               <motion.div
@@ -271,6 +443,14 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                     {q.concept}
                   </span>
                   <span className="rounded-full bg-muted px-2.5 py-1 font-semibold text-muted-foreground">{q.difficulty}</span>
+                  {flags[i] && (
+                    <span className="flex items-center gap-1 rounded-full bg-xp/15 px-2.5 py-1 font-semibold text-xp-foreground">
+                      <Flag className="size-3" /> flagged
+                    </span>
+                  )}
+                  {isExam && timings[i] >= 0 && (
+                    <span className="rounded-full bg-muted px-2.5 py-1 font-semibold text-muted-foreground">{timings[i]}s</span>
+                  )}
                 </div>
                 {a && (
                   <p className="mt-3 text-xs text-muted-foreground">
@@ -303,10 +483,35 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   // ---------------------------------------------------------------- active
   const pct = Math.round((idx / Math.max(1, total)) * 100);
   const showFeedback = feedback !== null && feedback.idx === idx;
+  const timeCritical = remaining !== null && remaining <= 60;
   return (
     <div className="mx-auto max-w-2xl">
+      {/* exam header */}
+      {isExam && (
+        <div className={cn(
+          "flex items-center justify-between rounded-2xl border px-4 py-3",
+          timeCritical ? "border-destructive/40 bg-destructive/10" : "border-primary/25 bg-primary/5",
+        )}>
+          <span className="flex items-center gap-2 text-sm font-bold">
+            <Timer className={cn("size-4", timeCritical ? "text-destructive" : "text-primary")} />
+            {timeCritical ? "Final minute — submit what you have" : "Exam in progress"}
+          </span>
+          <span
+            className={cn(
+              "font-display text-xl font-extrabold tabular-nums",
+              timeCritical ? "animate-pulse text-destructive" : "text-primary",
+            )}
+            role="timer"
+          >
+            {remaining != null
+              ? `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`
+              : "--:--"}
+          </span>
+        </div>
+      )}
+
       {/* progress */}
-      <div className="flex items-center gap-3">
+      <div className="mt-4 flex items-center gap-3">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-primary to-chart-4"
@@ -319,6 +524,40 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
         </span>
       </div>
 
+      {/* question palette (exam mode) */}
+      {isExam && attempt.questions.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {attempt.questions.map((_, i) => {
+            const isAnswered = i < answered.length;
+            const isFlagged = flags[i];
+            const isCurrent = i === idx;
+            return (
+              <button
+                key={i}
+                onClick={() => jumpTo(i)}
+                disabled={isAnswered || feedback !== null}
+                title={isFlagged ? "Flagged for review" : isAnswered ? "Answered" : i === attempt.answers.length ? "Jump here" : "Locked (answer in order)"}
+                aria-label={`Question ${i + 1}${isFlagged ? ", flagged" : isAnswered ? ", answered" : ""}`}
+                className={cn(
+                  "relative grid size-7 place-items-center rounded-lg text-[10px] font-extrabold transition-colors",
+                  isCurrent && "ring-2 ring-primary ring-offset-1 ring-offset-background",
+                  isAnswered
+                    ? "bg-muted text-muted-foreground"
+                    : isFlagged
+                      ? "bg-xp/25 text-xp-foreground"
+                      : "bg-primary/10 text-primary hover:bg-primary/20",
+                )}
+              >
+                {i + 1}
+                {isFlagged && (
+                  <Flag className="absolute -right-1 -top-1 size-2.5 fill-xp text-xp" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         <motion.div
           key={idx}
@@ -326,7 +565,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
           transition={{ duration: 0.25 }}
-          className="mt-5 rounded-3xl border border-border/70 bg-card p-6 sm:p-8"
+          className="mt-4 rounded-3xl border border-border/70 bg-card p-6 sm:p-8"
         >
           {question && (
             <>
@@ -343,6 +582,21 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">
                   {question.type}
                 </span>
+                {isExam && (
+                  <button
+                    onClick={() => toggleFlag({ attemptId: attempt._id, index: idx }).catch(() => {})}
+                    className={cn(
+                      "ml-auto flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors",
+                      flags[idx]
+                        ? "bg-xp/25 text-xp-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground",
+                    )}
+                    aria-pressed={flags[idx] ?? false}
+                  >
+                    <Flag className={cn("size-3", flags[idx] && "fill-xp")} />
+                    {flags[idx] ? "Flagged" : "Flag for review"}
+                  </button>
+                )}
               </div>
 
               <h2 className="mt-4 font-display text-lg font-bold leading-snug sm:text-xl">{question.question}</h2>
@@ -454,6 +708,21 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
           )}
         </motion.div>
       </AnimatePresence>
+    </div>
+  );
+}
+
+function AutopsyCard({
+  icon: Icon, tone, title, body,
+}: {
+  icon: typeof Clock; tone: string; title: string; body: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card/80 p-4">
+      <p className={cn("flex items-center gap-2 text-sm font-bold", tone)}>
+        <Icon className="size-4" /> {title}
+      </p>
+      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{body}</p>
     </div>
   );
 }

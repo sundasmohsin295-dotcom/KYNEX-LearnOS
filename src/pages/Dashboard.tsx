@@ -181,9 +181,14 @@ export default function Dashboard() {
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <Sparkles className="size-5 text-primary" /> Academic Pulse
           </h3>
-          <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/twin")}>
-            Full pulse <ArrowRight className="size-3.5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/gpa")}>
+              GPA Lab <ArrowRight className="size-3.5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/twin")}>
+              Full pulse <ArrowRight className="size-3.5" />
+            </Button>
+          </div>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <PulseTile

@@ -3,8 +3,9 @@ import { useNavigate } from "react-router";
 import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowRight, BarChart3, BookOpen, Brain, Command, Flame, GraduationCap,
-  Layers, Play, Plus, RefreshCw, Search, Target, User, Zap,
+  ArrowRight, BarChart3, BookOpen, Brain, Calculator, Command, Flame,
+  GraduationCap, Layers, Network, Play, Plus, RefreshCw, Search, Stethoscope,
+  Target, User, Wrench, Zap,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,10 @@ export function CommandBar() {
       { id: "upload", label: "Upload to Vault", group: "Vault", icon: Plus, hint: "PDF, link, notes…", run: () => navigate("/add") },
       { id: "goals", label: "Update academic goals", group: "Twin", icon: Layers, hint: "GPA targets & identity", run: () => navigate("/twin?edit=1") },
       { id: "achievements", label: "View achievements", group: "Insights", icon: Zap, run: () => navigate("/achievements") },
+      { id: "gpa", label: "Open GPA Lab", group: "GPA Lab", icon: Calculator, hint: "CGPA, required GPA & scenarios", run: () => navigate("/gpa") },
+      { id: "mistakes", label: "Open Mistake Bank", group: "Practice", icon: Wrench, hint: "Every miss, classified & fixable", run: () => navigate("/mistakes") },
+      { id: "graph", label: "Open KYNEX Map", group: "Knowledge", icon: Network, hint: "Concept graph & weak roots", run: () => navigate("/graph") },
+      { id: "exam", label: "Start a timed exam", group: "Practice", icon: Stethoscope, hint: "Server-timed simulator + autopsy", run: () => navigate("/practice") },
     ];
     if (q.trim().length >= 4) {
       base.unshift({
