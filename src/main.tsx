@@ -26,6 +26,9 @@ const Insights = lazy(() => import("./pages/Insights.tsx"));
 const GpaLab = lazy(() => import("./pages/GpaLab.tsx"));
 const MistakeBank = lazy(() => import("./pages/MistakeBank.tsx"));
 const KnowledgeGraph = lazy(() => import("./pages/KnowledgeGraph.tsx"));
+const MissionScreen = lazy(() => import("./pages/MissionScreen.tsx"));
+const Planner = lazy(() => import("./pages/Planner.tsx"));
+const Security = lazy(() => import("./pages/Security.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -246,6 +249,38 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Flashcards />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/mission"
+                element={
+                  <RequireAuth>
+                    <MissionScreen />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/mission/:missionId"
+                element={
+                  <RequireAuth>
+                    <MissionScreen />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/planner"
+                element={
+                  <RequireAuth>
+                    <Planner />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/security"
+                element={
+                  <RequireAuth>
+                    <Security />
                   </RequireAuth>
                 }
               />

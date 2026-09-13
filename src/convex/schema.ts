@@ -318,6 +318,77 @@ const schema = defineSchema(
       .index("by_user_status", ["userId", "status"])
       .index("by_user_created", ["userId", "createdAt"]),
 
+    // ---- KYNEX Mission Engine: durable per-mission tasks ----
+    // One row per task; the parent mission stays in `missions` (shared with
+    // the quiz/XP loop). Tasks are the structured learning sequence a
+    // mission walks through and hold the real per-step evidence.
+    missionTasks: defineTable({
+      userId: v.id("users"), // denormalized ownership + index
+      missionId: v.id("missions"),
+      order: v.number(),
+      kind: v.union(
+        v.literal("explain"), // quick explanation / example (read step)
+        v.literal("recall"), // retrieval prompt answered from memory
+        v.literal("practice"), // MCQ-style check with options
+        v.literal("challenge"), // final harder application step
+      ),
+      title: v.string(),
+      prompt: v.string(),
+      // For practice/challenge steps: options + correct index
+      options: v.optional(v.array(v.string())),
+      correctIndex: v.optional(v.number()),
+      explanation: v.optional(v.string()),
+      hint: v.optional(v.string()),
+      // Student's recorded outcome
+      status: v.union(
+        v.literal("pending"),
+        v.literal("correct"),
+        v.literal("partial"),
+        v.literal("incorrect"),
+        v.literal("skipped"),
+      ),
+      confidence: v.optional(v.union(
+        v.literal("sure"),
+        v.literal("probably"),
+        v.literal("guess"),
+      )),
+      secondsSpent: v.optional(v.number()),
+      answeredAt: v.optional(v.number()),
+    })
+      .index("by_mission", ["missionId"])
+      .index("by_user", ["userId"]),
+
+    // ---- Study Planner: one persisted plan per (user, day) ----
+    // `blocks` are ordered study blocks the student can complete, skip or
+    // reschedule. Built from the same intelligence inputs as NEXT MOVE.
+    studyPlans: defineTable({
+      userId: v.id("users"),
+      dayKey: v.string(), // "YYYY-MM-DD" (UTC) — one plan per day
+      examDate: v.optional(v.number()),
+      blocks: v.array(
+        v.object({
+          id: v.string(),
+          kind: v.union(
+            v.literal("practice"),
+            v.literal("review"),
+            v.literal("recall"),
+            v.literal("fix"),
+          ),
+          title: v.string(),
+          minutes: v.number(),
+          status: v.union(
+            v.literal("pending"),
+            v.literal("completed"),
+            v.literal("skipped"),
+          ),
+          conceptKey: v.optional(v.string()),
+          materialId: v.optional(v.id("materials")),
+        }),
+      ),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }).index("by_user_day", ["userId", "dayKey"]),
+
     xpEvents: defineTable({
       userId: v.id("users"),
       amount: v.number(),

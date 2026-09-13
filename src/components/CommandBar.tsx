@@ -4,8 +4,8 @@ import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, BookOpen, Brain, Calculator, Command, Flame,
-  GraduationCap, Layers, Network, Play, Plus, RefreshCw, Search, Stethoscope,
-  Target, User, Wrench, Zap,
+  GraduationCap, Layers, Network, Play, Plus, RefreshCw, Search, ShieldCheck,
+  Stethoscope, Target, User, Wrench, Zap,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,9 @@ export function CommandBar() {
     const base: Action[] = [
       { id: "ask", label: q ? `Ask the Professor: “${q}”` : "Ask the Professor", group: "Professor", icon: GraduationCap, hint: "AI teaching + Socratic modes", run: () => navigate(`/chat${q ? `?q=${encodeURIComponent(q)}` : ""}`) },
       { id: "next", label: "Show my Next Move", group: "Command Center", icon: Target, hint: "Highest-impact action", run: () => navigate("/dashboard") },
+      { id: "mission", label: "Start a mission now", group: "Mission Engine", icon: Play, hint: "One click → real mission screen", run: () => navigate("/mission") },
+      { id: "plan", label: "Open today's study plan", group: "Planner", icon: Layers, hint: "Persisted blocks from real weak spots", run: () => navigate("/planner") },
+      { id: "security", label: "Review security & sessions", group: "Account", icon: ShieldCheck, hint: "Live sessions, revocation, controls", run: () => navigate("/security") },
       { id: "twin", label: "Open KYNEX Twin", group: "Command Center", icon: User, hint: "CURRENT → GAP → NEXT", run: () => navigate("/twin") },
       { id: "insights", label: "Show my weakest subject", group: "Insights", icon: BarChart3, hint: "Pulse + mistake bank", run: () => navigate("/insights") },
       { id: "practice", label: "Start practice", group: "Practice", icon: Play, hint: "Adaptive drills", run: () => navigate("/practice") },

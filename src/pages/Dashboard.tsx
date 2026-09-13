@@ -42,12 +42,14 @@ export default function Dashboard() {
   const intel = useQuery(api.intelligence.dailyBriefQuery);
   const startQuick = useMutation(api.intelligence.startQuickMission);
   const startRescue = useMutation(api.intelligence.startRescuePlan);
+  const startMission = useMutation(api.missions.startFromCurrent);
   const act = useMissionAction();
   const [showWhy, setShowWhy] = useState(false);
   const [rescueOpen, setRescueOpen] = useState(false);
   const [rescueHours, setRescueHours] = useState(4);
   const [rescueWhy, setRescueWhy] = useState("");
   const [rescueBusy, setRescueBusy] = useState(false);
+  const [startingMission, setStartingMission] = useState(false);
 
   if (!overview) {
     return (
@@ -168,8 +170,26 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Button size="lg" className="h-14 gap-2 rounded-2xl px-8 text-base font-bold shadow-xl shadow-primary/30" onClick={() => act(mission)}>
-                <Play className="size-5 fill-current" /> Start Next Move
+              <Button
+                size="lg"
+                className="h-14 gap-2 rounded-2xl px-8 text-base font-bold shadow-xl shadow-primary/30"
+                disabled={startingMission}
+                onClick={async () => {
+                  setStartingMission(true);
+                  try {
+                    // ONE CLICK → real persisted mission with tasks → mission screen.
+                    const res = await startMission({});
+                    navigate(`/mission/${String(res.missionId)}`);
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Couldn't start the mission");
+                    // Fall back to the classic mission flow if generation can't run.
+                    act(mission);
+                  } finally {
+                    setStartingMission(false);
+                  }
+                }}
+              >
+                <Play className="size-5 fill-current" /> {startingMission ? "Preparing mission…" : "Start Mission"}
               </Button>
               <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setShowWhy((s) => !s)}>
                 Show reasoning
@@ -262,6 +282,34 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ---------- ONE THING TO FIX NEXT ---------- */}
+      {intel?.oracle.enoughData && intel.oracle.level !== "LOW" && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-chart-5/30 bg-gradient-to-r from-chart-5/5 via-card to-card px-6 py-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-chart-5">One thing to fix next</p>
+            <p className="mt-1 truncate font-display text-sm font-bold">{intel.oracle.action}</p>
+          </div>
+          <Button
+            size="sm"
+            className="gap-1.5 rounded-lg"
+            disabled={startingMission}
+            onClick={async () => {
+              setStartingMission(true);
+              try {
+                const res = await startMission({});
+                navigate(`/mission/${String(res.missionId)}`);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Couldn't start the mission");
+              } finally {
+                setStartingMission(false);
+              }
+            }}
+          >
+            <Wrench className="size-3.5" /> Fix it
+          </Button>
         </div>
       )}
 

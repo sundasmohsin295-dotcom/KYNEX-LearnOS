@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   BarChart3, BookOpen, Flame, GraduationCap, LayoutDashboard, LogOut,
   Moon, Network, Plus, Sun, Target, Wrench, Zap, RefreshCw, Fingerprint, Calculator,
+  CalendarDays, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,10 @@ const NAV = [
   { to: "/flashcards", label: "Recall", icon: RefreshCw },
   { to: "/mistakes", label: "Mistake Bank", icon: Wrench },
   { to: "/graph", label: "KYNEX Map", icon: Network },
+  { to: "/planner", label: "Planner", icon: CalendarDays },
   { to: "/gpa", label: "GPA Lab", icon: Calculator },
   { to: "/insights", label: "Insights", icon: BarChart3 },
+  { to: "/security", label: "Security", icon: ShieldCheck },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
