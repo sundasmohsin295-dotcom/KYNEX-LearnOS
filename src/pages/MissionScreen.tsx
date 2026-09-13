@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
@@ -84,11 +84,10 @@ export default function MissionScreen() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<CompleteResult | null>(null);
   const taskStart = useRef<number>(0);
-  if (taskStart.current === 0) {
-    // First render: start the clock for the first task without calling
-    // impure functions during render.
-    taskStart.current = Date.now();
-  }
+  useEffect(() => {
+    // Start the clock for the first task; resetStep restarts it per task.
+    if (taskStart.current === 0) taskStart.current = Date.now();
+  }, []);
 
   const mission = active?.mission as MissionDoc | undefined;
   const tasks = (active?.tasks ?? []) as TaskDoc[];
