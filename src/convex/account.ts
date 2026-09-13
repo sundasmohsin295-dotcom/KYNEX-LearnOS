@@ -64,10 +64,11 @@ export const revokeSession = mutation({
     if (!userId) throw new Error("Not authenticated");
     const session = await ctx.db.get(sessionId);
     if (!session || session.userId !== userId) {
-      await logAccessDenied(ctx, userId, "revoke_session", {
+      // Deny path commits (returns the result) so the inline audit row
+      // written by logAccessDenied survives the transaction.
+      return await logAccessDenied(ctx, userId, "revoke_session", {
         crossUser: !!session,
       });
-      return { ok: false as const };
     }
     await deleteSessionWithTokens(ctx, session);
     await logAuditEvent(ctx, userId, SECURITY_EVENTS.SESSION_REVOKED);

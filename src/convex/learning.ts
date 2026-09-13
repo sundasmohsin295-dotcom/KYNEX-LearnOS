@@ -636,8 +636,11 @@ export const resolveMistake = mutation({
     if (!userId) throw new Error("Not authenticated");
     const m = await ctx.db.get(id);
     if (!m || m.userId !== userId) {
-      await logAccessDenied(ctx, userId, "mistake.resolve", { crossUser: true });
-      return { ok: false as const };
+      // Deny path commits (returns the result) so the inline audit row
+      // written by logAccessDenied survives the transaction.
+      return await logAccessDenied(ctx, userId, "mistake.resolve", {
+        crossUser: true,
+      });
     }
     await ctx.db.patch(id, { resolved: true, resolvedAt: Date.now() });
     return { ok: true as const };

@@ -176,22 +176,30 @@ export const securityEventInternal = internalMutation({
   },
 });
 
+/** Denial result every deny path must COMMIT (never throw) so the audit row
+ *  written in the same transaction survives. `ok: false` doubles as the
+ *  no-existence-oracle response shape for foreign/invalid ids. */
+export type DenialResult = { ok: false };
+
 /**
- * Log a failed authorization / ownership check. This is the single choke
- * point for "deny" paths so cross-user probing shows up in one queryable
- * stream. `detail` carries only an operation tag — never resource content.
+ * Log a failed authorization / ownership check and return the denial result
+ * the caller must `return` directly. This is the single choke point for
+ * "deny" paths so cross-user probing shows up in one queryable stream.
+ * `detail` carries only an operation tag — never resource content.
  *
- * Writes the audit row INLINE in the caller's transaction. That requires the
- * deny path to COMMIT (return a denial result) rather than throw — a thrown
+ * The audit row is written INLINE in the caller's transaction, so the deny
+ * path must COMMIT (return the returned result) rather than throw — a thrown
  * mutation rolls back its whole transaction and would erase the audit event.
- * The one current caller (`account.revokeSession`) follows that pattern.
+ * By returning the result from THIS function, the contract is structural:
+ * the deny path is a `return await logAccessDenied(...)` statement and cannot
+ * accidentally end in a throw that erases the audit row.
  */
 export async function logAccessDenied(
   ctx: MutationCtx,
   userId: string | null,
   operation: string,
   opts?: { crossUser?: boolean },
-): Promise<void> {
+): Promise<DenialResult> {
   await logAuditEvent(
     ctx,
     userId,
@@ -200,6 +208,7 @@ export async function logAccessDenied(
       : SECURITY_EVENTS.ACCESS_DENIED,
     operation.slice(0, 60),
   );
+  return { ok: false };
 }
 
 // ---------------------------------------------------------------------------
