@@ -1,0 +1,43 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- KYNEX sun-core app icon: silhouette-first, safe-zone margins -->
+  <defs>
+    <radialGradient id="core" cx="50%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#9fc6ff"/>
+      <stop offset="60%" stop-color="#2f7bff"/>
+      <stop offset="100%" stop-color="#1b3f9e"/>
+    </radialGradient>
+    <linearGradient id="ray" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3fd6ff"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2f7bff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#2f7bff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0a1428"/>
+  <circle cx="256" cy="256" r="200" fill="url(#glow)"/>
+  <!-- segmented orbital rays (arc segments, not triangles) -->
+  <g stroke="url(#ray)" stroke-width="26" stroke-linecap="round" fill="none">
+    <path d="M256 92 A164 164 0 0 1 371.9 140.1"/>
+    <path d="M371.9 140.1 A164 164 0 0 1 420 256" transform="rotate(45 256 256)"/>
+    <path d="M256 92 A164 164 0 0 1 371.9 140.1" transform="rotate(90 256 256)"/>
+    <path d="M256 92 A164 164 0 0 1 371.9 140.1" transform="rotate(135 256 256)"/>
+    <path d="M256 92 A164 164 0 0 1 371.9 140.1" transform="rotate(180 256 256)"/>
+    <path d="M256 92 A164 164 0 0 1 371.9 140.1" transform="rotate(225 256 256)"/>
+    <path d="M256 92 A164 164 0 0 1 371.9 140.1" transform="rotate(270 256 256)"/>
+    <path d="M256 92 A164 164 0 0 1 371.9 140.1" transform="rotate(315 256 256)"/>
+  </g>
+  <!-- neural node ring -->
+  <circle cx="256" cy="256" r="122" fill="none" stroke="#2f7bff" stroke-opacity="0.55" stroke-width="9" stroke-dasharray="18 26"/>
+  <g fill="#9fc6ff">
+    <circle cx="256" cy="134" r="11"/>
+    <circle cx="378" cy="256" r="11"/>
+    <circle cx="256" cy="378" r="11"/>
+    <circle cx="134" cy="256" r="11"/>
+  </g>
+  <!-- dimensional core -->
+  <circle cx="256" cy="256" r="70" fill="url(#core)"/>
+  <circle cx="239" cy="236" r="20" fill="#ffffff" opacity="0.9"/>
+</svg>

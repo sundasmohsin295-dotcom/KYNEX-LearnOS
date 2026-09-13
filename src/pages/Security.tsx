@@ -67,6 +67,11 @@ export default function Security() {
             <Row ok label={`Signed in as ${email}`} sub="Identity derived from a signed server session — never from client state." />
             <Row ok label="Session expires automatically" sub="Server-side expiration time on every session; expired sessions are rejected." />
             <Row ok label="Logout revokes the server session" sub="Signing out ends the session on the server, not just locally." />
+            <Row
+              ok={false}
+              label="Two-factor authentication (2FA / passkeys)"
+              sub="Not configured on the current authentication provider. KYNEX won't simulate it — this lights up automatically once TOTP or WebAuthn is enabled on the backend."
+            />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button

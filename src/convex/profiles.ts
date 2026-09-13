@@ -144,6 +144,19 @@ export const updateProfile = mutation({
   },
 });
 
+/** Skip onboarding: user keeps the default profile, onboardingComplete flips true. */
+export const skipOnboarding = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const { profile } = await ensureProfiles(ctx, "Student");
+    if (!profile.onboardingComplete) {
+      await ctx.db.patch(profile._id, { onboardingComplete: true });
+    }
+  },
+});
+
 /** KYNEX Twin — academic identity + GPA goals (self-reported, validated). */
 export const setAcademicProfile = mutation({
   args: {
