@@ -1,5 +1,4 @@
-import { useCallback, useRef, useState } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useCallback, useRef, useState } from "react";import { useMutation, useAction } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,8 +28,10 @@ export default function AddMaterial() {
   const [errorMsg, setErrorMsg] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
+  // Kept in state (not a ref) so the button's disabled state re-renders when
+  // a file is chosen — refs don't trigger renders.
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const pendingFile = useRef<File | null>(null);
 
   const createText = useMutation(api.materials.createText);
   const markFailed = useMutation(api.materials.markFailed);
@@ -76,7 +77,7 @@ export default function AddMaterial() {
 
   const handleFile = () =>
     runPipeline(async () => {
-      const file = pendingFile.current;
+      const file = pendingFile;
       if (!file) throw new Error("No file selected.");
       setStage("reading");
       let extracted = "";
@@ -105,8 +106,19 @@ export default function AddMaterial() {
                 ? "code"
                 : "txt",
       });
-      setStage("generating");
-      await analyze({ materialId: id });
+      try {
+        setStage("generating");
+        await analyze({ materialId: id });
+      } catch (err) {
+        // The material row exists but analysis failed — persist the failure so
+        // the Vault never shows a stuck "processing" row. Best effort: the
+        // thrown error below still surfaces in the UI.
+        await markFailed({
+          id,
+          error: err instanceof Error ? err.message : "Analysis failed",
+        }).catch(() => {});
+        throw err;
+      }
       navigate(`/material/${id}`);
     });
 
@@ -123,7 +135,7 @@ export default function AddMaterial() {
       setPhase("error");
       return;
     }
-    pendingFile.current = f;
+    setPendingFile(f);
     setFileName(f.name);
     if (!title) setTitle(f.name.replace(/\.[^.]+$/, ""));
     setTab("file");
@@ -286,7 +298,7 @@ export default function AddMaterial() {
               <Button
                 size="lg"
                 className="w-full gap-2 rounded-xl"
-                disabled={busy || !pendingFile.current}
+                disabled={busy || pendingFile === null}
                 onClick={handleFile}
               >
                 <FileUp className="size-4.5" /> {busy ? "Extracting & analyzing…" : "Analyze this file"}

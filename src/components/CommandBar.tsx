@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -39,9 +39,15 @@ export function CommandBar() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => {
-    if (open) { setQ(""); setCursor(0); }
-  }, [open]);
+  // Reset composer + cursor when the bar opens. Adjusting state during
+  // render from a previous-value check is the React-recommended alternative
+  // to a setState-in-effect (no cascading render).
+  const prevOpen = useRef(false);
+  if (open && !prevOpen.current) {
+    setQ("");
+    setCursor(0);
+  }
+  prevOpen.current = open;
 
   const actions = useMemo<Action[]>(() => {
     const base: Action[] = [

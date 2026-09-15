@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useNavigate, useSearchParams } from "react-router";
 import { motion } from "framer-motion";
@@ -30,15 +30,22 @@ export default function Twin() {
   });
 
   const profile = overview?.profile;
-  useEffect(() => {
-    const e = params.get("edit");
-    if (e === "1") { setEditing(true); setParams((p) => { p.delete("edit"); return p; }); }
-  }, [params, setParams]);
 
-  useEffect(() => {
-    if (!profile) return;
-    setForm((f) => ({
-      ...f,
+  // "edit=1" deep-link opens the editor once, then removes the param.
+  const editParam = params.get("edit") === "1";
+  const [appliedEditParam, setAppliedEditParam] = useState(false);
+  if (editParam && !appliedEditParam) {
+    setEditing(true);
+    setAppliedEditParam(true);
+    setParams((p) => { p.delete("edit"); return p; });
+  }
+
+  // Form seed: derive from the profile with an applied-flag so loading the
+  // profile never runs a cascading state effect, and later saves (which
+  // return a new profile object) don't clobber the user's in-progress edits.
+  const [formSeeded, setFormSeeded] = useState(false);
+  if (profile && !formSeeded) {
+    setForm({
       degree: profile.degree ?? "",
       department: profile.department ?? "",
       university: profile.university ?? "",
@@ -49,8 +56,9 @@ export default function Twin() {
       currentCgpa: profile.currentCgpa != null ? String(profile.currentCgpa) : "",
       targetGpa: profile.targetGpa != null ? String(profile.targetGpa) : "",
       targetCgpa: profile.targetCgpa != null ? String(profile.targetCgpa) : "",
-    }));
-  }, [profile]);
+    });
+    setFormSeeded(true);
+  }
 
   const saveProfile = async () => {
     try {

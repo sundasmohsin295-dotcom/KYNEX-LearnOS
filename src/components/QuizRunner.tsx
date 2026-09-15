@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,7 +44,9 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
 
   const kicked = useRef(false);
   const finishedRef = useRef(false);
-  const [cursor, setCursor] = useState(0);
+  // Local question cursor. -1 = follow server truth (initial load, refresh);
+  // any other value is an explicit pin set when the student advances.
+  const [rawCursor, setRawCursor] = useState(-1);
   const [selected, setSelected] = useState<number | null>(null);
   const [confidence, setConfidence] = useState<Confidence | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean; idx: number } | null>(null);
@@ -55,8 +57,10 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     rawScore?: number; negatives?: number; negativeMarking?: boolean;
   } | null>(null);
 
-  // per-question timer (exam mode): seconds on the current question
-  const questionStartRef = useRef<number>(Date.now());
+  // per-question timer (exam mode): seconds on the current question.
+  // Initialized to 0 and set in an effect when a question is displayed —
+  // never call Date.now() during render.
+  const questionStartRef = useRef<number>(0);
 
   // ---- Exam clock (server-synced) ----
   const isExam = attempt?.examMode === true;
@@ -83,37 +87,18 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     }
   }, [examActive, attempt?.examStartedAt, startExam, attemptId]);
 
-  // Local countdown driven by the SERVER deadline (not the client clock).
-  useEffect(() => {
-    if (!examActive || !endsAt) {
-      setRemaining(null);
-      return;
-    }
-    const tick = () => {
-      const left = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
-      setRemaining(left);
-      if (left === 0) void finish();
-    };
-    tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examActive, endsAt]);
-
   const active = attempt?.status === "active";
 
-  // Re-sync cursor with server truth whenever no feedback panel is showing
-  // (handles page refresh mid-quiz and any live-query drift in both directions).
-  useEffect(() => {
-    if (!attempt || !active || feedback !== null) return;
-    const serverLen = attempt.answers.length;
-    if (cursor !== serverLen && serverLen <= attempt.questions.length) {
-      setCursor(serverLen);
-      questionStartRef.current = Date.now();
-    }
-  }, [attempt, active, feedback, cursor]);
+  // The visible cursor is derived from server truth while unpinned (-1),
+  // which transparently handles page refresh mid-quiz and live-query drift
+  // without a state-syncing effect.
+  const serverLen = attempt?.answers.length ?? 0;
+  const effCursor =
+    rawCursor < 0
+      ? Math.min(serverLen, Math.max(0, (attempt?.questions.length ?? 1) - 1))
+      : rawCursor;
 
-  const finish = async () => {
+  const finish = useCallback(async () => {
     if (!attempt || finishing || finishedRef.current) return;
     finishedRef.current = true;
     setFinishing(true);
@@ -130,7 +115,30 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     } finally {
       setFinishing(false);
     }
-  };
+  }, [attempt, finishing, completeQuiz]);
+
+  // Local countdown driven by the SERVER deadline (not the client clock).
+  // When the exam deactivates the countdown simply stops updating — the
+  // active/completed view guards make a stale value unreachable.
+  useEffect(() => {
+    if (!examActive || !endsAt) return;
+    const tick = () => {
+      const left = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+      setRemaining(left);
+      if (left === 0) void finish();
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [examActive, endsAt, finish]);
+
+  // Reset the per-question timer whenever a fresh question is displayed
+  // (mount/refresh fallback; advance paths reset it explicitly too).
+  useEffect(() => {
+    if (active && feedback === null) {
+      questionStartRef.current = Date.now();
+    }
+  }, [active, feedback, effCursor]);
 
   // All questions answered but never completed (e.g. tab closed)? Auto-score.
   useEffect(() => {
@@ -141,9 +149,9 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     ) {
       void finish();
     }
-  }, [attempt, active, feedback, finishing]);
+  }, [attempt, active, feedback, finishing, finish]);
 
-  const idx = feedback ? feedback.idx : Math.min(cursor, (attempt?.questions.length ?? 1) - 1);
+  const idx = feedback ? feedback.idx : Math.min(effCursor, (attempt?.questions.length ?? 1) - 1);
   const total = attempt?.questions.length ?? 0;
   const question = attempt?.questions[idx];
   const done = attempt?.status === "completed";
@@ -156,7 +164,8 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     try {
       // exam mode: log seconds spent on this question first (best effort)
       if (isExam) {
-        const secs = Math.round((Date.now() - questionStartRef.current) / 1000);
+        const start = questionStartRef.current || Date.now();
+        const secs = Math.max(0, Math.round((Date.now() - start) / 1000));
         void recordTiming({ attemptId: attempt._id, seconds: secs }).catch(() => {});
       }
       const res = await answerQuestion({
@@ -183,7 +192,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     if (nextIdx >= total) {
       void finish();
     } else {
-      setCursor(nextIdx);
+      setRawCursor(nextIdx);
     }
   };
 
@@ -192,7 +201,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
     // Palette navigation: only the next unanswered question is reachable
     // (answers are append-only and the server enforces order).
     if (i !== attempt.answers.length) return;
-    setCursor(i);
+    setRawCursor(i);
     setSelected(null);
     setConfidence(null);
     questionStartRef.current = Date.now();

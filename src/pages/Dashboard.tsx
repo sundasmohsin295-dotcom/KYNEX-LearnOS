@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, ArrowUpRight, ArrowDownRight, Brain, ChevronDown, Flame, Play, Plus,
+  ArrowRight, ArrowUpRight, ArrowDownRight, Brain, ChevronDown, Play, Plus,
   RefreshCw, Rocket, Siren, Sparkles, Target, Timer, Trophy, Wrench, Zap, Info,
   ShieldCheck, TrendingUp, X,
 } from "lucide-react";
@@ -73,6 +73,13 @@ export default function Dashboard() {
   const maxMin = Math.max(30, ...weekMinutes.map((d) => d.minutes));
   const streak = game.streakCount;
   const streakAlive = stats.streakSafe;
+  // Ticks once per minute so the exam countdown stays honest without calling
+  // the impure Date.now() during render.
+  const [, setClockTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setClockTick((n) => n + 1), 60_000);
+    return () => clearInterval(t);
+  }, []);
   const daysToExam = nextExam ? Math.ceil((nextExam.examDate - Date.now()) / 86400000) : null;
 
   // NEXT MOVE evidence, computed from real data only

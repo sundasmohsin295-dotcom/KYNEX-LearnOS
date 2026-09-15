@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { useNavigate, useSearchParams } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import {
   Bot, Check, ChevronDown, Download, MessageSquarePlus, Pencil, Search, Send, Star, Trash2, User,
@@ -30,7 +30,6 @@ const QUICK_PROMPTS = [
 
 export default function Chat() {
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
   const conversations = useQuery(api.learning.listConversations);
   const materials = useQuery(api.materials.listReady);
   const sendUser = useMutation(api.learning.appendUserMessage);
@@ -65,21 +64,25 @@ export default function Chat() {
     materialId ? { id: materialId } : "skip",
   );
 
-  // URL-driven mode / material / new chat
-  useEffect(() => {
-    const m = params.get("mode") as ModeKey | null;
-    if (m && MODES.some((x) => x.key === m)) setMode(m);
-  }, [params]);
-
-  // Command-bar handoff: /chat?q=… pre-fills the composer
-  useEffect(() => {
-    const q = params.get("q");
-    if (q) {
-      setInput(q);
-      setParams((p) => { p.delete("q"); return p; });
+  // URL-driven mode: apply once per distinct mode param via the
+  // render-time previous-value pattern (no cascading state effect).
+  const modeParam = params.get("mode");
+  const prevModeParam = useRef<string | null>(null);
+  if (modeParam !== prevModeParam.current) {
+    prevModeParam.current = modeParam;
+    if (modeParam && MODES.some((x) => x.key === modeParam)) {
+      setMode(modeParam as ModeKey);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+
+  // Command-bar handoff: /chat?q=… pre-fills the composer exactly once.
+  const qParam = params.get("q");
+  const appliedQ = useRef(false);
+  if (qParam && !appliedQ.current) {
+    appliedQ.current = true;
+    setInput(qParam);
+    setParams((p) => { p.delete("q"); return p; });
+  }
 
   const concept = params.get("concept");
 
