@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ProcessingPipeline } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
-import { extractTextFromFile } from "@/lib/studyos";
+import { extractTextFromFile } from "@/lib/learning";
 
 type Tab = "url" | "text" | "file";
 

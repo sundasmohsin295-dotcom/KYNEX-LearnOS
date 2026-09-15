@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import type { MasteryRow } from "@/lib/studyos";
-import { masteryPct, masteryState, conceptColor } from "@/lib/studyos";
+import type { MasteryRow } from "@/lib/learning";
+import { masteryPct, masteryState, conceptColor } from "@/lib/learning";
 import { cn } from "@/lib/utils";
 
 /** Compact radial progress ring. */

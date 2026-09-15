@@ -9,7 +9,7 @@ import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { MasteryRings } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
-import { masteryState } from "@/lib/studyos";
+import { masteryState } from "@/lib/learning";
 
 /**
  * Practice hub. With :materialId → session launcher for that material.

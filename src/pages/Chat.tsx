@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { MODES, MODE_TO_AI, type ModeKey } from "@/lib/studyos";
+import { MODES, MODE_TO_AI, type ModeKey } from "@/lib/learning";
 
 const QUICK_PROMPTS = [
   // KYNEX Professor quick intents

@@ -11,7 +11,7 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Ring } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
-import { conceptColor } from "@/lib/studyos";
+import { conceptColor } from "@/lib/learning";
 
 type Confidence = "sure" | "probably" | "guess";
 

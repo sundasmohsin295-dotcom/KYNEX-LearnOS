@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ProcessingPipeline, KnowledgeNode } from "@/components/VisualBits";
 import { MasteryRings } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
-import { MODES, masteryState, conceptColor } from "@/lib/studyos";
+import { MODES, masteryState, conceptColor } from "@/lib/learning";
 
 const MODE_ICON: Record<string, typeof Zap> = {
   zap: Zap, sprout: Sprout, microscope: Microscope, graduation: GraduationCap,

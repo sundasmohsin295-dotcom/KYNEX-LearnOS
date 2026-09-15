@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
-import logo from "@/assets/logo.svg";
+import { KynexMark } from "@/components/brand/KynexBrand";
 import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -119,16 +119,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         <Card className="min-w-[350px] pb-0 border shadow-md">
           {step === "signIn" ? (
             <>
-              <CardHeader className="text-center">
-              <div className="flex justify-center">
-                    <img
-                      src={logo}
-                      alt="Lock Icon"
-                      width={64}
-                      height={64}
-                      className="rounded-lg mb-4 mt-4 cursor-pointer"
+              <CardHeader className="text-center">                <div className="flex justify-center">
+                    <button
+                      type="button"
+                      aria-label="KYNEX home"
+                      className="mb-4 mt-4 cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => navigate("/")}
-                    />
+                    >
+                      <KynexMark className="size-16" />
+                    </button>
                   </div>
                 <CardTitle className="text-xl">Get Started</CardTitle>
                 <CardDescription>

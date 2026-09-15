@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MasteryRings, StreakDots } from "@/components/VisualBits";
 import { MASTERY_LOOP, levelTitle } from "@/lib/game";
 import { cn } from "@/lib/utils";
-import type { Mission } from "@/lib/studyos";
+import type { Mission } from "@/lib/learning";
 
 function useMissionAction() {
   const navigate = useNavigate();

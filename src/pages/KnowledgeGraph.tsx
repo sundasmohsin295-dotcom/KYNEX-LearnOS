@@ -9,7 +9,7 @@ import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { conceptColor } from "@/lib/studyos";
+import { conceptColor } from "@/lib/learning";
 
 type Node = {
   key: string;

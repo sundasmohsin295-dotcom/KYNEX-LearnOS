@@ -1,16 +1,16 @@
 {
-  "name": "freebuff.com application",
-  "short_name": "freebuff.com",
-  "description": "freebuff.com application",
+  "name": "KYNEX — Academic Intelligence OS",
+  "short_name": "KYNEX",
+  "description": "KYNEX builds a living model of your academic journey and continuously determines the highest-impact action you should take next.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#05070d",
+  "theme_color": "#0a1428",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/kynex-icon.svg",
       "sizes": "any",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

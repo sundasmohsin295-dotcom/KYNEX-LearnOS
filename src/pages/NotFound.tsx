@@ -1,4 +1,8 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router";
+import { ArrowLeft } from "lucide-react";
+import { KynexMark } from "@/components/brand/KynexBrand";
+import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -6,21 +10,28 @@ export default function NotFound() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col"
+      className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4 text-center"
     >
-
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="max-w-5xl mx-auto relative px-4">
-          <div className="flex items-center justify-center min-h-[200px]">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
-              <p className="text-lg text-gray-600">Page Not Found</p>
-            </div>
-          </div>
-        </div>
+      <KynexMark className="size-14" />
+      <div>
+        <h1 className="font-display text-5xl font-extrabold tracking-tight text-foreground">
+          404
+        </h1>
+        <p className="mt-2 text-lg text-muted-foreground">
+          This page doesn't exist.
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Your learning data is safe — head back and continue where you left
+          off.
+        </p>
       </div>
+      <Button asChild>
+        {/* Signed-out users are sent through /auth with this path preserved. */}
+        <Link to="/dashboard">
+          <ArrowLeft className="mr-2 size-4" />
+          Back to Command Center
+        </Link>
+      </Button>
     </motion.div>
   );
 }
