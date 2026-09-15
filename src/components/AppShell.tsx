@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
-  BarChart3, BookOpen, Flame, GraduationCap, LayoutDashboard, LogOut,
+  BarChart3, BookOpen, Flame, GraduationCap, Gauge, LayoutDashboard, LogOut,
   Moon, Network, Plus, Sun, Target, Wrench, Zap, RefreshCw, Fingerprint, Calculator,
   CalendarDays, ShieldCheck,
 } from "lucide-react";
@@ -32,6 +32,7 @@ const NAV = [
   { to: "/planner", label: "Planner", icon: CalendarDays },
   { to: "/gpa", label: "GPA Lab", icon: Calculator },
   { to: "/insights", label: "Insights", icon: BarChart3 },
+  { to: "/plan", label: "Plan & usage", icon: Gauge },
   { to: "/security", label: "Security", icon: ShieldCheck },
 ] as const;
 

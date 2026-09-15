@@ -167,12 +167,12 @@ export default function Landing() {
           >
             <Button asChild size="lg" className="h-13 gap-2 rounded-2xl px-8 text-base shadow-xl shadow-primary/30">
               <Link to="/auth">
-                <Zap className="size-4.5" /> Launch KYNEX free
+                <Zap className="size-4.5" /> Start learning free
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-13 gap-2 rounded-2xl px-8 text-base">
               <a href="#system">
-                See the core loop <ArrowRight className="size-4.5" />
+                See how KYNEX works <ArrowRight className="size-4.5" />
               </a>
             </Button>
           </motion.div>

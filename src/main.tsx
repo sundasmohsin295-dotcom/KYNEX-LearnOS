@@ -29,6 +29,7 @@ const KnowledgeGraph = lazy(() => import("./pages/KnowledgeGraph.tsx"));
 const MissionScreen = lazy(() => import("./pages/MissionScreen.tsx"));
 const Planner = lazy(() => import("./pages/Planner.tsx"));
 const Security = lazy(() => import("./pages/Security.tsx"));
+const PlanPage = lazy(() => import("./pages/PlanPage.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -289,6 +290,14 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Achievements />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/plan"
+                element={
+                  <RequireAuth>
+                    <PlanPage />
                   </RequireAuth>
                 }
               />

@@ -26,6 +26,7 @@ const QUICK_PROMPTS = [
   "Teach me from zero",
   "Find the missing concept I need before learning this",
   "Ask me questions until you know I understand",
+  "Still confused — diagnose what I'm missing and reteach it",
 ];
 
 export default function Chat() {

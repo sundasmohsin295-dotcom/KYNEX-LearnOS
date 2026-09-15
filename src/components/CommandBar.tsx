@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowRight, BarChart3, BookOpen, Brain, Calculator, Command, Flame,
+  ArrowRight, BarChart3, BookOpen, Brain, Calculator, Command, Flame, Gauge,
   GraduationCap, Layers, Network, Play, Plus, RefreshCw, Search, ShieldCheck,
   Stethoscope, Target, User, Wrench, Zap,
 } from "lucide-react";
@@ -56,6 +56,7 @@ export function CommandBar() {
       { id: "mission", label: "Start a mission now", group: "Mission Engine", icon: Play, hint: "One click → real mission screen", run: () => navigate("/mission") },
       { id: "plan", label: "Open today's study plan", group: "Planner", icon: Layers, hint: "Persisted blocks from real weak spots", run: () => navigate("/planner") },
       { id: "security", label: "Review security & sessions", group: "Account", icon: ShieldCheck, hint: "Live sessions, revocation, controls", run: () => navigate("/security") },
+      { id: "plan", label: "Check my plan & usage", group: "Account", icon: Gauge, hint: "AI limits, Free vs Pro", run: () => navigate("/plan") },
       { id: "twin", label: "Open KYNEX Twin", group: "Command Center", icon: User, hint: "CURRENT → GAP → NEXT", run: () => navigate("/twin") },
       { id: "insights", label: "Show my weakest subject", group: "Insights", icon: BarChart3, hint: "Pulse + mistake bank", run: () => navigate("/insights") },
       { id: "practice", label: "Start practice", group: "Practice", icon: Play, hint: "Adaptive drills", run: () => navigate("/practice") },
