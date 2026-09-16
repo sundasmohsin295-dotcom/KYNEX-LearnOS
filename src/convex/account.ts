@@ -147,6 +147,18 @@ export const mySecurityOverview = query({
  * This is the "right to erasure" path — it must stay complete. Runs inside a
  * rate-limited mutation (`accountDelete`) and writes a final audit event.
  */
+/** Delete one of the caller's own examiner evaluations (ownership-checked). */
+export const deleteExaminerEvaluation = mutation({
+  args: { id: v.id("examinerEvaluations") },
+  handler: async (ctx, { id }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const row = await ctx.db.get(id);
+    if (!row || row.userId !== userId) throw new Error("Not found");
+    await ctx.db.delete(id);
+  },
+});
+
 export const deleteMyAccount = mutation({
   args: { confirm: v.literal("DELETE") },
   handler: async (ctx, { confirm }) => {

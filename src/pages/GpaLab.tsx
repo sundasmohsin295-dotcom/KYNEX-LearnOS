@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Calculator, Check, GraduationCap, Info, Plus, Target,
+  ArrowRight, Calculator, Check, GraduationCap, Info, Plus, Route, Target,
   TrendingUp, Trash2, X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -153,6 +153,9 @@ export default function GpaLab() {
           </div>
         </div>
       </div>
+
+      {/* ---------- Grade Path: the honest gap → action plan ---------- */}
+      <GradePathCard navigate={navigate} />
 
       {/* ---------- Required GPA sentence ---------- */}
       {data.required && (
@@ -545,5 +548,102 @@ function ScenarioCard({
       </div>
       <p className="mt-2.5 text-[11px] leading-relaxed text-muted-foreground">{desc}</p>
     </motion.div>
+  );
+}
+
+/** "How do I get a high grade?" — honest gap → required performance → actions.
+ *  Every number comes from the student's own GPA Lab, Twin and practice data. */
+function GradePathCard({ navigate }: { navigate: (to: string) => void }) {
+  const data = useQuery(api.intelligence.gradePathQuery);
+  if (!data) return null;
+  const { path } = data;
+
+  return (
+    <div className="mt-5 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/5 via-card to-card p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+          <Route className="size-4" /> How do I get a high grade?
+        </p>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Evidence-based · no guarantees
+        </span>
+      </div>
+
+      {!path.ready ? (
+        <>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            {path.notReadyReason}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 gap-2 rounded-lg"
+            onClick={() => navigate("/twin?edit=1")}
+          >
+            <Target className="size-3.5" /> Set your target in KYNEX Twin
+          </Button>
+        </>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Current</p>
+              <p className="mt-1 font-display text-xl font-extrabold">{path.currentPosition}</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target</p>
+              <p className="mt-1 font-display text-xl font-extrabold text-chart-4">{path.targetPosition}</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Gap</p>
+              <p className="mt-1 font-display text-xl font-extrabold text-chart-5">{path.gap}</p>
+            </div>
+          </div>
+
+          <p className="mt-4 rounded-2xl bg-card px-4 py-3 text-sm leading-relaxed text-foreground/90">
+            {path.required.explanation}
+          </p>
+
+          {path.impactActions.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Highest-impact actions</p>
+              <ul className="mt-2 space-y-2">
+                {path.impactActions.map((a, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3"
+                  >
+                    <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">{a.action}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {a.evidence} · ~{a.minutes} min
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {path.riskAreas.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {path.riskAreas.map((r, i) => (
+                <span
+                  key={i}
+                  className="rounded-full border border-chart-5/40 bg-chart-5/5 px-3 py-1 text-xs font-semibold text-chart-5"
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{path.verification}</p>
+        </>
+      )}
+    </div>
   );
 }

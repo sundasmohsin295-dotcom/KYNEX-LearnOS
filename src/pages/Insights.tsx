@@ -2,7 +2,7 @@ import { useQuery } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
-  ArrowDownRight, ArrowUpRight, Award, BarChart3, Brain, Crosshair,
+  ArrowDownRight, ArrowUpRight, Award, BarChart3, Brain, Crosshair, FileBarChart,
   Lock, Target, Trophy, Wrench,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
@@ -22,6 +22,7 @@ export default function Insights() {
   const insights = useQuery(api.profiles.myInsights);
   const overview = useQuery(api.profiles.myOverview);
   const achievements = useQuery(api.learning.listAchievements);
+  const weekly = useQuery(api.intelligence.weeklyReportQuery);
 
   const loading = insights === undefined || overview === undefined;
 
@@ -37,6 +38,9 @@ export default function Insights() {
         <div className="h-72 animate-pulse rounded-3xl bg-muted/60" />
       ) : (
         <>
+          {/* ---------- Weekly Academic Intelligence Report ---------- */}
+          <WeeklyReportCard weekly={weekly} />
+
           {/* ---------- Pulse trends ---------- */}
           <div className="rounded-3xl border border-border/70 bg-card p-6">
             <h3 className="flex items-center gap-2 font-display text-lg font-bold">
@@ -222,6 +226,151 @@ function SignalBox({ label, value, tone, note }: { label: string; value: number;
     <div className="rounded-2xl border border-border/60 bg-muted/30 p-4" title={note}>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className={cn("mt-1.5 font-display text-2xl font-extrabold", tone)}>{value}%</p>
+    </div>
+  );
+}
+
+/** Weekly Academic Intelligence Report — every line traces to a real number.
+ *  A quiet week is reported honestly and met with a small next action. */
+function WeeklyReportCard({
+  weekly,
+}: {
+  weekly:
+    | {
+        report: {
+          ready: boolean;
+          notReadyReason?: string;
+          improved: { evidence: string }[];
+          stillWeak: { evidence: string }[];
+          repeatedMistakes: { evidence: string }[];
+          mastered: string[];
+          forgotten: string[];
+          examRisk: string | null;
+          goalProgress: string;
+          nextAction: string;
+          stats: {
+            minutesThisWeek: number;
+            minutesLastWeek: number;
+            questionsThisWeek: number;
+            accuracyThisWeek: number | null;
+            accuracyLastWeek: number | null;
+            reviewsThisWeek: number;
+          };
+        };
+      }
+    | undefined
+    | null;
+}) {
+  if (!weekly) return null;
+  const r = weekly.report;
+
+  return (
+    <div className="mb-6 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/5 via-card to-card p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+          <FileBarChart className="size-5 text-primary" /> Weekly Intelligence Report
+        </h3>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Last 7 days vs previous 7
+        </span>
+      </div>
+
+      {!r.ready ? (
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          {r.notReadyReason}
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Stat label="Study minutes" value={`${r.stats.minutesThisWeek}`} sub={`last week: ${r.stats.minutesLastWeek}`} />
+            <Stat
+              label="Practice accuracy"
+              value={r.stats.accuracyThisWeek != null ? `${r.stats.accuracyThisWeek}%` : "—"}
+              sub={
+                r.stats.accuracyLastWeek != null
+                  ? `last week: ${r.stats.accuracyLastWeek}%`
+                  : "first recorded week"
+              }
+            />
+            <Stat label="Questions answered" value={`${r.stats.questionsThisWeek}`} sub={`this week`} />
+            <Stat label="Recall reviews" value={`${r.stats.reviewsThisWeek}`} sub={`this week`} />
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-success">What improved</p>
+              <ul className="mt-2 space-y-1.5">
+                {r.improved.length > 0 ? (
+                  r.improved.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+                      <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-success" />
+                      {s.evidence}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-sm text-muted-foreground">No measurable improvement this week — the next action below is the fastest lever.</li>
+                )}
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-chart-5">Still weak</p>
+              <ul className="mt-2 space-y-1.5">
+                {r.stillWeak.length > 0 ? (
+                  r.stillWeak.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+                      <Target className="mt-0.5 size-3.5 shrink-0 text-chart-5" />
+                      {s.evidence}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-sm text-muted-foreground">Nothing below the mastery floor. Keep the streak of solid work.</li>
+                )}
+              </ul>
+            </div>
+          </div>
+
+          {r.repeatedMistakes.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-destructive">Repeated mistakes — break the pattern</p>
+              <ul className="mt-1.5 space-y-1">
+                {r.repeatedMistakes.map((s, i) => (
+                  <li key={i} className="text-sm text-muted-foreground">• {s.evidence}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <Stat label="Mastered (verified)" value={`${r.mastered.length}`} sub="3+ attempts at 85%+" />
+            <Stat label="Needs refresh" value={`${r.forgotten.length}`} sub="mastered, untouched 2+ weeks" />
+            <Stat label="Recall reviews" value={`${r.stats.reviewsThisWeek}`} sub="spaced repetition" />
+          </div>
+
+          {r.examRisk && (
+            <p className="mt-4 rounded-2xl border border-xp/40 bg-xp/5 px-4 py-3 text-sm text-foreground/90">
+              <strong className="font-bold">Exam risk:</strong> {r.examRisk}
+            </p>
+          )}
+
+          <p className="mt-4 text-sm text-muted-foreground">
+            <strong className="font-semibold text-foreground">Goal progress:</strong> {r.goalProgress}
+          </p>
+
+          <p className="mt-3 rounded-2xl bg-primary/10 px-4 py-3 text-sm font-semibold text-foreground">
+            Next action: {r.nextAction}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 font-display text-xl font-extrabold">{value}</p>
+      {sub && <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }

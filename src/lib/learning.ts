@@ -26,6 +26,7 @@ export const MODES = [
   { key: "practice", label: "Practice", depth: "EXAM", desc: "Adaptive questions with feedback", icon: "target" },
   { key: "revision", label: "Recall Drill", depth: "CORE", desc: "Retrieval practice & memory hooks", icon: "refresh" },
   { key: "teach", label: "Teach Me", depth: "CORE", desc: "Tutor loop: step → check → advance", icon: "present" },
+  { key: "debug", label: "Debug My Understanding", depth: "CORE", desc: "Finds the misconception behind a wrong belief", icon: "wrench" },
 ] as const;
 
 export type ModeKey = (typeof MODES)[number]["key"];
@@ -43,6 +44,7 @@ export const MODE_TO_AI: Record<ModeKey, string> = {
   practice: "quiz",
   revision: "explain",
   teach: "teach",
+  debug: "debugmyunderstanding",
 };
 
 /** Curiosity-gap helpers ------------------------------------------------- */

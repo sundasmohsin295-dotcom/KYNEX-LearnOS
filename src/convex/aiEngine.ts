@@ -30,7 +30,7 @@ async function rateLimitAction(
  *  raw client strings into system prompts. */
 const CHAT_MODES = [
   "explain", "example", "why", "compare", "quiz", "socratic",
-  "feynman", "teach", "zero", "diagnose", "application",
+  "feynman", "teach", "zero", "diagnose", "application", "debugmyunderstanding",
 ] as const;
 type ChatMode = (typeof CHAT_MODES)[number];
 
@@ -691,7 +691,8 @@ Mode instructions (follow the mode the user picked):
 - teach: TUTOR LOOP — teach ONE small concept step, then ask a short check question and STOP. Wait for the student's answer. Do not reveal the check-question answer until the student responds. Evaluate their answer, correct mistakes, then give the next step, increasing difficulty gradually.
 - zero: teach from absolute zero, assume no prior knowledge, define every term.
 - diagnose: identify what the student needs to understand BEFORE this topic. Ask what they already know first.
-- application: give a realistic scenario where the concept is used and walk through it.`;
+- application: give a realistic scenario where the concept is used and walk through it.
+- debugmyunderstanding: DIAGNOSTIC — the student believes something wrong. First state the misconception you think they hold as a question ("Are you assuming that…?"), then correct it with a minimal counterexample. Never dump a full lecture.`;
 
 export const chatInternal = internalAction({
   args: {
@@ -731,6 +732,16 @@ export const chatInternal = internalAction({
         content:
           "No study material is selected (GENERAL KNOWLEDGE MODE). Teach the requested concept fully from your own subject knowledge. Do not claim the explanation is drawn from uploaded course material — it is not.",
       });
+    } else {
+      const material = await ctx.runQuery(internal.materials.getInternal, {
+        id: materialId,
+      });
+      if (material?.analysis) {
+        messages.push({
+          role: "system",
+          content: `Source-labeling rule: the student's uploaded material "${material.title}" is the primary context. When you use it, open with "From your material:". When you go beyond it, write "General knowledge:". Never blend the two silently.`,
+        });
+      }
     }
     messages.push({ role: "system", content: `Active mode: ${mode}.` });
 

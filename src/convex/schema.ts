@@ -575,6 +575,44 @@ const schema = defineSchema(
       quizCount: v.number(),
       updatedAt: v.number(),
     }).index("by_user_day", ["userId", "dayKey"]),
+
+    // ---- AI Examiner: structured written-answer evaluations ----
+    // Every row is a real evaluation produced by the examiner model and
+    // validated server-side. Marks are PROVISIONAL rubric marks — the UI must
+    // never present them as official university grades.
+    examinerEvaluations: defineTable({
+      userId: v.id("users"),
+      materialId: v.optional(v.id("materials")),
+      conceptLabel: v.string(),
+      question: v.string(),
+      studentAnswer: v.string(),
+      marksAwarded: v.number(), // 0..marksTotal
+      marksTotal: v.number(), // 10
+      breakdown: v.array(
+        v.object({
+          criterion: v.string(),
+          status: v.union(
+            v.literal("met"),
+            v.literal("partial"),
+            v.literal("missed"),
+          ),
+          detail: v.string(),
+        }),
+      ),
+      missingPoints: v.array(v.string()),
+      errors: v.array(v.string()),
+      modelAnswer: v.string(),
+      howToImprove: v.string(),
+      nextMove: v.string(),
+      scheme: v.union(
+        v.literal("provided"),
+        v.literal("provisional"),
+      ), // whether an official marking scheme was used
+      model: v.string(),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_created", ["userId", "createdAt"]),
   },
   {
     schemaValidation: false,

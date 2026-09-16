@@ -9,6 +9,8 @@ import {
   type IntelInput,
   type AttemptRecord,
 } from "./intel";
+import { gradePath, type GradePathInput } from "./gradePath";
+import { weeklyReport, type WeeklyReportInput } from "./weeklyReport";
 import { ensureProfiles } from "./gamification";
 import { logAuditEvent } from "./security";
 
@@ -225,6 +227,219 @@ function evidenceCounters(attemptsRaw: AttemptDoc[]) {
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
+
+/** Shared weak-concept + exam helpers for the Grade Path and Weekly Report. */
+async function weakConceptsAndExam(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
+  const now = Date.now();
+  const masteryRows = await ctx.db
+    .query("masteryScores")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .collect();
+  const weakConcepts = masteryRows
+    .filter((m) => m.attempts >= 2 && m.correct / m.attempts < 0.6)
+    .map((m) => ({
+      label: m.conceptLabel,
+      accuracy: Math.round((m.correct / m.attempts) * 100),
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy)
+    .slice(0, 6);
+  const examRows = await ctx.db
+    .query("exams")
+    .withIndex("by_user_date", (q) => q.eq("userId", userId).gt("examDate", now))
+    .collect();
+  const next = examRows.sort((a, b) => a.examDate - b.examDate)[0];
+  const daysToExam = next
+    ? Math.max(0, Math.ceil((next.examDate - now) / 86400000))
+    : null;
+  return { weakConcepts, daysToExam };
+}
+
+/** "How do I get a high grade?" — the honest gap → required-performance engine. */
+export const gradePathQuery = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+    const game = await ctx.db
+      .query("gameProfiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    // GPA state from the student's own Lab rows (deterministic).
+    const semesters = await ctx.db
+      .query("gpaSemesters")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const courses = await ctx.db
+      .query("gpaCourses")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    let gradedPoints = 0;
+    let gradedCredits = 0;
+    let currentCredits = 0;
+    for (const c of courses) {
+      if (c.creditHours <= 0) continue;
+      const sem = semesters.find((s) => s._id === c.semesterId);
+      if (sem?.status === "in_progress") {
+        currentCredits += c.creditHours;
+        continue;
+      }
+      if (c.gradePoint != null && Number.isFinite(c.gradePoint)) {
+        gradedPoints += c.gradePoint * c.creditHours;
+        gradedCredits += c.creditHours;
+      }
+    }
+    const currentCgpa =
+      gradedCredits > 0
+        ? Math.round((gradedPoints / gradedCredits) * 100) / 100
+        : null;
+
+    // Scale ceiling from the student's configured grading system.
+    const scale = profile?.gradingScale ?? "4.0";
+    const maxPoint =
+      scale === "custom"
+        ? Math.max(4, ...(profile?.customBands ?? []).map((b) => b.point))
+        : scale === "5.0"
+          ? 5
+          : 4;
+
+    const { weakConcepts, daysToExam } = await weakConceptsAndExam(ctx, userId);
+
+    // Top repeated mistake categories from the Mistake Bank.
+    const mistakeRows = await ctx.db
+      .query("mistakes")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const byCat = new Map<string, number>();
+    for (const m of mistakeRows) {
+      if (m.resolved) continue;
+      byCat.set(m.category, (byCat.get(m.category) ?? 0) + m.timesMissed);
+    }
+    const topMistakeCategories = [...byCat.entries()]
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+    const input: GradePathInput = {
+      currentCgpa,
+      targetCgpa: profile?.targetCgpa ?? null,
+      completedCredits: gradedCredits,
+      currentCredits,
+      maxPoint,
+      // Marks-based tracking isn't stored yet — pass null honestly rather
+      // than inventing a percentage.
+      currentPercent: null,
+      targetPercent: null,
+      completedWeight: 0,
+      daysToExam,
+      weakConcepts,
+      topMistakeCategories,
+    };
+    return {
+      path: gradePath(input),
+      goalMinutesPerDay: game?.goalMinutesPerDay ?? 0,
+      generatedAt: Date.now(),
+    };
+  },
+});
+
+/** The Weekly Academic Intelligence Report — evidence-based, zero fluff. */
+export const weeklyReportQuery = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const now = Date.now();
+
+    const attemptRows = (
+      await ctx.db
+        .query("quizAttempts")
+        .withIndex("by_user_created", (q) => q.eq("userId", userId))
+        .order("desc")
+        .take(60)
+    ).filter((a) => a.status === "completed" && a.completedAt != null);
+
+    const mistakeRows = await ctx.db
+      .query("mistakes")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    const sessions = await ctx.db
+      .query("studySessions")
+      .withIndex("by_user_created", (q) =>
+        q.eq("userId", userId).gte("createdAt", now - 14 * 86400000),
+      )
+      .collect();
+
+    const masteryRows = await ctx.db
+      .query("masteryScores")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    const reviewRows = await ctx.db
+      .query("reviews")
+      .withIndex("by_user_reviewed", (q) =>
+        q.eq("userId", userId).gte("reviewedAt", now - 14 * 86400000),
+      )
+      .collect();
+
+    const dueCards = (
+      await ctx.db
+        .query("flashcards")
+        .withIndex("by_user_due", (q) =>
+          q.eq("userId", userId).lte("dueAt", now),
+        )
+        .collect()
+    ).length;
+
+    const game = await ctx.db
+      .query("gameProfiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    const { weakConcepts, daysToExam } = await weakConceptsAndExam(ctx, userId);
+
+    const input: WeeklyReportInput = {
+      now,
+      attempts: attemptRows.map((a) => ({
+        completedAt: a.completedAt!,
+        total: a.answers.length,
+        correct: a.answers.filter((x) => x.correct).length,
+      })),
+      mistakes: mistakeRows.map((m) => ({
+        conceptLabel: m.conceptLabel,
+        category: m.category,
+        resolved: m.resolved,
+        createdAt: m.createdAt,
+      })),
+      sessions: sessions.map((s) => ({
+        createdAt: s.createdAt,
+        minutes: s.minutes,
+      })),
+      mastery: masteryRows.map((m) => ({
+        conceptKey: m.conceptKey,
+        conceptLabel: m.conceptLabel,
+        correct: m.correct,
+        attempts: m.attempts,
+        lastPracticedAt: m.lastPracticedAt,
+      })),
+      reviews: reviewRows.map((r) => ({
+        reviewedAt: r.reviewedAt,
+        grade: r.grade,
+      })),
+      dueCards,
+      goalMinutesPerDay: game?.goalMinutesPerDay ?? 0,
+      daysToExam,
+      weakConcepts,
+    };
+    return { report: weeklyReport(input), generatedAt: now };
+  },
+});
 
 /** The full intelligence snapshot (Academic Twin feed). */
 export const snapshot = query({

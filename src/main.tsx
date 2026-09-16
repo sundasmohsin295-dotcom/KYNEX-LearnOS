@@ -28,6 +28,7 @@ const MistakeBank = lazy(() => import("./pages/MistakeBank.tsx"));
 const KnowledgeGraph = lazy(() => import("./pages/KnowledgeGraph.tsx"));
 const MissionScreen = lazy(() => import("./pages/MissionScreen.tsx"));
 const Planner = lazy(() => import("./pages/Planner.tsx"));
+const ExaminerPage = lazy(() => import("./pages/ExaminerPage.tsx"));
 const Security = lazy(() => import("./pages/Security.tsx"));
 const PlanPage = lazy(() => import("./pages/PlanPage.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -282,6 +283,14 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Security />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/examiner"
+                element={
+                  <RequireAuth>
+                    <ExaminerPage />
                   </RequireAuth>
                 }
               />
