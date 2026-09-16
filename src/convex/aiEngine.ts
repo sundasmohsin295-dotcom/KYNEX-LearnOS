@@ -137,7 +137,9 @@ export interface LearningAnalysis {
   analyzedAt?: number;
 }
 
-/** One LLM call with retries and plain-error extraction. */
+/** One LLM call with retries and plain-error extraction. Credential and
+ *  configuration failures abort immediately — retrying a rejected key can
+ *  never succeed and just burns quota and latency. */
 async function callAI(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   maxTokens = 2400,
@@ -153,11 +155,14 @@ async function callAI(
       });
       if (!res.success || !res.data?.choices?.[0]?.message?.content) {
         lastErr = res.error ?? "Empty AI response";
+        const cls = classifyAiFailure(lastErr);
+        if (!cls.retryable) break; // credential/config/quota — do not retry
         continue;
       }
       return res.data.choices[0].message.content;
     } catch (e) {
       lastErr = e instanceof Error ? e.message : String(e);
+      if (!classifyAiFailure(lastErr).retryable) break;
     }
   }
   throw new Error(lastErr);
@@ -434,6 +439,111 @@ function frameUntrusted(label: string, content: string): string {
   ].join("\n");
 }
 
+/** HTTP-status-style failure classification for AI gateway failures. Also flags
+ *  the credential-rejected state so callers can fail fast instead of retrying
+ *  a request that can never succeed. */
+export interface AiFailureClass {
+  /** Stable machine-readable code for diagnostics/metrics. */
+  code:
+    | "ai_not_configured" // no key at all
+    | "ai_key_rejected" // gateway answered 401/403 — credential invalid/expired
+    | "ai_rate_limited"
+    | "ai_quota_exhausted"
+    | "ai_provider_unavailable"
+    | "ai_invalid_request"
+    | "ai_provider_error";
+  /** Safe, honest, user-facing message. No internal details, no false promises. */
+  userMessage: string;
+  /** A retried request could plausibly succeed. */
+  retryable: boolean;
+}
+
+/** Classify a raw AI-layer error string. Exported for the test suite. Never
+ *  includes secrets or provider internals in the result. */
+export function classifyAiFailure(msg: string): AiFailureClass {
+  const m = (msg || "").toLowerCase();
+  if (
+    m.includes("401") ||
+    m.includes("403") ||
+    m.includes("unauthorized") ||
+    m.includes("forbidden") ||
+    m.includes("invalid api key") ||
+    m.includes("invalid_api_key") ||
+    (m.includes("api key") && (m.includes("invalid") || m.includes("expired"))) ||
+    m.includes("permission") ||
+    m.includes("credential")
+  ) {
+    return {
+      code: "ai_key_rejected",
+      userMessage:
+        "⚠️ Professor AI isn't available right now — its service credential was rejected by the provider.\n\nThis is a configuration issue on the platform side, not something a retry can fix. The KYNEX team needs to reconnect the AI integration in the project's API keys settings.",
+      retryable: false,
+    };
+  }
+  if (!m || m.includes("not configured") || m.includes("missing")) {
+    return {
+      code: "ai_not_configured",
+      userMessage:
+        "⚠️ Professor AI isn't configured yet.\n\nConnect the AI provider in the project's API keys settings to enable Professor responses.",
+      retryable: false,
+    };
+  }
+  if (m.includes("429") || m.includes("rate limit")) {
+    return {
+      code: "ai_rate_limited",
+      userMessage:
+        "⚠️ Professor is temporarily rate-limited by the AI provider. Please try again in a moment.",
+      retryable: true,
+    };}
+  if (m.includes("quota") || m.includes("insufficient") || m.includes("billing")) {
+    return {
+      code: "ai_quota_exhausted",
+      userMessage:
+        "⚠️ The AI service has exhausted its quota. The KYNEX team needs to top up the AI integration.",
+      retryable: false,
+    };
+  }
+  if (
+    m.includes("econnrefused") ||
+    m.includes("econnreset") ||
+    m.includes("enotfound") ||
+    m.includes("etimedout") ||
+    m.includes("timeout") ||
+    m.includes("502") ||
+    m.includes("503") ||
+    m.includes("504") ||
+    m.includes("unavailable") ||
+    m.includes("network") ||
+    m.includes("fetch failed")
+  ) {
+    return {
+      code: "ai_provider_unavailable",
+      userMessage:
+        "⚠️ The Professor AI service is temporarily unreachable. Please try again shortly.",
+      retryable: true,
+    };
+  }
+  if (
+    m.includes("400") ||
+    m.includes("422") ||
+    m.includes("invalid request") ||
+    m.includes("malformed")
+  ) {
+    return {
+      code: "ai_invalid_request",
+      userMessage:
+        "I couldn't process that request. Try asking the question another way.",
+      retryable: false,
+    };
+  }
+  return {
+    code: "ai_provider_error",
+    userMessage:
+      "⚠️ Professor couldn't complete the response. Try again in a moment.",
+    retryable: true,
+  };
+}
+
 /** Map an AI-layer failure to a safe, user-visible message. Internal/provider
  *  details must never reach the UI or the database error field. */
 function safeAiError(msg: string): string {
@@ -612,6 +722,16 @@ export const chatInternal = internalAction({
       const role = m.role === "assistant" ? "assistant" : "user";
       messages.push({ role, content: m.content });
     }
+    if (!materialId) {
+      // GENERAL KNOWLEDGE MODE — an absent material is a valid teaching
+      // context, not an error. Say so explicitly in the prompt and label the
+      // answer's source honestly (never claim it came from uploaded material).
+      messages.push({
+        role: "system",
+        content:
+          "No study material is selected (GENERAL KNOWLEDGE MODE). Teach the requested concept fully from your own subject knowledge. Do not claim the explanation is drawn from uploaded course material — it is not.",
+      });
+    }
     messages.push({ role: "system", content: `Active mode: ${mode}.` });
 
     try {
@@ -622,16 +742,25 @@ export const chatInternal = internalAction({
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      const cls = classifyAiFailure(msg);
+      // Correlation ID for tracing this failure in server logs. Contains no
+      // secrets and no user content.
+      const requestId = `chat_${Date.now().toString(36)}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      console.error(
+        `[ProfessorRequestError] requestId=${requestId} code=${cls.code} conversationId=${conversationId}`,
+        msg,
+      );
       await ctx.runMutation(internal.security.securityEventInternal, {
         userId: undefined,
         action: "ai_chat_failed",
-        detail: "chat_generation_error",
+        detail: `${cls.code}:${requestId}`.slice(0, 120),
       });
       await ctx.runMutation(internal.learning.appendAssistantInternal, {
         conversationId,
-        content: `⚠️ Sorry — the Professor couldn't respond right now. Please try again in a moment.`,
+        content: cls.userMessage,
       });
-      void msg;
     }
   },
 });
