@@ -105,6 +105,14 @@ export default function Dashboard() {
   const [rescueWhy, setRescueWhy] = useState("");
   const [rescueBusy, setRescueBusy] = useState(false);
   const [startingMission, setStartingMission] = useState(false);
+  // Ticks once per minute so the exam countdown stays honest without calling
+  // the impure Date.now() during render. Declared with all other Hooks so the
+  // Hook sequence is identical on loading AND loaded renders.
+  const [, setClockTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setClockTick((n) => n + 1), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   if (!overview) {
     return (
@@ -128,13 +136,6 @@ export default function Dashboard() {
   const maxMin = Math.max(30, ...weekMinutes.map((d) => d.minutes));
   const streak = game.streakCount;
   const streakAlive = stats.streakSafe;
-  // Ticks once per minute so the exam countdown stays honest without calling
-  // the impure Date.now() during render.
-  const [, setClockTick] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setClockTick((n) => n + 1), 60_000);
-    return () => clearInterval(t);
-  }, []);
   const daysToExam = nextExam ? Math.ceil((nextExam.examDate - Date.now()) / 86400000) : null;
 
   // NEXT MOVE evidence, computed from real data only
