@@ -1,6 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { query, mutation, QueryCtx } from "./_generated/server";
+import { query, mutation, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { todayKey } from "./gamification";
 
@@ -19,7 +19,7 @@ const MAX_STORED = 12;
 const MAX_SHOWN = 4;
 
 /** Ensure at most MAX_STORED undiscmissed rows per user (oldest trimmed first). */
-async function trimNudges(ctx: QueryCtx, userId: Id<"users">) {
+async function trimNudges(ctx: MutationCtx, userId: Id<"users">) {
   const rows = await ctx.db
     .query("nudges")
     .withIndex("by_user_created", (q) => q.eq("userId", userId))
@@ -33,7 +33,7 @@ async function trimNudges(ctx: QueryCtx, userId: Id<"users">) {
 
 /** Get-or-create a nudge row for (kind, ref) if it isn't duped/dismissed. */
 async function upsertNudge(
-  ctx: QueryCtx,
+  ctx: MutationCtx,
   userId: Id<"users">,
   kind: string,
   ref: string,
@@ -94,13 +94,15 @@ export const refresh = mutation({
     // ---- Signal 2: upcoming exams with weak, high-impact concepts ----
     const exams = await ctx.db
       .query("exams")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_date", (q) =>
+        q.eq("userId", userId).gt("examDate", now),
+      )
       .collect();
     const upcoming = exams
-      .filter((e) => e.date > now && e.date < now + 30 * 86400000)
-      .sort((a, b) => a.date - b.date)[0];
+      .filter((e) => e.examDate < now + 30 * 86400000)
+      .sort((a, b) => a.examDate - b.examDate)[0];
     if (upcoming) {
-      const days = Math.max(1, Math.ceil((upcoming.date - now) / 86400000));
+      const days = Math.max(1, Math.ceil((upcoming.examDate - now) / 86400000));
       const mastery = await ctx.db
         .query("masteryScores")
         .withIndex("by_user", (q) => q.eq("userId", userId))

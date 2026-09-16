@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, ArrowUpRight, ArrowDownRight, Brain, ChevronDown, Play, Plus,
-  RefreshCw, Rocket, Siren, Sparkles, Target, Timer, Trophy, Wrench, Zap, Info,
+  Radar, RefreshCw, Rocket, Siren, Sparkles, Target, Timer, Trophy, Wrench, Zap, Info,
   ShieldCheck, TrendingUp, X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,61 @@ import { MasteryRings, StreakDots } from "@/components/VisualBits";
 import { MASTERY_LOOP, levelTitle } from "@/lib/game";
 import { cn } from "@/lib/utils";
 import type { Mission } from "@/lib/learning";
+
+/** Live signals from the nudge engine — every line carries a REAL number from
+ *  the student's own data. Recomputed server-side on load; dismissal persists. */
+function NudgeStrip() {
+  const navigate = useNavigate();
+  const nudges = useQuery(api.nudges.listMine);
+  const refresh = useMutation(api.nudges.refresh);
+  const dismiss = useMutation(api.nudges.dismiss);
+  const [hidden, setHidden] = useState<string[]>([]);
+
+  // Recompute signals from real stored data (idempotent, server-side).
+  useEffect(() => {
+    void refresh({});
+  }, [refresh]);
+
+  if (!nudges) return null;
+  const visible = nudges.filter((n) => !hidden.includes(n._id));
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="mb-6 space-y-2">
+      {visible.map((n) => (
+        <motion.div
+          key={n._id}
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card/80 px-4 py-3"
+        >
+          <Radar className="mt-0.5 size-4 shrink-0 text-primary" />
+          <button
+            className="min-w-0 flex-1 text-left text-sm leading-snug"
+            onClick={() => navigate(n.targetRoute)}
+          >
+            {n.body}
+            <span className="ml-2 whitespace-nowrap text-xs font-bold text-primary">Go →</span>
+          </button>
+          <button
+            aria-label="Dismiss signal"
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            onClick={async () => {
+              setHidden((h) => [...h, n._id]); // optimistic
+              try {
+                await dismiss({ id: n._id }); // persisted — never nags twice
+              } catch {
+                toast.error("Couldn't dismiss the signal — it will return on next load.");
+              }
+            }}
+          >
+            <X className="size-4" />
+          </button>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 function useMissionAction() {
   const navigate = useNavigate();
@@ -113,6 +168,8 @@ export default function Dashboard() {
           </Button>
         </div>
       </PageHeader>
+
+      <NudgeStrip />
 
       {/* ---------- NEXT MOVE ---------- */}
       {mission ? (
