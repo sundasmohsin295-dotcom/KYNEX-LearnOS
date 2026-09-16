@@ -535,6 +535,36 @@ const schema = defineSchema(
       updatedAt: v.number(),
     }).index("by_user", ["userId"]),
 
+    // ---- Referral engine (real codes, one-shot validation, real rewards) ----
+    referrals: defineTable({
+      // The referrer (owner of the code). Never derived from client input.
+      referrerId: v.id("users"),
+      // The invited friend — null until a NEW user redeems the code.
+      refereeId: v.optional(v.id("users")),
+      code: v.string(), // KYNEX-XXXXX, unique
+      // Reward ledger — granted only by the server on first redemption.
+      referrerRewarded: v.boolean(),
+      refereeRewarded: v.boolean(),
+      createdAt: v.number(),
+      redeemedAt: v.optional(v.number()),
+    })
+      .index("by_referrer", ["referrerId"])
+      .index("by_referee", ["refereeId"])
+      .index("by_code", ["code"]),
+
+    // ---- Notification intelligence: useful, limited, dismissible ----
+    nudges: defineTable({
+      userId: v.id("users"),
+      kind: v.string(), // e.g. "review_due", "exam_gap", "momentum"
+      body: v.string(), // Human message with a REAL number in it.
+      targetRoute: v.string(), // deep link to the exact screen
+      // Deduplication: same kind + ref within 3 days won't repeat.
+      ref: v.string(),
+      createdAt: v.number(),
+      dismissedAt: v.optional(v.number()),
+    })
+      .index("by_user_created", ["userId", "createdAt"]),
+
     // Daily AI usage for denial-of-wallet protection. Reset is computed from
     // dayKey (UTC "YYYY-MM-DD") — no cron needed, no drift.
     aiUsageDaily: defineTable({
