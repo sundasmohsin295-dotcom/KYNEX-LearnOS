@@ -143,16 +143,38 @@ export const startFromCurrent = mutation({
         .withIndex("by_user_created", (q) => q.eq("userId", userId))
         .order("desc")
         .first();
-      if (newest && newest.status === "ready" && newest.userId === userId) {
+      if (newest && newest.userId === userId) {
         materialId = newest._id;
       }
     }
-    if (!materialId) throw new Error("Add a learning material to the Vault first.");
+    if (!materialId) {
+      // Honest dependency state: the user genuinely has no learning material.
+      // Never fabricate a mission from data that doesn't exist.
+      throw new Error(
+        "No learning material is available yet. Add one to the Vault first, then start a mission.",
+      );
+    }
 
     // OWNERSHIP CHECK — the material must belong to the caller.
     const material = await ctx.db.get(materialId);
     if (!material || material.userId !== userId) {
       throw new Error("Material not found.");
+    }
+
+    // DEPENDENCY STATE — a material that exists is not automatically usable.
+    // Each upstream state gets its own honest message and next action.
+    if (material.status !== "ready" || !material.analysis) {
+      if (material.status === "processing") {
+        throw new Error(
+          "Your material exists, but analysis is still running. Wait for it to finish, then start the mission.",
+        );
+      }
+      const reason = material.error
+        ? ` Reason: ${material.error}`
+        : "";
+      throw new Error(
+        `Your material exists, but analysis has not completed yet.${reason} Open it in the Vault and retry analysis, then start the mission.`,
+      );
     }
 
     // Stored accuracy for this concept (real evidence, shapes difficulty).

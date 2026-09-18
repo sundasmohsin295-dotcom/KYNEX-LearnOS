@@ -137,12 +137,15 @@ export interface LearningAnalysis {
   analyzedAt?: number;
 }
 
-/** One LLM call with retries and plain-error extraction. Credential and
- *  configuration failures abort immediately — retrying a rejected key can
- *  never succeed and just burns quota and latency. */
-async function callAI(
+/** The single centralized AI provider path for EVERY feature (Professor chat,
+ *  material analysis, quiz generation, AI Examiner). One LLM call with bounded
+ *  retries and plain-error extraction. Credential and configuration failures
+ *  abort immediately — retrying a rejected key can never succeed and just
+ *  burns quota and latency. */
+export async function callAI(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   maxTokens = 2400,
+  temperature = 0.4,
 ): Promise<string> {
   let lastErr = "Unknown AI error";
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -151,7 +154,7 @@ async function callAI(
         model: MODEL,
         messages,
         maxTokens,
-        temperature: 0.4,
+        temperature,
       });
       if (!res.success || !res.data?.choices?.[0]?.message?.content) {
         lastErr = res.error ?? "Empty AI response";
@@ -181,6 +184,60 @@ function parseJson<T>(raw: string): T {
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+// ---------------------------------------------------------------------------
+// URL ingestion — HTTP status taxonomy (Phase 8 failure states, Phase 11 safe
+// retry). 429 is respected with bounded backoff and Retry-After; a persistent
+// 429 is an honest user-facing state, never a fake analysis.
+// ---------------------------------------------------------------------------
+
+const URL_FETCH_ATTEMPTS = 2; // initial try + 1 bounded retry for 429/5xx only
+const MAX_RETRY_AFTER_MS = 8_000; // never sleep longer than this per Retry-After
+
+/** Map an HTTP status (and optional Retry-After) to a safe, actionable
+ *  user-facing message. Exported for unit testing. Never leaks internals. */
+export function ingestHttpError(status: number, retryAfterHeader: string | null): string {
+  if (status === 429) {
+    const seconds = parseRetryAfter(retryAfterHeader);
+    return seconds
+      ? `That website temporarily limited access (HTTP 429) and asked for about ${seconds}s before the next request. Your material was not analyzed — try again shortly.`
+      : "That website temporarily limited access (HTTP 429). Your material was not analyzed — try again in a little while.";
+  }
+  if (status === 401 || status === 403) {
+    return "That site blocked automated access (HTTP 403). Try pasting the page text directly into KYNEX instead.";
+  }
+  if (status === 404 || status === 410) {
+    return "That page doesn't exist (HTTP 404). Check the link and try again.";
+  }
+  if (status === 408) {
+    return "The website took too long to respond (HTTP 408). Try again in a moment.";
+  }
+  if (status >= 500) {
+    return `The website is having server trouble (HTTP ${status}). Try again shortly.`;
+  }
+  return `That site could not be reached (HTTP ${status}).`;
+}
+
+/** Parse a Retry-After header (seconds form or HTTP-date form). Returns the
+ *  delay in seconds, capped for safety, or null when absent/unparseable. */
+export function parseRetryAfter(header: string | null, now = Date.now()): number | null {
+  if (!header) return null;
+  const s = header.trim();
+  if (/^\d+$/.test(s)) {
+    return Math.min(60, Math.max(0, parseInt(s, 10))) || null;
+  }
+  const date = Date.parse(s);
+  if (Number.isFinite(date)) {
+    return Math.min(60, Math.max(0, Math.round((date - now) / 1000))) || null;
+  }
+  return null;
+}
+
+/** True when the status is transient enough to justify exactly one bounded
+ *  retry (429 and 5xx). 4xx client errors are never retried. */
+export function isTransientFetchStatus(status: number): boolean {
+  return status === 429 || status >= 500;
 }
 
 // ---------------------------------------------------------------------------
@@ -617,19 +674,17 @@ export const analyzeMaterial = internalAction({
       await sleep(500);
       await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "structuring" });
 
-      const res = await vly.ai.completion({
-        model: MODEL,
-        messages: [
+      // Centralized provider path — same credential validation, retry
+      // classification, and fail-fast behavior as every other AI feature.
+      const raw = await callAI(
+        [
           { role: "system", content: ANALYSIS_SYSTEM },
           { role: "user", content: frameUntrusted("study material", text) },
         ],
-        maxTokens: 3500,
-        temperature: 0.3,
-      });
-      if (!res.success || !res.data?.choices?.[0]?.message?.content) {
-        throw new Error(res.error ? safeAiError("internal") : "The AI service returned an empty response.");
-      }
-      const analysis = validateAnalysis(parseJson<unknown>(res.data.choices[0].message.content));
+        3500,
+        0.3,
+      );
+      const analysis = validateAnalysis(parseJson<unknown>(raw));
 
       await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "generating" });
       await sleep(400);
@@ -807,9 +862,9 @@ export const quizInternal = internalAction({
           ? "Order questions from easy to hard."
           : `All questions should be ${difficulty} difficulty.`;
 
-      const res = await vly.ai.completion({
-        model: MODEL,
-        messages: [
+      // Centralized provider path (identical to chat/analysis/examiner).
+      const raw = await callAI(
+        [
           {
             role: "system",
             content: `You are an exam writer. Write ${count} multiple-choice questions from the material.
@@ -826,13 +881,10 @@ JSON shape: [{ "question": string, "options": string[4], "correctIndex": 0-3, "e
           },
           { role: "user", content: frameUntrusted("study material", text) },
         ],
-        maxTokens: 3000,
-        temperature: 0.5,
-      });
-      if (!res.success || !res.data?.choices?.[0]?.message?.content) {
-        throw new Error(res.error ?? "Empty AI response");
-      }
-      const parsed = parseJson<unknown>(res.data.choices[0].message.content);
+        3000,
+        0.5,
+      );
+      const parsed = parseJson<unknown>(raw);
       const questions = validateQuizQuestions(parsed, count, material.title);
       await ctx.runMutation(internal.learning.activateInternal, { attemptId, questions });
     } catch (e) {
@@ -947,7 +999,8 @@ export const generateQuiz = action({
 
 /** Fetch a URL server-side (no CORS), extract readable text, create + analyze.
  *  Hardened: allowlisted schemes, DNS-based SSRF guard, response size cap,
- *  redirect budget, and generic errors that don't leak internal details. */
+ *  redirect budget, HTTP-status classification (429/Retry-After honored with
+ *  bounded backoff), and generic errors that don't leak internal details. */
 export const ingestUrl = action({
   args: { url: v.string() },
   handler: async (ctx, { url }): Promise<string> => {
@@ -977,29 +1030,20 @@ export const ingestUrl = action({
     let text = "";
     let title = normalized.hostname + normalized.pathname;
     try {
-      const res = await fetch(normalized.toString(), {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; KYNEXBot/1.0)",
-          Accept: "text/html,text/plain,*/*",
-        },
-        signal: AbortSignal.timeout(15000),
-        redirect: "manual",
-      });
-      // Follow redirects manually, re-validating each hop against the SSRF
-      // guard (a public URL can redirect to an internal one).
-      let hop = res;
-      let redirects = 0;
-      while (
-        hop.status >= 300 &&
-        hop.status < 400 &&
-        hop.headers.get("location")
-      ) {
-        if (redirects++ >= MAX_REDIRECTS) {
-          throw new Error("Too many redirects.");
+      // Bounded retry: ONLY transient statuses (429 / 5xx) are retried, at
+      // most once more, honoring the site's Retry-After (capped). 4xx client
+      // errors are never retried — hammering a rejecting site is wrong.
+      let hop: Response | null = null;
+      let lastStatus = 0;
+      let lastRetryAfter: string | null = null;
+      for (let attempt = 0; attempt < URL_FETCH_ATTEMPTS; attempt++) {
+        if (attempt > 0) {
+          const waitMs = Math.min(
+            (parseRetryAfter(lastRetryAfter) ?? 2) * 1000,
+            MAX_RETRY_AFTER_MS,
+          );
+          await sleep(waitMs);
         }
-        const loc = hop.headers.get("location")!;
-        const next = new URL(loc, normalized).toString();
-        normalized = await assertPublicHttpUrl(next);
         hop = await fetch(normalized.toString(), {
           headers: {
             "User-Agent": "Mozilla/5.0 (compatible; KYNEXBot/1.0)",
@@ -1008,9 +1052,38 @@ export const ingestUrl = action({
           signal: AbortSignal.timeout(15000),
           redirect: "manual",
         });
+        // Follow redirects manually, re-validating each hop against the SSRF
+        // guard (a public URL can redirect to an internal one).
+        let redirects = 0;
+        while (
+          hop.status >= 300 &&
+          hop.status < 400 &&
+          hop.headers.get("location")
+        ) {
+          if (redirects++ >= MAX_REDIRECTS) {
+            throw new Error("Too many redirects.");
+          }
+          const loc = hop.headers.get("location")!;
+          const next = new URL(loc, normalized).toString();
+          normalized = await assertPublicHttpUrl(next);
+          hop = await fetch(normalized.toString(), {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (compatible; KYNEXBot/1.0)",
+              Accept: "text/html,text/plain,*/*",
+            },
+            signal: AbortSignal.timeout(15000),
+            redirect: "manual",
+          });
+        }
+        lastStatus = hop.status;
+        lastRetryAfter = hop.headers.get("retry-after");
+        if (hop.ok) break;
+        if (!isTransientFetchStatus(hop.status)) {
+          throw new Error(ingestHttpError(hop.status, lastRetryAfter));
+        }
       }
-      if (!hop.ok) {
-        throw new Error(`That site could not be reached (HTTP ${hop.status}).`);
+      if (!hop || !hop.ok) {
+        throw new Error(ingestHttpError(lastStatus, lastRetryAfter));
       }
       // Cap how much we download before extraction.
       const raw = await hop.text();
@@ -1039,10 +1112,10 @@ export const ingestUrl = action({
           .trim();
       }
     } catch (e) {
-      // Generic, non-leaking message for network failures.
-      if (e instanceof Error && e.message.startsWith("That")) throw e;
-      if (e instanceof Error && e.message.startsWith("Only")) throw e;
-      if (e instanceof Error && e.message.startsWith("Too many")) throw e;
+      // Re-throw our classified, safe messages untouched. All begin with
+      // these prefixes and are worded for end users (no internals).
+      const m = e instanceof Error ? e.message : "";
+      if (m.startsWith("That") || m.startsWith("Only") || m.startsWith("Too many")) throw e;
       throw new Error(
         "We couldn't read that link. It may be unavailable, blocking automated access, or not a study-friendly page.",
       );

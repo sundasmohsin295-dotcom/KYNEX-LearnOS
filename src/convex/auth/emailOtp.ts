@@ -22,8 +22,12 @@ export const emailOtp = Email({
     // and set FREEBUFF_OTP_API_KEY in the deployment environment.
     const apiKey = process.env.FREEBUFF_OTP_API_KEY;
     if (!apiKey) {
-      // Fail closed, without leaking why to the end user.
-      throw new Error("Email delivery is not configured.");
+      // Fail closed, without leaking any secret. The message names the exact
+      // missing configuration so the project owner can act (Phase 2:
+      // professional setup-state, never a fake "verification sent").
+      throw new Error(
+        "Email verification isn't configured for this deployment yet. The FREEBUFF_OTP_API_KEY key is missing — connect it in the project's API keys settings, then try again.",
+      );
     }
     try {
       await axios.post(

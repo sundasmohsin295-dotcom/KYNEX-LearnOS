@@ -34,6 +34,7 @@ export const RATE_LIMITS = {
   aiAnalyze: { limit: 15, windowMs: 10 * 60_000 }, // 15 analyses / 10 min
   aiQuiz: { limit: 12, windowMs: 10 * 60_000 }, // 12 quiz generations / 10 min
   urlIngest: { limit: 8, windowMs: 10 * 60_000 }, // 8 URL fetches / 10 min
+  aiProbe: { limit: 4, windowMs: 60 * 60_000 }, // AI health checks: 4/hour
   // Mutations
   textIngest: { limit: 20, windowMs: 10 * 60_000 }, // 20 materials / 10 min
   review: { limit: 240, windowMs: 10 * 60_000 }, // flashcard reviews
