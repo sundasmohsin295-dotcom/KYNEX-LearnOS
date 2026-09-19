@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, BookOpen, Brain, Calculator, Command, Flame, Gauge,
-  GraduationCap, Layers, Network, Play, Plus, RefreshCw, Search, ShieldCheck,
+  GraduationCap, Layers, MessagesSquare, Network, Play, Plus, RefreshCw, Search, ShieldCheck,
   Stethoscope, Target, User, Wrench, Zap,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
@@ -26,6 +26,13 @@ export function CommandBar() {
   const [q, setQ] = useState("");
   const [cursor, setCursor] = useState(0);
   const materials = useQuery(api.materials.listReady);
+  // Smart Search (§33): contextual cross-entity results — materials, concepts
+  // (with mastery), conversations, messages, mistakes, flashcards, missions,
+  // examiner evaluations. Server-ranked; skipped until 2+ characters.
+  const smart = useQuery(
+    api.smartSearchQuery.search,
+    q.trim().length >= 2 ? { q: q.trim() } : "skip",
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -93,11 +100,44 @@ export function CommandBar() {
     return base;
   }, [q, materials, navigate]);
 
+  const smartActions = useMemo<Action[]>(() => {
+    const kindIcon: Record<string, typeof Target> = {
+      material: BookOpen,
+      concept: Network,
+      conversation: MessagesSquare,
+      message: GraduationCap,
+      mistake: Wrench,
+      flashcard: RefreshCw,
+      mission: Play,
+      examiner: Stethoscope,
+    };
+    const out: Action[] = [];
+    for (const g of smart?.groups ?? []) {
+      for (const r of g.rows) {
+        out.push({
+          id: `s-${r.kind}-${r.ref}`,
+          label: r.title.length > 90 ? `${r.title.slice(0, 90)}…` : r.title,
+          hint: r.context,
+          group: g.label,
+          icon: kindIcon[r.kind] ?? Search,
+          run: () => navigate(r.ref),
+        });
+      }
+    }
+    return out;
+  }, [smart, navigate]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return actions.slice(0, 10);
-    return actions.filter((a) => a.label.toLowerCase().includes(needle)).slice(0, 10);
-  }, [actions, q]);
+    // Workspace results are server-ranked by relevance — show them first,
+    // then command matches. Deep-link results cap at 6 so commands stay visible.
+    const smartTop = smartActions.slice(0, 6);
+    const cmdMatches = actions
+      .filter((a) => a.label.toLowerCase().includes(needle))
+      .slice(0, Math.max(4, 10 - smartTop.length));
+    return [...smartTop, ...cmdMatches];
+  }, [actions, smartActions, q]);
 
   const exec = (a?: Action) => {
     if (!a) return;
@@ -177,7 +217,9 @@ export function CommandBar() {
                 ))}
                 {filtered.length === 0 && (
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    No matching command — press Enter on “Ask the Professor” to hand it to the AI.
+                    {q.trim().length >= 2 && smart?.empty
+                      ? smart.empty
+                      : "No matching command — press Enter on “Ask the Professor” to hand it to the AI."}
                   </p>
                 )}
               </div>

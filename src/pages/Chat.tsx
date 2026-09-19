@@ -85,6 +85,16 @@ export default function Chat() {
     setParams((p) => { p.delete("q"); return p; });
   }
 
+  // Smart Search deep link: /chat?conv=<id> opens that conversation exactly
+  // once, then the param is cleared so URL and local selection never fight.
+  const convParam = params.get("conv");
+  const appliedConv = useRef<string | null>(null);
+  if (convParam && convParam !== appliedConv.current) {
+    appliedConv.current = convParam;
+    setActiveId(convParam as Id<"conversations">);
+    setParams((p) => { p.delete("conv"); return p; }, { replace: true });
+  }
+
   const concept = params.get("concept");
 
   useEffect(() => {
