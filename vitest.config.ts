@@ -6,7 +6,7 @@ import path from "path";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/convex/**/*.test.ts"],
+    include: ["src/convex/**/*.test.ts", "src/lib/**/*.test.ts"],
   },
   resolve: {
     alias: {

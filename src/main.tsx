@@ -5,6 +5,12 @@ import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 import React, { StrictMode, useEffect, lazy, Suspense } from "react";
+import {
+  installGlobalErrorHandlers,
+  reportCrash,
+  safeCrashMessage,
+} from "@/lib/globalErrorHandler";
+import { SystemRecoveryScreen } from "@/components/SystemRecoveryScreen";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
@@ -60,45 +66,82 @@ class ToolbarErrorBoundary extends React.Component<
   }
 }
 
-/** Hard guard so runtime errors never leave the preview as a blank page. */
+/**
+ * Root crash guard (§2 Zero-Crash Architecture). A fatal render error swaps
+ * the whole app for the dark SystemRecoveryScreen — correlation ID + safe
+ * message only; raw stacks never render to the user (console only).
+ */
 class RootErrorBoundary extends React.Component<
   { children: React.ReactNode },
-  { hasError: boolean; message: string; stack: string }
+  { hasError: boolean; message: string; correlationId: string }
 > {
-  state = { hasError: false, message: "", stack: "" };
+  state = { hasError: false, message: "", correlationId: "" };
   static getDerivedStateFromError(error: Error) {
+    const entry = reportCrash(error, "error");
     return {
       hasError: true,
-      message: error.message || "Unknown runtime error",
-      stack: error.stack || "",
+      message: safeCrashMessage(error),
+      correlationId: entry.id,
     };
   }
   componentDidCatch(err: Error) {
-    console.error("[WebContainer preview] Root crash:", err);
+    console.error("[KYNEX] Root crash captured:", err);
   }
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6">
-          <div className="max-w-lg text-center">
-            <p className="text-sm font-semibold">Preview runtime error</p>
-            <p className="mt-2 text-xs text-muted-foreground break-words">
-              {this.state.message}
-            </p>
-            {this.state.stack && (
-              <pre className="mt-3 text-left text-[10px] leading-4 text-muted-foreground/80 max-h-40 overflow-auto rounded border border-border/60 p-2">
-                {this.state.stack}
-              </pre>
-            )}
-          </div>
-        </div>
+        <SystemRecoveryScreen
+          message={this.state.message}
+          correlationId={this.state.correlationId}
+          onReboot={() => window.location.reload()}
+        />
       );
     }
     return this.props.children;
   }
 }
 
+/**
+ * Route-level guard (§2): a crash inside one lazy route no longer takes down
+ * the shell. Recover = re-mount the route's subtree via a key bump; Reboot =
+ * full app reload via the recovery screen.
+ */
+class RouteErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; message: string; correlationId: string; reloadKey: number }
+> {
+  state = { hasError: false, message: "", correlationId: "", reloadKey: 0 };
+  static getDerivedStateFromError(error: Error) {
+    const entry = reportCrash(error, "error");
+    return {
+      hasError: true,
+      message: safeCrashMessage(error),
+      correlationId: entry.id,
+    };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <SystemRecoveryScreen
+          message={this.state.message}
+          correlationId={this.state.correlationId}
+          onReboot={() =>
+            this.setState((s) => ({ hasError: false, reloadKey: s.reloadKey + 1 }))
+          }
+        />
+      );
+    }
+    return <React.Fragment key={this.state.reloadKey}>{this.props.children}</React.Fragment>;
+  }
+}
+
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+
+// §2: capture fatal errors + async rejections before anything renders.
+installGlobalErrorHandlers();
+
+// §2: capture fatal errors + async rejections before anything renders.
+installGlobalErrorHandlers();
 
 
 
@@ -136,6 +179,7 @@ createRoot(document.getElementById("root")!).render(
         <BrowserRouter>
           <RouteSyncer />
           <Suspense fallback={<RouteLoading />}>
+            <RouteErrorBoundary>
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route
@@ -312,6 +356,7 @@ createRoot(document.getElementById("root")!).render(
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </RouteErrorBoundary>
           </Suspense>
         </BrowserRouter>
         <Toaster />

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 interface Action {
   id: string;
@@ -26,12 +27,15 @@ export function CommandBar() {
   const [q, setQ] = useState("");
   const [cursor, setCursor] = useState(0);
   const materials = useQuery(api.materials.listReady);
+  // §3 anti-freeze: a strict 300ms debounce between keystrokes and the server
+  // query — rapid typing never queues duplicate background work.
+  const debouncedQ = useDebouncedValue(q, 300);
   // Smart Search (§33): contextual cross-entity results — materials, concepts
   // (with mastery), conversations, messages, mistakes, flashcards, missions,
   // examiner evaluations. Server-ranked; skipped until 2+ characters.
   const smart = useQuery(
     api.smartSearchQuery.search,
-    q.trim().length >= 2 ? { q: q.trim() } : "skip",
+    debouncedQ.trim().length >= 2 ? { q: debouncedQ.trim() } : "skip",
   );
 
   useEffect(() => {
