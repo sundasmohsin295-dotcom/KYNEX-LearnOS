@@ -57,6 +57,11 @@ export const aiStatus = action({
     message: v.string(),
     model: v.string(),
     checkedAt: v.number(),
+    // Which configured path OTP verification email would take right now:
+    // "otp-api" (dedicated key), "gateway" (shared integration key), or
+    // "none" (email delivery cannot be attempted). Env-presence only —
+    // no extra network probe, no secrets returned.
+    emailPath: v.string(),
   }),
   handler: async (ctx) => {
     const userId = await ctx.runQuery(api.securityGet.userId);
@@ -70,6 +75,11 @@ export const aiStatus = action({
 
     const model = "gpt-4o-mini";
     const checkedAt = Date.now();
+    const emailPath = process.env.FREEBUFF_OTP_API_KEY
+      ? "otp-api"
+      : process.env.VLY_INTEGRATION_KEY
+        ? "gateway"
+        : "none";
 
     if (!process.env.VLY_INTEGRATION_KEY) {
       return {
@@ -78,6 +88,7 @@ export const aiStatus = action({
           "The AI service isn't connected for this deployment. Add the AI integration key in the project's API keys settings.",
         model,
         checkedAt,
+        emailPath,
       };
     }
 
@@ -101,6 +112,7 @@ export const aiStatus = action({
           message: "The AI service is connected and responding.",
           model,
           checkedAt,
+          emailPath,
         };
       }
       const cls = classifyAiFailure(res.error ?? "Empty AI response");
@@ -109,6 +121,7 @@ export const aiStatus = action({
         message: cls.userMessage,
         model,
         checkedAt,
+        emailPath,
       };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -118,6 +131,7 @@ export const aiStatus = action({
         message: cls.userMessage,
         model,
         checkedAt,
+        emailPath,
       };
     }
   },
