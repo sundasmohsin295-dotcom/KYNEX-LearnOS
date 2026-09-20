@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { ProfessorHealthCard } from "@/components/ProfessorHealthCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -56,6 +57,9 @@ export default function Security() {
           it says so — KYNEX never shows fake green checkmarks.
         </p>
       </PageHeader>
+
+      {/* ---------- live Professor AI health check ---------- */}
+      <ProfessorHealthCard className="mb-5" />
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* ---------- identity + authentication ---------- */}

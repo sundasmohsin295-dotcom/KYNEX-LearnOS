@@ -30,6 +30,7 @@ const QUICK_PROMPTS = [
 ];
 
 export default function Chat() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const conversations = useQuery(api.learning.listConversations);
   const materials = useQuery(api.materials.listReady);
@@ -394,6 +395,14 @@ export default function Chat() {
                   {msg.role === "assistant" ? (
                     <div className="space-y-2 [&_h3]:font-display [&_h3]:text-sm [&_h3]:font-bold [&_li]:ml-4 [&_li]:list-disc [&_ol]:ml-4 [&_ol]:list-decimal [&_p+p]:mt-2 [&_strong]:text-foreground [&_table]:w-full [&_td]:border [&_td]:border-border/60 [&_td]:px-2 [&_th]:border [&_th]:border-border/60 [&_th]:px-2">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      {msg.content.startsWith("⚠️") && (
+                        <button
+                          onClick={() => navigate("/security")}
+                          className="text-[11px] font-semibold text-primary underline-offset-2 hover:underline"
+                        >
+                          Run a live AI service status check →
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <p className="whitespace-pre-wrap">{msg.content}</p>
