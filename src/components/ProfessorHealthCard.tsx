@@ -113,9 +113,13 @@ export function ProfessorHealthCard({ className }: { className?: string }) {
     }
   };
 
-  // First mount: probe once (or serve the fresh cache).
+  // First mount: probe once (or serve the fresh cache). Deferred via a
+  // cancelled timeout so no setState runs synchronously inside the effect
+  // (avoids cascading renders; unmounts can cancel the pending probe). The
+  // run() callback itself is intentionally excluded from deps.
   useEffect(() => {
-    void run(false);
+    const t = setTimeout(() => void run(false), 0);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

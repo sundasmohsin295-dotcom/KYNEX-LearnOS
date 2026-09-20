@@ -1,6 +1,6 @@
 import { getAuthUserId, getAuthSessionId } from "@convex-dev/auth/server";
 import { query, mutation, MutationCtx } from "./_generated/server";
-import { Doc, Id } from "./_generated/dataModel";
+import { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
 import {
   logAuditEvent,
@@ -314,6 +314,73 @@ export const deleteMyAccount = mutation({
       .withIndex("by_key", (q) => q.gte("key", `${userId}:`).lt("key", `${userId};`))
       .take(100)) {
       await ctx.db.delete(rl._id);
+    }
+
+    // Academic twin + performance data (P1 erasure gap fixed): mistakes,
+    // GPA semesters/courses, exams, study plans, mission tasks, nudges and
+    // examiner evaluations are all owned rows and MUST NOT survive erasure.
+    for (const mk of await ctx.db
+      .query("mistakes")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(2000)) {
+      await ctx.db.delete(mk._id);
+    }
+    for (const gc of await ctx.db
+      .query("gpaCourses")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(2000)) {
+      await ctx.db.delete(gc._id);
+    }
+    for (const gs of await ctx.db
+      .query("gpaSemesters")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(200)) {
+      await ctx.db.delete(gs._id);
+    }
+    for (const ex of await ctx.db
+      .query("exams")
+      .withIndex("by_user_date", (q) => q.eq("userId", userId))
+      .take(500)) {
+      await ctx.db.delete(ex._id);
+    }
+    for (const sp of await ctx.db
+      .query("studyPlans")
+      .withIndex("by_user_day", (q) => q.eq("userId", userId))
+      .take(400)) {
+      await ctx.db.delete(sp._id);
+    }
+    for (const mt of await ctx.db
+      .query("missionTasks")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(5000)) {
+      await ctx.db.delete(mt._id);
+    }
+    for (const n of await ctx.db
+      .query("nudges")
+      .withIndex("by_user_created", (q) => q.eq("userId", userId))
+      .take(1000)) {
+      await ctx.db.delete(n._id);
+    }
+    for (const ev of await ctx.db
+      .query("examinerEvaluations")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(1000)) {
+      await ctx.db.delete(ev._id);
+    }
+    // Referrals: rows the user OWNS (their code) are deleted. Rows where the
+    // user was an invited friend belong to the referrer's reward ledger —
+    // anonymize the reference instead of deleting another user's row.
+    for (const r of await ctx.db
+      .query("referrals")
+      .withIndex("by_referrer", (q) => q.eq("referrerId", userId))
+      .take(100)) {
+      await ctx.db.delete(r._id);
+    }
+    for (const r of await ctx.db
+      .query("referrals")
+      .withIndex("by_referee", (q) => q.eq("refereeId", userId))
+      .take(100)) {
+      await ctx.db.patch(r._id, { refereeId: undefined });
     }
 
     // subjects AFTER materials (materials reference subjectId, but deletion
