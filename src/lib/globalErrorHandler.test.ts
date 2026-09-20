@@ -45,7 +45,6 @@ describe("global error handler (zero-crash core)", () => {
     subscribeToCrashes((e) => entries.push(e));
     const event = new PromiseRejectionEvent(
       "unhandledrejection",
-      // @ts-expect-error — jsdom does not model promise rejection payloads fully
       { promise: Promise.resolve(), reason: new Error("async failure"), cancelable: true },
     );
     window.dispatchEvent(event);
