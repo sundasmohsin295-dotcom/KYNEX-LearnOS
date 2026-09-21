@@ -1,6 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { query, mutation, internalMutation, MutationCtx } from "./_generated/server";
-import { Doc, Id } from "./_generated/dataModel";
+import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import {
   ensureProfiles,
@@ -128,6 +128,7 @@ export const appendUserMessage = mutation({
     if (!conv || conv.userId !== userId) throw new Error("Conversation not found");
 
     // Server-side input validation: hard cap + strip control characters.
+    // eslint-disable-next-line no-control-regex -- intentional: strips C0 control chars from chat input
     const text = content.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim();
     if (text.length === 0) throw new Error("Message cannot be empty.");
     if (text.length > 4000) {
@@ -352,6 +353,9 @@ export const recordTiming = mutation({
 export const failInternal = internalMutation({
   args: { attemptId: v.id("quizAttempts"), error: v.string() },
   handler: async (ctx, { attemptId, error }) => {
+    // The attempt may have been deleted while generation ran — never throw
+    // from a failure path (a throw here would mask the real AI error).
+    if (!(await ctx.db.get(attemptId))) return;
     await ctx.db.patch(attemptId, {
       status: "failed",
       error: error.slice(0, 500),
@@ -725,7 +729,6 @@ export const knowledgeGraph = query({
     }
 
     // Weak roots: weak nodes whose prerequisites (in-graph) are also weak or new.
-    const weakKeys = new Set(nodes.filter((n) => n.state === "weak").map((n) => n.key));
     const nodeKeys = new Set(nodes.map((n) => n.key));
     const weakRoots: Array<{ key: string; label: string; blockedBy: string[] }> = [];
     for (const n of nodes) {

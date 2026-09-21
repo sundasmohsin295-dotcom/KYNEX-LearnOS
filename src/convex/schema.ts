@@ -502,7 +502,11 @@ const schema = defineSchema(
         v.literal("easy"),
       ),
       reviewedAt: v.number(),
-    }).index("by_user_reviewed", ["userId", "reviewedAt"]),
+    })
+      .index("by_user_reviewed", ["userId", "reviewedAt"])
+      // Deletion propagation: when a material's flashcards are removed, their
+      // review history must not survive as orphaned evidence.
+      .index("by_card", ["flashcardId"]),
 
     // ---- security ----
 

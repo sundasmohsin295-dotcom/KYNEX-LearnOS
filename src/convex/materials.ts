@@ -1,6 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
-import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { materialKindValidator } from "./schema";
 import { awardXp, generateNextMission } from "./gamification";
@@ -185,6 +184,15 @@ export const remove = mutation({
       .query("flashcards")
       .withIndex("by_material", (q) => q.eq("materialId", id))
       .collect()) {
+      // Review history is evidence tied to this card — remove it too, so no
+      // orphaned reviews survive the material (integrity of streak/DNA
+      // aggregations that read reviews by user).
+      for (const r of await ctx.db
+        .query("reviews")
+        .withIndex("by_card", (q) => q.eq("flashcardId", f._id))
+        .collect()) {
+        await ctx.db.delete(r._id);
+      }
       await ctx.db.delete(f._id);
     }
     await ctx.db.delete(id);
@@ -216,6 +224,9 @@ export const getChunksInternal = internalQuery({
 export const markFailedInternal = internalMutation({
   args: { id: v.id("materials"), error: v.string() },
   handler: async (ctx, { id, error }) => {
+    // The material may have been deleted while analysis ran — never throw
+    // from a failure path (a throw here would mask the real AI error).
+    if (!(await ctx.db.get(id))) return;
     await ctx.db.patch(id, {
       status: "failed",
       error: error.slice(0, 500),
