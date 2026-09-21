@@ -702,6 +702,15 @@ export const analyzeMaterial = internalAction({
       await ctx.runMutation(internal.materials.generateMissionInternal, {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      // Correlation ID for tracing this failure in server logs (same
+      // discipline as chatInternal). No secrets, no user content.
+      const requestId = `analyze_${Date.now().toString(36)}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      console.error(
+        `[AnalyzeRequestError] requestId=${requestId} code=${classifyAiFailure(msg).code} materialId=${materialId}`,
+        msg,
+      );
       await ctx.runMutation(internal.materials.markFailedInternal, {
         id: materialId,
         error: safeAiError(msg),
@@ -889,6 +898,13 @@ JSON shape: [{ "question": string, "options": string[4], "correctIndex": 0-3, "e
       await ctx.runMutation(internal.learning.activateInternal, { attemptId, questions });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      const requestId = `quiz_${Date.now().toString(36)}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      console.error(
+        `[QuizRequestError] requestId=${requestId} code=${classifyAiFailure(msg).code} attemptId=${attemptId}`,
+        msg,
+      );
       await ctx.runMutation(internal.learning.failInternal, {
         attemptId,
         error: safeAiError(msg),
