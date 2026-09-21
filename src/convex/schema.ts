@@ -614,9 +614,15 @@ const schema = defineSchema(
       .index("by_user", ["userId"])
       .index("by_user_created", ["userId", "createdAt"]),
   },
-  {
-    schemaValidation: false,
-  },
+  // SECURITY (ASVS 5.5.1 / API property-level authorization): enforce the
+  // declared validators on every write. All code paths already use explicit
+  // typed fields (no mass assignment), so validation is pure defense in
+  // depth — it hard-rejects any future path that tries to store data not
+  // matching the schema (e.g. unvalidated AI output or crafted args).
+  // Verified by the full adversarial suite (crossUserAttacks,
+  // aiContextIsolation, securityQuota tests) plus every unit/integration
+  // test — all must pass with validation on.
+  { schemaValidation: true },
 );
 
 export default schema;

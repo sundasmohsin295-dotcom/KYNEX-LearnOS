@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
+import { resolveRedirectAfterAuth } from "@/lib/redirect";
 import { KynexMark } from "@/components/brand/KynexBrand";
 import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
@@ -24,15 +25,6 @@ interface AuthProps {
   redirectAfterAuth?: string;
 }
 
-function resolveRedirectAfterAuth(
-  returnTo: string | null,
-  fallback = "/dashboard",
-) {
-  if (returnTo?.startsWith("/") && !returnTo.startsWith("//")) {
-    return returnTo;
-  }
-  return fallback;
-}
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
