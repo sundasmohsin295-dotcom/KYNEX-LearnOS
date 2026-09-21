@@ -102,12 +102,16 @@ export const redeem = mutation({
       };
     }
 
-    // --- Protection 2: one redemption per account, ever.
-    const alreadyUsed = await ctx.db
+    // --- Protection 2: one redemption per account, ever. The redeeming user
+    // becomes the REFEREE on some code — check the referee index, not the
+    // caller's own code row (its refereeId is always undefined). Convex
+    // mutations are serializable, so concurrent redemptions cannot race past
+    // this check.
+    const priorRedemption = await ctx.db
       .query("referrals")
-      .withIndex("by_referrer", (q) => q.eq("referrerId", userId))
+      .withIndex("by_referee", (q) => q.eq("refereeId", userId))
       .first();
-    if (alreadyUsed?.refereeId !== undefined) {
+    if (priorRedemption) {
       return { ok: false as const, reason: "You've already used a referral code." };
     }
 
