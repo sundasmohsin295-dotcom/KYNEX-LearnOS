@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { materialKindValidator } from "./schema";
+import { normalizeUntrustedText, sanitizeTitle } from "./aiSanitize";
 import { awardXp, generateNextMission } from "./gamification";
 import { enforceRateLimit, logAuditEvent } from "./security";
 
@@ -74,7 +75,10 @@ export const createText = mutation({
     if (!userId) throw new Error("Not authenticated");
     await enforceRateLimit(ctx, "textIngest", userId);
 
-    const text = args.text.trim();
+    // AI PERTURBATION SHIELD — every stored document is normalized (NFKC,
+    // zero-width/bidi removal, control-char strip, frame neutralization)
+    // BEFORE persistence, so nothing smuggled can survive into AI prompts.
+    const text = normalizeUntrustedText(args.text, MAX_MATERIAL_CHARS);
     if (text.length < 40) {
       throw new Error("Content is too short to analyze (need at least a paragraph).");
     }
@@ -96,7 +100,7 @@ export const createText = mutation({
     const id = await ctx.db.insert("materials", {
       userId,
       subjectId,
-      title: (args.title.trim().slice(0, 200) || "Untitled material").slice(0, 120),
+      title: sanitizeTitle(args.title) || "Untitled material",
       kind: args.kind,
       sourceUrl: args.sourceUrl,
       status: "processing",
