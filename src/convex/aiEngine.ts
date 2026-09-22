@@ -9,6 +9,7 @@ import { createVlyIntegrations } from "@vly-ai/integrations";
 import dns from "node:dns/promises";
 import net from "node:net";
 import { normalizeUntrustedText } from "./aiSanitize";
+import { aiBreaker, type BreakerOps } from "./circuitBreaker";
 
 // ---------------------------------------------------------------------------
 // Server-side rate limiting for AI/ingest actions (actions can't import the
@@ -147,7 +148,12 @@ export async function callAI(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   maxTokens = 2400,
   temperature = 0.4,
+  breaker?: BreakerOps,
 ): Promise<string> {
+  // Circuit breaker gate: while the provider is failing persistently, fail
+  // fast with a safe retryable message instead of burning another round trip.
+  if (breaker) await breaker.gate();
+  const started = Date.now();
   let lastErr = "Unknown AI error";
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -163,12 +169,15 @@ export async function callAI(
         if (!cls.retryable) break; // credential/config/quota — do not retry
         continue;
       }
+      // Real measured latency sample + recovery signal for the SRE surface.
+      breaker?.success(Date.now() - started);
       return res.data.choices[0].message.content;
     } catch (e) {
       lastErr = e instanceof Error ? e.message : String(e);
       if (!classifyAiFailure(lastErr).retryable) break;
     }
   }
+  breaker?.failure(classifyAiFailure(lastErr).code, Date.now() - started);
   throw new Error(lastErr);
 }
 
@@ -693,8 +702,18 @@ export const analyzeMaterial = internalAction({
         ],
         3500,
         0.3,
+        aiBreaker(ctx),
       );
       const analysis = validateAnalysis(parseJson<unknown>(raw));
+      // QC telemetry: the structured output passed real schema validation.
+      await ctx.runMutation(internal.telemetry.recordQcInternal, {
+        source: "analysis",
+        claimType: "structured_output",
+        result: "verified",
+        reason: "analysis JSON passed field-by-field validation",
+        severity: "info",
+        refId: materialId,
+      });
 
       await ctx.runMutation(internal.materials.setStageInternal, { id: materialId, stage: "generating" });
       await sleep(400);
@@ -712,15 +731,26 @@ export const analyzeMaterial = internalAction({
       await ctx.runMutation(internal.materials.generateMissionInternal, {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      const cls = classifyAiFailure(msg);
       // Correlation ID for tracing this failure in server logs (same
       // discipline as chatInternal). No secrets, no user content.
       const requestId = `analyze_${Date.now().toString(36)}_${Math.random()
         .toString(36)
         .slice(2, 8)}`;
       console.error(
-        `[AnalyzeRequestError] requestId=${requestId} code=${classifyAiFailure(msg).code} materialId=${materialId}`,
+        `[AnalyzeRequestError] requestId=${requestId} code=${cls.code} materialId=${materialId}`,
         msg,
       );
+      // QC telemetry: structured-output validation failed — the material is
+      // marked failed, never half-saved (recorded for the factchecker view).
+      await ctx.runMutation(internal.telemetry.recordQcInternal, {
+        source: "analysis",
+        claimType: "structured_output",
+        result: "flagged",
+        reason: `analysis output rejected (${cls.code})`,
+        severity: "warning",
+        refId: materialId,
+      });
       await ctx.runMutation(internal.materials.markFailedInternal, {
         id: materialId,
         error: safeAiError(msg),
@@ -820,7 +850,7 @@ export const chatInternal = internalAction({
     messages.push({ role: "system", content: `Active mode: ${mode}.` });
 
     try {
-      const reply = await callAI(messages, 1600);
+      const reply = await callAI(messages, 1600, 0.4, aiBreaker(ctx));
       await ctx.runMutation(internal.learning.appendAssistantInternal, {
         conversationId,
         content: reply,
@@ -902,9 +932,18 @@ JSON shape: [{ "question": string, "options": string[4], "correctIndex": 0-3, "e
         ],
         3000,
         0.5,
+        aiBreaker(ctx),
       );
       const parsed = parseJson<unknown>(raw);
       const questions = validateQuizQuestions(parsed, count, material.title);
+      await ctx.runMutation(internal.telemetry.recordQcInternal, {
+        source: "quiz",
+        claimType: "structured_output",
+        result: "verified",
+        reason: "quiz questions passed schema validation",
+        severity: "info",
+        refId: attemptId,
+      });
       await ctx.runMutation(internal.learning.activateInternal, { attemptId, questions });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -915,6 +954,14 @@ JSON shape: [{ "question": string, "options": string[4], "correctIndex": 0-3, "e
         `[QuizRequestError] requestId=${requestId} code=${classifyAiFailure(msg).code} attemptId=${attemptId}`,
         msg,
       );
+      await ctx.runMutation(internal.telemetry.recordQcInternal, {
+        source: "quiz",
+        claimType: "structured_output",
+        result: "flagged",
+        reason: `quiz output rejected (${classifyAiFailure(msg).code})`,
+        severity: "warning",
+        refId: attemptId,
+      });
       await ctx.runMutation(internal.learning.failInternal, {
         attemptId,
         error: safeAiError(msg),

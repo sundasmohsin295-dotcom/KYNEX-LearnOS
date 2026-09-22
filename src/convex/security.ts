@@ -40,6 +40,8 @@ export const RATE_LIMITS = {
   review: { limit: 240, windowMs: 10 * 60_000 }, // flashcard reviews
   quizAnswer: { limit: 120, windowMs: 10 * 60_000 },
   accountDelete: { limit: 2, windowMs: 60 * 60_000 },
+  // Client crash reports from the global error boundary.
+  clientError: { limit: 20, windowMs: 10 * 60_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitKey = keyof typeof RATE_LIMITS;

@@ -584,6 +584,87 @@ const schema = defineSchema(
     // Every row is a real evaluation produced by the examiner model and
     // validated server-side. Marks are PROVISIONAL rubric marks — the UI must
     // never present them as official university grades.
+    // ---- SRE telemetry: REAL operational signals, never fabricated ----
+
+    // Circuit breaker for the centralized AI provider path. One row per
+    // service. State transitions follow the classic pattern:
+    // closed -> (threshold consecutive failures) -> open
+    //        -> (cooldown elapsed) -> half_open -> success -> closed.
+    aiCircuitBreaker: defineTable({
+      service: v.string(), // "ai_provider"
+      state: v.union(
+        v.literal("closed"),
+        v.literal("open"),
+        v.literal("half_open"),
+      ),
+      consecutiveFailures: v.number(),
+      openedAt: v.optional(v.number()),
+      lastTransitionAt: v.number(),
+      lastFailureClass: v.optional(v.string()),
+    }).index("by_service", ["service"]),
+
+    // Measured provider round-trip durations. Aggregated into p50/p95/p99 by
+    // the telemetry query — the UI shows "Insufficient data" when empty.
+    latencySamples: defineTable({
+      service: v.string(),
+      durationMs: v.number(),
+      ok: v.boolean(),
+      at: v.number(),
+    }).index("by_service_at", ["service", "at"]),
+
+    // Content-free reliability event log (breaker transitions). Safe to show
+    // to signed-in users: no user content, no secrets, no personal data.
+    reliabilityEvents: defineTable({
+      service: v.string(),
+      event: v.string(), // "breaker_open" | "breaker_closed" | "probe_failed"
+      severity: v.union(
+        v.literal("info"),
+        v.literal("warning"),
+        v.literal("error"),
+      ),
+      status: v.string(), // "OPEN" | "CLOSED" | "HALF_OPEN"
+      correlationId: v.optional(v.string()),
+      at: v.number(),
+    }).index("by_at", ["at"]),
+
+    // Client-side render crashes captured by the global error boundary.
+    // Messages are sanitized + capped; stacks are never persisted.
+    clientErrors: defineTable({
+      userId: v.optional(v.id("users")),
+      correlationId: v.string(),
+      kind: v.string(), // "error" | "rejection"
+      message: v.string(),
+      route: v.string(),
+      at: v.number(),
+    })
+      .index("by_user_at", ["userId", "at"])
+      .index("by_at", ["at"]),
+
+    // AI quality-control (factchecker) events, recorded at real validation
+    // points: structured-output validation outcomes and examiner scheme
+    // provenance. Never contains student answer content or secrets.
+    qcEvents: defineTable({
+      userId: v.optional(v.id("users")),
+      source: v.string(), // "analysis" | "quiz" | "examiner"
+      claimType: v.string(), // "structured_output" | "marking_evaluation"
+      result: v.union(
+        v.literal("verified"),
+        v.literal("flagged"),
+        v.literal("needs_review"),
+        v.literal("resolved"),
+      ),
+      reason: v.string(),
+      severity: v.union(
+        v.literal("info"),
+        v.literal("warning"),
+        v.literal("error"),
+      ),
+      refId: v.optional(v.string()),
+      at: v.number(),
+    })
+      .index("by_at", ["at"])
+      .index("by_user_at", ["userId", "at"]),
+
     examinerEvaluations: defineTable({
       userId: v.id("users"),
       materialId: v.optional(v.id("materials")),

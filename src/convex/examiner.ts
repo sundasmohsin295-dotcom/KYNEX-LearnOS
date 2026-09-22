@@ -5,6 +5,7 @@ import { action, internalAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import { createVlyIntegrations } from "@vly-ai/integrations";
 import { classifyAiFailure } from "./aiEngine";
+import { aiBreaker, type BreakerOps } from "./circuitBreaker";
 
 /**
  * KYNEX AI Examiner — rigorous academic evaluation of free-form answers.
@@ -125,7 +126,12 @@ function validateEvaluation(raw: unknown, studentAnswer: string): ValidatedEvalu
 async function examinerCall(
   system: string,
   user: string,
+  breaker?: BreakerOps,
 ): Promise<string> {
+  // Same circuit breaker as every other AI feature — the Examiner must not
+  // hammer a failing provider either.
+  if (breaker) await breaker.gate();
+  const started = Date.now();
   let lastErr = "Unknown AI error";
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -143,12 +149,14 @@ async function examinerCall(
         if (!classifyAiFailure(lastErr).retryable) break;
         continue;
       }
+      breaker?.success(Date.now() - started);
       return res.data.choices[0].message.content;
     } catch (e) {
       lastErr = e instanceof Error ? e.message : String(e);
       if (!classifyAiFailure(lastErr).retryable) break;
     }
   }
+  breaker?.failure(classifyAiFailure(lastErr).code, Date.now() - started);
   throw new Error(lastErr);
 }
 
@@ -263,6 +271,7 @@ export const evaluate = action({
       raw = await examinerCall(
         scheme === "provided" ? SCHEME_SYSTEM : EVAL_SYSTEM,
         userPayload,
+        aiBreaker(ctx),
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -272,6 +281,13 @@ export const evaluate = action({
         `[ExaminerRequestError] requestId=${requestId} code=${cls.code}`,
         msg,
       );
+      await ctx.runMutation(internal.telemetry.recordQcInternal, {
+        source: "examiner",
+        claimType: "marking_evaluation",
+        result: "flagged",
+        reason: `evaluation output rejected (${cls.code})`,
+        severity: "warning",
+      });
       await ctx.runMutation(internal.security.securityEventInternal, {
         userId: userId as never,
         action: "ai_examiner_failed",
@@ -285,6 +301,13 @@ export const evaluate = action({
       evaluation = validateEvaluation(parseJson(raw), studentAnswer);
     } catch {
       // A malformed evaluation is a real failure — never store or fake it.
+      await ctx.runMutation(internal.telemetry.recordQcInternal, {
+        source: "examiner",
+        claimType: "marking_evaluation",
+        result: "flagged",
+        reason: "evaluation failed field-by-field validation",
+        severity: "warning",
+      });
       await ctx.runMutation(internal.security.securityEventInternal, {
         userId: userId as never,
         action: "ai_examiner_failed",
@@ -309,6 +332,19 @@ export const evaluate = action({
       nextMove: evaluation.nextMove,
       scheme,
       model: EXAMINER_MODEL,
+    });
+
+    // QC provenance: official scheme => verified; no scheme => the evaluation
+    // is honestly labeled provisional and surfaced as needing review.
+    await ctx.runMutation(internal.telemetry.recordQcInternal, {
+      source: "examiner",
+      claimType: "marking_evaluation",
+      result: scheme === "provided" ? "verified" : "needs_review",
+      reason:
+        scheme === "provided"
+          ? "marks follow the official scheme priority"
+          : "no official marking scheme: marks are provisional rubric marks",
+      severity: scheme === "provided" ? "info" : "warning",
     });
 
     return evaluation;
