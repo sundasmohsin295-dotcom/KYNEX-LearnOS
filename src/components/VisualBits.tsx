@@ -81,7 +81,7 @@ export function MasteryRings({ rows, className }: { rows: MasteryRow[]; classNam
 /** Last-14-days streak dots. */
 export function StreakDots({ streak, todayDone }: { streak: number; todayDone: boolean }) {
   return (
-    <div className="flex items-end gap-1.5">
+    <div className="flex items-end gap-1.5" role="img" aria-label={`Study streak: ${streak} of the last 14 days`}>
       {Array.from({ length: 14 }).map((_, i) => {
         const active = i >= 14 - streak;
         const isToday = i === 13;
@@ -122,12 +122,13 @@ export function KnowledgeNode({
   return (
     <button
       onClick={onClick}
+      aria-label={`${name}, mastery state: ${state}`}
       className={cn(
-        "group relative rounded-2xl px-4 py-2.5 text-left text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg",
+        "group relative rounded-2xl px-4 py-2.5 text-left text-sm font-semibold text-white shadow-md transition-colors hover:shadow-lg",
         ring,
         dim && "opacity-50",
       )}
-      style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+      style={{ background: from }}
     >
       {name}
       {state === "mastered" && (

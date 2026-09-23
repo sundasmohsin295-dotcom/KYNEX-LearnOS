@@ -1,5 +1,5 @@
 {
-  "name": "KYNEX — Academic Intelligence OS",
+  "name": "KYNEX | Academic Intelligence OS",
   "short_name": "KYNEX",
   "description": "KYNEX builds a living model of your academic journey and continuously determines the highest-impact action you should take next.",
   "start_url": "/",
@@ -8,10 +8,16 @@
   "theme_color": "#0a1428",
   "icons": [
     {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "/kynex-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ]
 }

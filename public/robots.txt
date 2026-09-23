@@ -1,0 +1,38 @@
+# KYNEX robots.txt
+# Public marketing, documentation and legal surfaces are indexable.
+# Everything behind authentication is disallowed: user dashboards, Vault,
+# Professor, practice, exams, telemetry and account pages.
+
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /twin
+Disallow: /library
+Disallow: /add
+Disallow: /material/
+Disallow: /chat
+Disallow: /practice
+Disallow: /quiz/
+Disallow: /flashcards
+Disallow: /mission
+Disallow: /planner
+Disallow: /examiner
+Disallow: /achievements
+Disallow: /insights
+Disallow: /gpa
+Disallow: /mistakes
+Disallow: /graph
+Disallow: /plan
+Disallow: /security
+
+# No AI training scrapes of any KYNEX surface.
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+Sitemap: https://kynex.app/sitemap.xml

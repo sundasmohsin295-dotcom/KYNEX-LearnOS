@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { KynexMark } from "@/components/AppShell";
+import { applySeo } from "@/lib/seo";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 const FEATURES = [
@@ -57,6 +58,9 @@ const FAQS = [
 export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Public, indexable marketing route: full metadata + JSON-LD.
+  useEffect(() => applySeo({ title: "Your Academic Intelligence OS", path: "/" }), []);
 
   if (!isLoading && isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -283,6 +287,11 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <KynexMark className="size-7" />
             <span className="font-semibold text-foreground">KYNEX</span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-5">
+            <Link to="/faq" className="hover:text-foreground">FAQ</Link>
+            <Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-foreground">Terms of Service</Link>
           </div>
           <p className="font-data text-xs">KNOW → UNDERSTAND → ACT → MASTER → ADVANCE</p>
         </div>

@@ -843,9 +843,14 @@ export const chatInternal = internalAction({
           title: material?.title,
         });
         if (decision && decision.verdict === "out_of_scope") {
-          console.log(
-            `[TutorScopeGate] conversationId=${conversationId} verdict=out_of_scope relevance=${decision.relevance.toFixed(2)}`,
-          );
+          // Sanitized ops telemetry (no user content, no raw message text).
+          await ctx.runMutation(internal.telemetry.recordQcInternal, {
+            source: "analysis",
+            claimType: "structured_output",
+            result: "resolved",
+            severity: "info",
+            reason: `tutor_scope_gate_out_of_scope:${decision.relevance.toFixed(2)}`,
+          });
           await ctx.runMutation(internal.learning.appendAssistantInternal, {
             conversationId,
             content: OUT_OF_SCOPE_MESSAGE,

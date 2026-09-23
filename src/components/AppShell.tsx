@@ -19,6 +19,7 @@ import {
 import { useTheme } from "next-themes";
 import { XP_PER_LEVEL, STREAK_MESSAGES } from "@/lib/game";
 import { CommandBar } from "@/components/CommandBar";
+import { applyPrivateSeo } from "@/lib/seo";
 
 const NAV = [
   { to: "/dashboard", label: "Command Center", icon: LayoutDashboard },
@@ -49,6 +50,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void ensureProfile({});
   }, [ensureProfile]);
+
+  // Private app surface: force noindex on every authenticated route.
+  useEffect(() => applyPrivateSeo(), []);
 
   const game = overview?.game;
   const xpInLevel = game ? game.xp % XP_PER_LEVEL : 0;
@@ -224,7 +228,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 /** KYNEX wordmark glyph — a geometric "K" node mark. */
 export function KynexMark({ className }: { className?: string }) {
   return (
-    <span className={cn("relative grid shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md", className)}>
+    <span aria-hidden="true" className={cn("relative grid shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md", className)}>
       <svg viewBox="0 0 24 24" fill="none" className="size-[58%]">
         <path d="M7 4v16" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
         <path d="M17 4l-7.5 8L17 20" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />

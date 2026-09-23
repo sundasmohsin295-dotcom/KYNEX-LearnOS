@@ -37,6 +37,9 @@ const Planner = lazy(() => import("./pages/Planner.tsx"));
 const ExaminerPage = lazy(() => import("./pages/ExaminerPage.tsx"));
 const Security = lazy(() => import("./pages/Security.tsx"));
 const PlanPage = lazy(() => import("./pages/PlanPage.tsx"));
+const Privacy = lazy(() => import("./pages/Privacy.tsx"));
+const Terms = lazy(() => import("./pages/Terms.tsx"));
+const Faq = lazy(() => import("./pages/Faq.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -140,9 +143,6 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 // §2: capture fatal errors + async rejections before anything renders.
 installGlobalErrorHandlers();
 
-// §2: capture fatal errors + async rejections before anything renders.
-installGlobalErrorHandlers();
-
 
 
 function RouteSyncer() {
@@ -182,6 +182,9 @@ createRoot(document.getElementById("root")!).render(
             <RouteErrorBoundary>
             <Routes>
               <Route path="/" element={<Landing />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/faq" element={<Faq />} />
               <Route
                 path="/auth"
                 element={<AuthPage redirectAfterAuth="/dashboard" />}
