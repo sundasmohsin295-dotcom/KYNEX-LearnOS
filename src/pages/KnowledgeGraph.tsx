@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { spring } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { conceptColor } from "@/lib/learning";
@@ -174,14 +175,23 @@ export default function KnowledgeGraph() {
                 )}
                 {/* nodes */}
                 {nodes.map((n, i) => {
-                  const { from, to } = conceptColor(n.label);
                   const r = n.state === "mastered" ? 26 : n.state === "weak" ? 34 : 30;
+                  // State-semantic fill: color IS the telemetry (per design
+                  // system). No per-concept rainbow gradients.
+                  const fill =
+                    n.state === "mastered"
+                      ? "var(--success)"
+                      : n.state === "weak"
+                        ? "var(--chart-5)"
+                        : n.state === "learning"
+                          ? "var(--primary)"
+                          : "var(--muted-foreground)";
                   return (
                     <motion.g
                       key={n.key}
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.04 }}
+                      transition={{ ...spring.spatial, delay: i * 0.03 }}
                       onClick={() => setSelectedKey(n.key)}
                       className="cursor-pointer"
                       style={{ transformOrigin: `${n.x}px ${n.y}px` }}
@@ -191,8 +201,8 @@ export default function KnowledgeGraph() {
                       )}
                       <circle
                         cx={n.x} cy={n.y} r={r}
-                        fill={`url(#grad-${i % 6})`}
-                        stroke={selectedKey === n.key ? "var(--primary)" : "transparent"}
+                        fill={fill}
+                        stroke={selectedKey === n.key ? "var(--foreground)" : "transparent"}
                         strokeWidth={3}
                       />
                       <text

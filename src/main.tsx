@@ -11,6 +11,7 @@ import {
   safeCrashMessage,
 } from "@/lib/globalErrorHandler";
 import { SystemRecoveryScreen } from "@/components/SystemRecoveryScreen";
+import { MotionProvider } from "@/lib/motion";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
@@ -176,6 +177,7 @@ createRoot(document.getElementById("root")!).render(
         <VlyToolbar />
       </ToolbarErrorBoundary>
       <ConvexAuthProvider client={convex}>
+        <MotionProvider>
         <BrowserRouter>
           <RouteSyncer />
           <Suspense fallback={<RouteLoading />}>
@@ -362,6 +364,7 @@ createRoot(document.getElementById("root")!).render(
             </RouteErrorBoundary>
           </Suspense>
         </BrowserRouter>
+        </MotionProvider>
         <Toaster />
       </ConvexAuthProvider>
     </RootErrorBoundary>

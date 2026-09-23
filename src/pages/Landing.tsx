@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { KynexMark } from "@/components/AppShell";
 import { applySeo } from "@/lib/seo";
+import { spring, TiltCard } from "@/lib/motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 const FEATURES = [
@@ -97,7 +98,7 @@ export default function Landing() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={spring.expressive}
           >
             <p className="font-data text-xs font-semibold uppercase tracking-[0.22em] text-primary">
               Academic Intelligence OS
@@ -125,11 +126,12 @@ export default function Landing() {
             </p>
           </motion.div>
 
-          {/* Product panel: the real interface idea, on a solid surface */}
-          <motion.div
+          {/* Product panel: the real interface idea, on a solid surface.
+              TiltCard degrades to a static panel under reduced motion. */}
+          <TiltCard
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
+            transition={spring.expressive}
             className="rounded-xl border border-border bg-card"
           >
             <div className="flex items-center justify-between border-b border-border/70 px-5 py-3.5">
@@ -174,7 +176,7 @@ export default function Landing() {
                 <CheckCircle2 className="size-3.5" /> Concept mastered: IP addressing
               </p>
             </div>
-          </motion.div>
+          </TiltCard>
         </div>
       </section>
 

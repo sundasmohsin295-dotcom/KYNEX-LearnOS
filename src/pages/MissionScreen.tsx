@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { spring } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -349,7 +350,7 @@ export default function MissionScreen() {
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
-          transition={{ duration: 0.25 }}
+          transition={{ ...spring.expressive, opacity: { duration: 0.16 } }}
           className="mt-4 rounded-3xl border border-border/70 bg-card p-6 sm:p-8"
         >
           <div className="flex flex-wrap items-center gap-2">
@@ -447,6 +448,7 @@ export default function MissionScreen() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
+                    transition={{ ...spring.smooth, opacity: { duration: 0.15 } }}
                     className="overflow-hidden"
                   >
                     <div className="mt-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm leading-relaxed">

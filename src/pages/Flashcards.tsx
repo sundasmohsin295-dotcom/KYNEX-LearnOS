@@ -6,6 +6,7 @@ import { CheckCircle2, Flame, Layers, RotateCcw, Sparkles, Zap } from "lucide-re
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { spring } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -135,7 +136,7 @@ export default function Flashcards() {
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0, rotateY: flipped ? 180 : 0 }}
                 exit={{ opacity: 0, y: -14 }}
-                transition={{ duration: 0.35 }}
+                transition={{ ...spring.expressive, opacity: { duration: 0.18 } }}
                 onClick={() => setFlipped((f) => !f)}
                 className={cn(
                   "grid min-h-80 w-full place-items-center rounded-3xl border p-8 text-center shadow-xl",
@@ -168,6 +169,7 @@ export default function Flashcards() {
           {flipped && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
+              transition={spring.smooth}
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4"
             >

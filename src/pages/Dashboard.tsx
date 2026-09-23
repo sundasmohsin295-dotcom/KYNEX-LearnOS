@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { spring, TiltCard } from "@/lib/motion";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -305,9 +306,10 @@ export default function Dashboard() {
 
       {/* ---------- NEXT MOVE ---------- */}
       {mission ? (
-        <motion.div
+        <TiltCard
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={spring.expressive}
           className="relative overflow-hidden rounded-3xl border border-primary/25 bg-card p-6 sm:p-8"
         >
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -391,7 +393,7 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
-        </motion.div>
+        </TiltCard>
       ) : (
         <div className="rounded-3xl border border-border/70 bg-card p-8 text-center">
           <p className="font-display text-xl font-bold">No active mission</p>
@@ -890,6 +892,7 @@ function RescueModal({
       <motion.div
         initial={{ opacity: 0, y: 16, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={spring.expressive}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-3xl border border-border/70 bg-card p-6 shadow-2xl"
       >
