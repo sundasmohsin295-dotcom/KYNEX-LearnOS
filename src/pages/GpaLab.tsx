@@ -63,12 +63,16 @@ export default function GpaLab() {
   const [busy, setBusy] = useState(false);
 
   // ---------------------------------------------------------------- actions
-  const guard = async (fn: () => Promise<unknown>) => {
+  // Returns true when the operation succeeded so callers can decide whether
+  // to reset dependent form state (never destroy student input on failure).
+  const guard = async (fn: () => Promise<unknown>): Promise<boolean> => {
     setBusy(true);
     try {
       await fn();
+      return true;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -368,14 +372,19 @@ export default function GpaLab() {
                     className="h-8 gap-1 rounded-lg"
                     disabled={busy || !newCourse.name.trim() || !newCourse.credits}
                     onClick={async () => {
-                      await guard(() => addCourse({
+                      const okResult = await guard(() => addCourse({
                         semesterId: sem.id,
                         name: newCourse.name,
                         code: newCourse.code || undefined,
                         creditHours: Number(newCourse.credits),
                         gradePoint: newCourse.grade ? Number(newCourse.grade) : undefined,
                       }));
-                      setNewCourse({ semId: null, name: "", code: "", credits: "", grade: "" });
+                      // Only reset the form when the course actually saved —
+                      // a rejected grade/credits value must not wipe the
+                      // student's typed row.
+                      if (okResult) {
+                        setNewCourse({ semId: null, name: "", code: "", credits: "", grade: "" });
+                      }
                     }}
                   >
                     <Check className="size-3.5" /> Add
@@ -493,7 +502,11 @@ function CourseRows({ semesterId }: { semesterId: Id<"gpaSemesters"> }) {
             variant="ghost"
             className="size-7 text-muted-foreground hover:text-destructive"
             aria-label={`Delete ${c.name}`}
-            onClick={() => void deleteCourse({ courseId: c._id })}
+            onClick={() =>
+              void deleteCourse({ courseId: c._id }).catch(() =>
+                toast.error("Couldn't delete the course"),
+              )
+            }
           >
             <Trash2 className="size-3.5" />
           </Button>

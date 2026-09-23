@@ -124,6 +124,7 @@ export default function Chat() {
     const content = (raw ?? input).trim();
     if (!content || waiting) return;
     let convId = activeId;
+    let persisted = false;
     try {
       if (!convId) {
         convId = await createConv({ materialId: materialId ?? undefined });
@@ -132,8 +133,14 @@ export default function Chat() {
       setInput("");
       setWaiting(true);
       await sendUser({ conversationId: convId, content });
+      persisted = true;
       await runChat({ conversationId: convId, materialId: materialId ?? undefined, mode: MODE_TO_AI[mode] });
     } catch (e) {
+      // If the message never reached the database, give the student their
+      // text back — losing composed work to a network drop is a data-loss
+      // bug, not just an error. If it WAS saved, it is in history; only the
+      // reply failed.
+      if (!persisted) setInput((cur) => (cur === "" ? content : cur));
       toast.error(e instanceof Error ? e.message : "The tutor couldn't reply");
     } finally {
       setWaiting(false);
@@ -206,8 +213,13 @@ export default function Chat() {
                       onChange={(e) => setRenameVal(e.target.value)}
                       onKeyDown={async (e) => {
                         if (e.key === "Enter" && renameVal.trim()) {
-                          await renameConv({ id: c._id, title: renameVal.trim() });
-                          setRenaming(null);
+                          try {
+                            await renameConv({ id: c._id, title: renameVal.trim() });
+                          } catch {
+                            toast.error("Couldn't rename the conversation");
+                          } finally {
+                            setRenaming(null);
+                          }
                         }
                         if (e.key === "Escape") setRenaming(null);
                       }}
@@ -218,8 +230,14 @@ export default function Chat() {
                       variant="ghost"
                       className="size-6"
                       onClick={async () => {
-                        if (renameVal.trim()) await renameConv({ id: c._id, title: renameVal.trim() });
-                        setRenaming(null);
+                        if (!renameVal.trim()) return;
+                        try {
+                          await renameConv({ id: c._id, title: renameVal.trim() });
+                        } catch {
+                          toast.error("Couldn't rename the conversation");
+                        } finally {
+                          setRenaming(null);
+                        }
                       }}
                     >
                       <Check className="size-3" />
@@ -239,7 +257,13 @@ export default function Chat() {
                   <button
                     className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-xp-foreground"
                     title={c.starred ? "Unstar" : "Star"}
-                    onClick={() => starConv({ id: c._id })}
+                    onClick={async () => {
+                      try {
+                        await starConv({ id: c._id });
+                      } catch {
+                        toast.error("Couldn't update the star");
+                      }
+                    }}
                   >
                     <Star className={cn("size-3", c.starred && "fill-xp text-xp")} />
                   </button>
@@ -254,8 +278,12 @@ export default function Chat() {
                     className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-destructive"
                     title="Delete"
                     onClick={async () => {
-                      await deleteConv({ id: c._id });
-                      if (activeId === c._id) setActiveId(null);
+                      try {
+                        await deleteConv({ id: c._id });
+                        if (activeId === c._id) setActiveId(null);
+                      } catch {
+                        toast.error("Couldn't delete the conversation");
+                      }
                     }}
                   >
                     <Trash2 className="size-3" />

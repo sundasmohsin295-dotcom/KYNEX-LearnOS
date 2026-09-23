@@ -428,18 +428,23 @@ export const completeQuiz = mutation({
     const now = Date.now();
 
     // update mastery scores per concept
+    // Indexed read ONCE for the whole transaction, then an in-memory index —
+    // the previous code re-collected every mastery row per answered question
+    // (O(answers × rows)). Same semantics: Convex reads see this transaction's
+    // own writes, mirrored here by updating the map when a row is inserted.
+    const masteryRows = await ctx.db
+      .query("masteryScores")
+      .withIndex("by_user", (mq) => mq.eq("userId", userId))
+      .collect();
+    const masteryByKey = new Map(
+      masteryRows.map((m) => [`${m.materialId ?? ""}|${m.conceptKey}`, m] as const),
+    );
     for (let i = 0; i < q.answers.length; i++) {
       const question = q.questions[i];
       const answer = q.answers[i];
       if (!question || !answer) continue;
       const key = question.concept.toLowerCase().trim();
-      const existing = await ctx.db
-        .query("masteryScores")
-        .withIndex("by_user", (mq) => mq.eq("userId", userId))
-        .collect();
-      const row = existing.find(
-        (m) => m.conceptKey === key && m.materialId === q.materialId,
-      );
+      const row = masteryByKey.get(`${q.materialId}|${key}`);
       if (row) {
         await ctx.db.patch(row._id, {
           correct: row.correct + (answer.correct ? 1 : 0),
@@ -449,7 +454,24 @@ export const completeQuiz = mutation({
           lastPracticedAt: now,
         });
       } else {
-        await ctx.db.insert("masteryScores", {
+        const inserted = await ctx.db.insert("masteryScores", {
+          userId,
+          subjectId: material?.subjectId,
+          materialId: q.materialId,
+          conceptKey: key,
+          conceptLabel: question.concept,
+          correct: answer.correct ? 1 : 0,
+          attempts: 1,
+          confidenceSum: CONFIDENCE_WEIGHT[answer.confidence] ?? 0.5,
+          confidenceCount: 1,
+          lastPracticedAt: now,
+        });
+        // Keep the in-memory index coherent for a second answer to the same
+        // concept later in this quiz (patch path must see the new row).
+        // Built from the values just written — no extra read, no null path.
+        masteryByKey.set(`${q.materialId}|${key}`, {
+          _id: inserted,
+          _creationTime: now,
           userId,
           subjectId: material?.subjectId,
           materialId: q.materialId,
@@ -848,20 +870,28 @@ export const generateFlashcards = mutation({
     }
     const a = material.analysis;
     const now = Date.now();
+    // Single indexed fetch + in-memory dedupe. The old loop re-queried per
+    // definition (N+1) and never deduped formula cards, so regenerating the
+    // deck duplicated every formula card. Both fixed: generation is now
+    // idempotent per (material, front).
+    const existing = await ctx.db
+      .query("flashcards")
+      .withIndex("by_material", (q) => q.eq("materialId", materialId))
+      .collect();
+    const seen = new Set(existing.map((c) => `${c.conceptKey ?? ""}|${c.front}`));
     let created = 0;
     for (const d of a.definitions ?? []) {
+      if (created >= 12) break;
       const key = d.term.toLowerCase().trim();
-      const existing = await ctx.db
-        .query("flashcards")
-        .withIndex("by_material", (q) => q.eq("materialId", materialId))
-        .collect();
-      if (existing.some((c) => (c.conceptKey ?? "") === key && c.front === `What is ${d.term}?`)) continue;
+      const front = `What is ${d.term}?`;
+      const dedupeKey = `${key}|${front}`;
+      if (seen.has(dedupeKey)) continue;
       await ctx.db.insert("flashcards", {
         userId,
         materialId,
         conceptKey: key,
         conceptLabel: d.term,
-        front: `What is ${d.term}?`,
+        front,
         back: d.definition,
         ease: 2.5,
         dueAt: now,
@@ -869,15 +899,18 @@ export const generateFlashcards = mutation({
         lapses: 0,
         createdAt: now,
       });
+      seen.add(dedupeKey);
       created++;
-      if (created >= 12) break;
     }
     for (const f of a.formulas ?? []) {
       if (created >= 16) break;
+      const front = `${f.name} — what is the expression?`;
+      const dedupeKey = `|${front}`;
+      if (seen.has(dedupeKey)) continue;
       await ctx.db.insert("flashcards", {
         userId,
         materialId,
-        front: `${f.name} — what is the expression?`,
+        front,
         back: `${f.expression}. ${f.note}`,
         ease: 2.5,
         dueAt: now,
@@ -885,6 +918,7 @@ export const generateFlashcards = mutation({
         lapses: 0,
         createdAt: now,
       });
+      seen.add(dedupeKey);
       created++;
     }
     return created;
