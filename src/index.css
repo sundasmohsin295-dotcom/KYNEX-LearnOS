@@ -44,30 +44,30 @@
 
 /* ------------------------------------------------------------------ */
 /* KYNEX — Academic Intelligence OS identity                           */
-/* Deep navy surfaces · electric blue · cyan · subtle purple           */
+/* Neutral obsidian/slate surfaces · electric blue interaction only    */
 /* ------------------------------------------------------------------ */
 
 /* CHANGE VALUES FOR THEME */
 :root {
   --radius: 1rem;
-  /* light mode: cool paper-white with a blue cast */
-  --background: oklch(0.972 0.006 250);
-  --foreground: oklch(0.19 0.04 265);
+  /* light mode: clean architectural off-white (#F8F9FA family) */
+  --background: oklch(0.977 0.002 260);
+  --foreground: oklch(0.2 0.01 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.19 0.04 265);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.19 0.04 265);
   --primary: oklch(0.55 0.22 262);
   --primary-foreground: oklch(0.985 0.005 250);
-  --secondary: oklch(0.95 0.014 255);
+  --secondary: oklch(0.955 0.003 260);
   --secondary-foreground: oklch(0.3 0.07 262);
-  --muted: oklch(0.95 0.01 255);
-  --muted-foreground: oklch(0.49 0.03 260);
-  --accent: oklch(0.93 0.03 255);
+  --muted: oklch(0.955 0.003 260);
+  --muted-foreground: oklch(0.49 0.015 260);
+  --accent: oklch(0.94 0.004 260);
   --accent-foreground: oklch(0.33 0.09 262);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.015 255);
-  --input: oklch(0.9 0.015 255);
+  --border: oklch(0.9 0.004 260);
+  --input: oklch(0.9 0.004 260);
   --ring: oklch(0.58 0.2 262);
   /* charts: blue → cyan → teal → purple → rose */
   --chart-1: oklch(0.55 0.22 262);
@@ -75,11 +75,11 @@
   --chart-3: oklch(0.66 0.13 185);
   --chart-4: oklch(0.55 0.04 260);
   --chart-5: oklch(0.62 0.17 25);
-  --sidebar: oklch(0.955 0.01 252);
-  --sidebar-foreground: oklch(0.19 0.04 265);
+  --sidebar: oklch(0.96 0.003 260);
+  --sidebar-foreground: oklch(0.2 0.01 260);
   --sidebar-primary: oklch(0.55 0.22 262);
   --sidebar-primary-foreground: oklch(0.985 0.005 250);
-  --sidebar-accent: oklch(0.92 0.025 255);
+  --sidebar-accent: oklch(0.925 0.004 260);
   --sidebar-accent-foreground: oklch(0.33 0.09 262);
   --sidebar-border: oklch(0.9 0.015 255);
   --sidebar-ring: oklch(0.58 0.2 262);
@@ -92,22 +92,23 @@
 }
 
 .dark {
-  /* deep navy / near-black academic surfaces */
-  --background: oklch(0.145 0.028 265);
-  --foreground: oklch(0.93 0.012 250);
-  --card: oklch(0.185 0.032 266);
-  --card-foreground: oklch(0.93 0.012 250);
-  --popover: oklch(0.2 0.034 266);
-  --popover-foreground: oklch(0.93 0.012 250);
+  /* deep neutral obsidian/slate: #0A0A0C to #16161A family. Near-zero
+     chroma with a faint cool cast; blue is reserved for interaction. */
+  --background: oklch(0.13 0.005 260);
+  --foreground: oklch(0.93 0.004 260);
+  --card: oklch(0.165 0.006 260);
+  --card-foreground: oklch(0.93 0.004 260);
+  --popover: oklch(0.185 0.006 260);
+  --popover-foreground: oklch(0.93 0.004 260);
   /* electric blue primary */
   --primary: oklch(0.66 0.19 255);
   --primary-foreground: oklch(0.14 0.04 265);
-  --secondary: oklch(0.24 0.04 265);
-  --secondary-foreground: oklch(0.92 0.012 250);
-  --muted: oklch(0.24 0.036 265);
-  --muted-foreground: oklch(0.68 0.024 255);
-  --accent: oklch(0.27 0.05 258);
-  --accent-foreground: oklch(0.92 0.012 250);
+  --secondary: oklch(0.22 0.006 260);
+  --secondary-foreground: oklch(0.92 0.004 260);
+  --muted: oklch(0.22 0.006 260);
+  --muted-foreground: oklch(0.68 0.01 260);
+  --accent: oklch(0.25 0.007 260);
+  --accent-foreground: oklch(0.92 0.004 260);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 13%);
@@ -118,12 +119,12 @@
   --chart-3: oklch(0.75 0.13 180);
   --chart-4: oklch(0.72 0.03 260);
   --chart-5: oklch(0.72 0.16 25);
-  --sidebar: oklch(0.165 0.03 265);
-  --sidebar-foreground: oklch(0.93 0.012 250);
+  --sidebar: oklch(0.145 0.005 260);
+  --sidebar-foreground: oklch(0.93 0.004 260);
   --sidebar-primary: oklch(0.66 0.19 255);
   --sidebar-primary-foreground: oklch(0.14 0.04 265);
-  --sidebar-accent: oklch(0.26 0.045 262);
-  --sidebar-accent-foreground: oklch(0.92 0.012 250);
+  --sidebar-accent: oklch(0.24 0.007 260);
+  --sidebar-accent-foreground: oklch(0.92 0.004 260);
   --sidebar-border: oklch(1 0 0 / 9%);
   --sidebar-ring: oklch(0.66 0.19 255);
   --xp: oklch(0.82 0.14 80);
@@ -235,5 +236,32 @@
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+}
+
+/* Adaptive Intelligence HUD (focus mode). Applied to <html> while a study
+   session is running: the app chrome recedes to low emphasis and becomes
+   non-interactive so attention stays on the material. Restores instantly
+   when the session ends. */
+html.kynex-focus aside,
+html.kynex-focus header {
+  opacity: 0.28;
+  filter: saturate(0.4);
+  pointer-events: none;
+  user-select: none;
+  transition:
+    opacity 0.25s ease,
+    filter 0.25s ease;
+}
+html.kynex-focus aside:hover,
+html.kynex-focus header:hover {
+  /* hover-to-reveal: peek without losing the focused state */
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.kynex-focus aside,
+  html.kynex-focus header {
+    transition: none;
   }
 }

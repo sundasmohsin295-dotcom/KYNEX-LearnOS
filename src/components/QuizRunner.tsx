@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Ring } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
 import { conceptColor } from "@/lib/learning";
+import { useLocalStorageState } from "@/lib/useLocalStorageState";
 
 type Confidence = "sure" | "probably" | "guess";
 
@@ -493,8 +494,35 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   const pct = Math.round((idx / Math.max(1, total)) * 100);
   const showFeedback = feedback !== null && feedback.idx === idx;
   const timeCritical = remaining !== null && remaining <= 60;
+
+  // Adaptive Intelligence HUD (focus mode): while answering, the chrome
+  // recedes. The sidebar, header and level card fade to low emphasis and
+  // become non-interactive, then restore instantly when a task completes.
+  // Preference persists across sessions; reduced-motion users get an instant
+  // state switch instead of animated transparency.
+  const [focusMode, setFocusMode] = useLocalStorageState<boolean>("kynex.focusMode", true);
+  useEffect(() => {
+    document.documentElement.classList.toggle("kynex-focus", focusMode === true && active);
+    return () => {
+      document.documentElement.classList.toggle("kynex-focus", false);
+    };
+  }, [focusMode, active]);
+
   return (
     <div className="mx-auto max-w-2xl">
+      {/* focus toggle (only while a session is running) */}
+      {active && (
+        <div className="mb-2 flex justify-end">
+          <button
+            onClick={() => setFocusMode(!(focusMode === true))}
+            role="switch"
+            aria-checked={focusMode === true}
+            className="font-data rounded-md border border-border/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {focusMode === true ? "Focus on" : "Focus off"}
+          </button>
+        </div>
+      )}
       {/* exam header */}
       {isExam && (
         <div className={cn(
@@ -507,7 +535,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
           </span>
           <span
             className={cn(
-              "font-display text-xl font-extrabold tabular-nums",
+              "font-data text-xl font-semibold tabular-nums",
               timeCritical ? "animate-pulse text-destructive" : "text-primary",
             )}
             role="timer"
