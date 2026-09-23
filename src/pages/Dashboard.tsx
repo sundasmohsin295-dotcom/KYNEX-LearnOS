@@ -74,14 +74,14 @@ function ReadinessRadar({ navigate }: { navigate: (to: string) => void }) {
       </div>
       {counts.needsRepair > 0 && (
         <p className="mt-2 rounded-xl bg-chart-5/10 px-3.5 py-2.5 text-xs leading-relaxed text-chart-5">
-          {counts.needsRepair} unit{counts.needsRepair === 1 ? "" : "s"} below the {readiness.threshold}% line. Each has a structured review module — relearn, recall, practice, verify.
+          {counts.needsRepair} unit{counts.needsRepair === 1 ? "" : "s"} below the {readiness.threshold}% line. Each has a structured review module: relearn, recall, practice, verify.
         </p>
       )}
       {!hasAnyEvidence ? (
         <p className="mt-4 rounded-xl bg-muted/50 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
           {counts.unverified > 0
-            ? "Units exist but none have enough practice evidence yet — answer at least 3 questions on a unit and its rolling score will appear here."
-            : "Practice a unit to start its readiness score — only verified quiz evidence moves it, never passive reading."}
+            ? "Units exist but none have enough practice evidence yet. Answer at least 3 questions on a unit and its rolling score will appear here."
+            : "Practice a unit to start its readiness score. Only verified quiz evidence moves it, never passive reading."}
         </p>
       ) : (
         <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
@@ -112,7 +112,7 @@ function ReadinessRadar({ navigate }: { navigate: (to: string) => void }) {
                   </span>
                 </div>
                 <p className="mt-1.5 font-display text-xl font-extrabold tracking-tight">
-                  {u.proficiency !== null ? `${u.proficiency}%` : "—"}
+                  {u.proficiency !== null ? `${u.proficiency}%` : "--"}
                 </p>
                 <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={u.evidence}>
                   {u.evidence}
@@ -136,7 +136,7 @@ function ReadinessRadar({ navigate }: { navigate: (to: string) => void }) {
                     <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-chart-5/15 text-[9px] font-extrabold text-chart-5">
                       {i + 1}
                     </span>
-                    <span className="min-w-0"><span className="font-semibold text-foreground">{s.title}</span> — {s.detail}</span>
+                    <span className="min-w-0"><span className="font-semibold text-foreground">{s.title}</span> · {s.detail}</span>
                   </li>
                 ))}
               </ol>
@@ -189,9 +189,9 @@ function NudgeStrip() {
             onClick={async () => {
               setHidden((h) => [...h, n._id]); // optimistic
               try {
-                await dismiss({ id: n._id }); // persisted — never nags twice
+                await dismiss({ id: n._id }); // persisted: never nags twice
               } catch {
-                toast.error("Couldn't dismiss the signal — it will return on next load.");
+                toast.error("Couldn't dismiss the signal. It will return on next load.");
               }
             }}
           >
@@ -308,9 +308,8 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-6 shadow-xl shadow-primary/10 sm:p-8"
+          className="relative overflow-hidden rounded-3xl border border-primary/25 bg-card p-6 sm:p-8"
         >
-          <div aria-hidden className="absolute -right-16 -top-16 size-56 rounded-full bg-primary/15 blur-3xl" />
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-xl">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-primary">
@@ -341,8 +340,8 @@ export default function Dashboard() {
                     {weakAcc !== null && (
                       <Evidence>{`Your recent accuracy on this concept is ${weakAcc}% across ${weakMastery?.attempts ?? 0} questions.`}</Evidence>
                     )}
-                    {mission.kind === "review" && <Evidence>Spaced repetition is due — recall decays fastest here right now.</Evidence>}
-                    {mission.kind === "practice" && !weakMastery && <Evidence>This is your newest material — testing yourself now finds gaps early.</Evidence>}
+                    {mission.kind === "review" && <Evidence>Spaced repetition is due: recall decays fastest here right now.</Evidence>}
+                    {mission.kind === "practice" && !weakMastery && <Evidence>This is your newest material. Testing yourself now finds gaps early.</Evidence>}
                     <Evidence>{`Mission progress so far: ${mission.progress}/${mission.targetCount}. Worth +${mission.xpReward} XP on completion.`}</Evidence>
                   </motion.ul>
                 )}
@@ -423,7 +422,7 @@ export default function Dashboard() {
               <BriefTile item={intel.brief.quickMission} navigate={navigate} tone="text-xp-foreground" icon={Timer} />
               <BriefTile item={intel.brief.personalBest} navigate={navigate} tone="text-success" icon={ShieldCheck} />
             </div>
-            {/* 20-minute mission CTA — creates a REAL mission from real state */}
+            {/* 20-minute mission CTA: creates a REAL mission from real state */}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3">
               <div className="min-w-0">
                 <p className="text-sm font-bold">{intel.quickMission.title}</p>
@@ -435,7 +434,7 @@ export default function Dashboard() {
                 onClick={async () => {
                   try {
                     await startQuick({ minutes: 20 });
-                    toast.success("Quick mission ready — it's your Next Move now");
+                    toast.success("Quick mission ready: it's your Next Move now");
                     navigate("/dashboard");
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : "Couldn't start the mission");
@@ -456,7 +455,7 @@ export default function Dashboard() {
               <RiskBadge level={intel.oracle.level} />
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-              Based on your available data — never a certainty.
+              Based on your available data, never a certainty.
             </p>
             <div className="mt-3 space-y-2">
               {intel.oracle.reasons.length === 0 ? (
@@ -483,7 +482,7 @@ export default function Dashboard() {
 
       {/* ---------- ONE THING TO FIX NEXT ---------- */}
       {intel?.oracle.enoughData && intel.oracle.level !== "LOW" && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-chart-5/30 bg-gradient-to-r from-chart-5/5 via-card to-card px-6 py-4">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-chart-5/30 bg-chart-5/5 px-6 py-4">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-widest text-chart-5">One thing to fix next</p>
             <p className="mt-1 truncate font-display text-sm font-bold">{intel.oracle.action}</p>
@@ -513,17 +512,17 @@ export default function Dashboard() {
       <ReadinessRadar navigate={navigate} />
 
       {/* ---------- Rescue mode bar ---------- */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-destructive/25 bg-gradient-to-r from-destructive/5 via-card to-card px-6 py-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-destructive/25 bg-destructive/5 px-6 py-4">
         <div>
           <p className="flex items-center gap-2 font-display text-sm font-bold text-destructive">
             <Siren className="size-4" /> Behind on material?
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Tell KYNEX how much time you actually have — get a realistic recovery plan, never an all-nighter.
+            Tell KYNEX how much time you actually have: get a realistic recovery plan, never an all-nighter.
           </p>
         </div>
         <Button variant="outline" className="gap-2 rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setRescueOpen(true)}>
-          <Siren className="size-4" /> I'm behind — plan my recovery
+          <Siren className="size-4" /> I'm behind: plan my recovery
         </Button>
       </div>
 
@@ -557,14 +556,14 @@ export default function Dashboard() {
           />
           <PulseTile
             label="Weakest Area"
-            value={insights?.weakest?.label ?? "—"}
+            value={insights?.weakest?.label ?? "--"}
             sub={insights?.weakest ? `${insights.weakest.accuracy}% accuracy` : "practice to reveal"}
             tone="text-chart-5"
             small
           />
           <PulseTile
             label="Strongest Area"
-            value={insights?.strongest?.label ?? "—"}
+            value={insights?.strongest?.label ?? "--"}
             sub={insights?.strongest ? `${insights.strongest.accuracy}% accuracy` : "practice to reveal"}
             tone="text-success"
             small
@@ -572,7 +571,7 @@ export default function Dashboard() {
         </div>
         {insights?.recallTrend && insights.recallTrend.delta < -5 && insights.accuracyTrend && insights.accuracyTrend.delta > 0 && (
           <p className="mt-3 rounded-xl bg-primary/5 px-4 py-2.5 text-xs font-medium text-primary">
-            Your recall is falling while understanding is improving — a short Recall session is recommended.
+            Your recall is falling while understanding is improving: a short Recall session is recommended.
           </p>
         )}
       </div>
@@ -593,7 +592,7 @@ export default function Dashboard() {
                 <motion.div
                   className={cn(
                     "w-full rounded-lg",
-                    d.minutes > 0 ? "bg-gradient-to-t from-primary/70 to-primary" : "bg-muted",
+                    d.minutes > 0 ? "bg-primary" : "bg-muted",
                     i === weekMinutes.length - 1 && d.minutes === 0 && "ring-1 ring-dashed ring-primary/40",
                   )}
                   initial={{ height: 0 }}
@@ -638,7 +637,7 @@ export default function Dashboard() {
           )}
           {stats.weakCount > 0 && (
             <div className="mt-4 rounded-xl bg-chart-5/10 px-4 py-3 text-xs font-medium text-chart-5">
-              KYNEX detected {stats.weakCount} weak concept{stats.weakCount === 1 ? "" : "s"} — Missions are targeting them.
+              KYNEX detected {stats.weakCount} weak concept{stats.weakCount === 1 ? "" : "s"}. Missions are targeting them.
             </div>
           )}
         </div>
@@ -672,7 +671,7 @@ export default function Dashboard() {
               </button>
             ))}
             {(materials ?? []).length === 0 && (
-              <p className="py-6 text-center text-sm text-muted-foreground">Vault is empty — add your first source.</p>
+              <p className="py-6 text-center text-sm text-muted-foreground">Vault is empty. Add your first source.</p>
             )}
           </div>
         </div>
@@ -707,7 +706,7 @@ export default function Dashboard() {
               {streakAlive
                 ? "Today is locked in. Come back tomorrow to extend it."
                 : streak > 0
-                  ? "Welcome back. Your progress is still here — one session restarts the flame."
+                  ? "Welcome back. Your progress is still here, and one session restarts the flame."
                   : "Consistency beats intensity. 10 minutes a day is enough."}
             </p>
           </div>
@@ -790,12 +789,12 @@ function GpaStrip({ navigate }: { navigate: (to: string) => void }) {
         </Button>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <PulseTile label="Current CGPA" value={gpa.currentCgpa != null ? String(gpa.currentCgpa) : "—"} tone="text-primary" />
-        <PulseTile label="Target" value={gpa.targetCgpa != null ? String(gpa.targetCgpa) : "—"} tone="text-foreground" />
-        <PulseTile label="Projected" value={gpa.projected != null ? String(gpa.projected) : "—"} tone="text-chart-4" note="current in-progress courses at entered expected grades" />
+        <PulseTile label="Current CGPA" value={gpa.currentCgpa != null ? String(gpa.currentCgpa) : "--"} tone="text-primary" />
+        <PulseTile label="Target" value={gpa.targetCgpa != null ? String(gpa.targetCgpa) : "--"} tone="text-foreground" />
+        <PulseTile label="Projected" value={gpa.projected != null ? String(gpa.projected) : "--"} tone="text-chart-4" note="current in-progress courses at entered expected grades" />
         <PulseTile
           label="Gap to target"
-          value={gap != null ? (gap > 0 ? `+${gap}` : "0") : "—"}
+          value={gap != null ? (gap > 0 ? `+${gap}` : "0") : "--"}
           sub={gap != null && gap > 0 ? "required GPA computed in the Lab" : "on or above target"}
           tone={gap != null && gap > 0 ? "text-chart-5" : "text-success"}
         />
@@ -885,7 +884,7 @@ function RescueModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-background/70 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-background/80 px-4"
       onClick={onClose}
     >
       <motion.div
@@ -900,7 +899,7 @@ function RescueModal({
               <Siren className="size-5" /> Rescue Mode
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              A realistic plan from your actual weak spots — prerequisite repair first, always.
+              A realistic plan from your actual weak spots: prerequisite repair first, always.
             </p>
           </div>
           <Button size="icon" variant="ghost" className="size-8" onClick={onClose} aria-label="Close">
@@ -945,7 +944,7 @@ function RescueModal({
         </div>
 
         <p className="mt-4 rounded-xl bg-muted/60 px-3.5 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
-          Plans are paced with breaks in mind. Sleep beats cramming — retention collapses without it.
+          Plans are paced with breaks in mind. Sleep beats cramming: retention collapses without it.
         </p>
 
         <div className="mt-5 flex justify-end gap-2">

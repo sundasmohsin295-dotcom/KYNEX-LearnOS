@@ -30,7 +30,7 @@ const KIND_META: Record<Block["kind"], { label: string; icon: typeof Target; cls
   review: { label: "Review", icon: BookOpen, cls: "bg-chart-4/15 text-chart-4" },
 };
 
-/** KYNEX Study Planner — today's persisted plan built from real state. */
+/** KYNEX Study Planner: today's persisted plan built from real state. */
 export default function Planner() {
   const navigate = useNavigate();
   const data = useQuery(api.planner.today);
@@ -115,7 +115,7 @@ export default function Planner() {
           {!persisted && (
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3">
               <p className="text-sm text-muted-foreground">
-                This plan is generated from your live data — save it to make it official for today.
+                This plan is generated from your live data. Save it to make it official for today.
               </p>
               <Button
                 size="sm"
@@ -222,7 +222,7 @@ export default function Planner() {
           </div>
 
           <p className="mt-5 text-center text-xs text-muted-foreground">
-            Blocks come from your real mastery data — weakest concepts first, then recall, then exam prep.
+            Blocks come from your real mastery data: weakest concepts first, then recall, then exam prep.
           </p>
         </>
       )}

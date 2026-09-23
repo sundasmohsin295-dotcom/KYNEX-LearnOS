@@ -43,7 +43,7 @@ const CATEGORY_META: Record<Mistake["category"], { label: string; icon: typeof B
 };
 
 /**
- * KYNEX Mistake Bank — every wrong answer from real practice, classified and
+ * KYNEX Mistake Bank: every wrong answer from real practice, classified and
  * resolvable. "Fix My Mistakes" launches targeted practice per concept.
  */
 export default function MistakeBank() {
@@ -161,7 +161,7 @@ export default function MistakeBank() {
           <CheckCircle2 className="mx-auto size-12 text-success" />
           <p className="mt-4 font-display text-2xl font-bold">Your bank is clean</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            Mistakes appear here the moment you miss a practice question — and resolving them is
+            Mistakes appear here the moment you miss a practice question, and resolving them is
             how mastery actually compounds.
           </p>
           <Button className="mt-5 gap-2 rounded-xl" onClick={() => navigate("/practice")}>

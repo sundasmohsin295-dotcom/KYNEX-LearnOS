@@ -31,7 +31,7 @@ type AiStatusResult = {
 const EMAIL_PATH_LABEL: Record<string, string> = {
   "otp-api": "Dedicated OTP key (FREEBUFF_OTP_API_KEY)",
   gateway: "Platform integration key",
-  none: "Not configured — verification emails cannot send yet",
+  none: "Not configured: verification emails cannot send yet",
 };
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {

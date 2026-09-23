@@ -167,7 +167,7 @@ export function CommandBar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] flex items-start justify-center bg-background/60 px-4 pt-[14vh] backdrop-blur-sm"
+            className="fixed inset-0 z-[80] flex items-start justify-center bg-background/70 px-4 pt-[14vh]"
             onClick={() => setOpen(false)}
           >
             <motion.div
@@ -223,7 +223,7 @@ export function CommandBar() {
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
                     {q.trim().length >= 2 && smart?.empty
                       ? smart.empty
-                      : "No matching command — press Enter on “Ask the Professor” to hand it to the AI."}
+                      : "No matching command. Press Enter on “Ask the Professor” to hand it to the AI."}
                   </p>
                 )}
               </div>

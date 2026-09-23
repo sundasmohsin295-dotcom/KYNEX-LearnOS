@@ -65,11 +65,11 @@ export default function Flashcards() {
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-sm font-bold">
             <Layers className="size-4 text-primary" />
-            {counts ? counts.total : "—"} cards
+            {counts ? counts.total : "--"} cards
           </span>
           <span className="flex items-center gap-1.5 rounded-full border border-xp/30 bg-xp/10 px-3.5 py-1.5 text-sm font-bold text-xp-foreground">
             <Flame className="size-4" />
-            {counts ? counts.due : "—"} due
+            {counts ? counts.due : "--"} due
           </span>
         </div>
       </PageHeader>
@@ -77,7 +77,7 @@ export default function Flashcards() {
       {loading && <div className="mx-auto h-96 max-w-2xl animate-pulse rounded-3xl bg-muted/60" />}
 
       {finished && reviewedThisSession > 0 && (
-        <div className="mx-auto max-w-2xl rounded-3xl border border-success/30 bg-gradient-to-br from-success/10 via-card to-card p-10 text-center">
+        <div className="mx-auto max-w-2xl rounded-3xl border border-success/30 bg-success/5 p-10 text-center">
           <motion.div
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -92,7 +92,7 @@ export default function Flashcards() {
             {reviewedThisSession - doneCount} flagged for another pass
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            KYNEX rewards genuine recall — never clicking through.
+            KYNEX rewards genuine recall, never clicking through.
           </p>
           <Button asChild variant="outline" className="mt-6 gap-2 rounded-xl">
             <Link to="/dashboard">Back to dashboard</Link>
@@ -105,7 +105,7 @@ export default function Flashcards() {
           <CheckCircle2 className="mx-auto size-12 text-success" />
           <p className="mt-4 font-display text-2xl font-bold">Nothing due right now</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            KYNEX Recall schedules cards at the moment you're about to forget them — generate
+            KYNEX Recall schedules cards at the moment you're about to forget them. Generate
             cards from any Vault source.
           </p>
           <Button asChild className="mt-6 gap-2 rounded-xl">
@@ -120,7 +120,7 @@ export default function Flashcards() {
           <div className="flex items-center gap-3">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-chart-4"
+                className="h-full rounded-full bg-primary"
                 animate={{ width: `${(index / cards.length) * 100}%` }}
               />
             </div>
@@ -140,7 +140,7 @@ export default function Flashcards() {
                 className={cn(
                   "grid min-h-80 w-full place-items-center rounded-3xl border p-8 text-center shadow-xl",
                   flipped
-                    ? "border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card"
+                    ? "border-primary/30 bg-primary/5"
                     : "border-border/70 bg-card card-lift",
                 )}
                 style={{ transformStyle: "preserve-3d" }}

@@ -105,13 +105,12 @@ export default function GpaLab() {
       <PageHeader eyebrow="KYNEX GPA Lab · Academic Intelligence" title="GPA / CGPA Lab">
         <p className="max-w-md text-sm text-muted-foreground">
           Real math on your real records. Every projection below is computed from your stored
-          semesters, courses and credit hours — nothing is estimated from study time.
+          semesters, courses and credit hours: nothing is estimated from study time.
         </p>
       </PageHeader>
 
       {/* ---------- Hero: current CGPA + gap ---------- */}
-      <div className="edge-glow relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:p-8">
-        <div aria-hidden className="absolute -right-20 -top-20 size-64 rounded-full bg-chart-2/15 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-card p-6 sm:p-8">
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-6">
             <Ring
@@ -124,7 +123,7 @@ export default function GpaLab() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Cumulative CGPA</p>
               <p className="mt-1 font-display text-4xl font-extrabold tracking-tight">
-                {cgpa != null ? cgpa.toFixed(2) : "—"}
+                {cgpa != null ? cgpa.toFixed(2) : "--"}
                 <span className="ml-1 text-base font-bold text-muted-foreground">/ {data.max}.0</span>
               </p>
               <p className="mt-1.5 text-sm text-muted-foreground">
@@ -137,7 +136,7 @@ export default function GpaLab() {
           <div className="grid gap-3 sm:grid-cols-3 lg:w-[26rem]">
             <MiniStat
               label="Projected"
-              value={data.projected != null ? data.projected.toFixed(2) : "—"}
+              value={data.projected != null ? data.projected.toFixed(2) : "--"}
               tone="text-chart-2"
               note="CGPA if the current semester lands at its current trend"
             />
@@ -150,7 +149,7 @@ export default function GpaLab() {
             />
             <MiniStat
               label="Gap"
-              value={gap != null && gap > 0 ? `+${gap}` : gap === 0 ? "0" : "—"}
+              value={gap != null && gap > 0 ? `+${gap}` : gap === 0 ? "0" : "--"}
               tone="text-chart-5"
               note="Points between current CGPA and target"
             />
@@ -196,14 +195,14 @@ export default function GpaLab() {
           title="Expected"
           value={data.scenarios.expected}
           max={data.max}
-          desc="In-progress courses graded at their semester's current average — a trend estimate, not a promise."
+          desc="In-progress courses graded at their semester's current average: a trend estimate, not a promise."
           tone="text-primary"
         />
         <ScenarioCard
           title="Risk floor"
           value={data.scenarios.risk}
           max={data.max}
-          desc="In-progress courses contribute nothing — the honest lower bound."
+          desc="In-progress courses contribute nothing: the honest lower bound."
           tone="text-chart-5"
         />
       </div>
@@ -222,9 +221,7 @@ export default function GpaLab() {
                   <motion.div
                     className={cn(
                       "w-full rounded-t-lg",
-                      s.status === "completed"
-                        ? "bg-gradient-to-t from-primary/60 to-primary"
-                        : "bg-gradient-to-t from-chart-2/40 to-chart-2",
+                      s.status === "completed" ? "bg-primary" : "bg-chart-2",
                     )}
                     initial={{ height: 0 }}
                     animate={{ height: `${Math.max(3, pct)}%` }}
@@ -234,7 +231,7 @@ export default function GpaLab() {
                   <span className="max-w-full truncate text-center text-[10px] font-semibold text-muted-foreground" title={s.name}>
                     {s.name}
                   </span>
-                  <span className="text-[10px] font-bold">{s.gpa != null ? s.gpa.toFixed(1) : "—"}</span>
+                  <span className="text-[10px] font-bold">{s.gpa != null ? s.gpa.toFixed(1) : "--"}</span>
                 </div>
               );
             })}
@@ -263,7 +260,7 @@ export default function GpaLab() {
             <p className="mt-4 font-display text-xl font-bold">Build your academic record</p>
             <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
               Add semesters with courses, credit hours and grades. KYNEX computes GPA, CGPA,
-              required GPA and scenarios from this data — and keeps updating as you learn.
+              required GPA and scenarios from this data, and keeps updating as you learn.
             </p>
             <Button className="mt-5 gap-2 rounded-xl" onClick={() => guard(() => addSemester({}))}>
               <Plus className="size-4" /> Create first semester
@@ -290,7 +287,7 @@ export default function GpaLab() {
                 {sem.status === "completed" ? "completed" : "in progress"}
               </span>
               <span className="text-xs font-semibold text-muted-foreground">
-                GPA {sem.gpa != null ? sem.gpa.toFixed(2) : "—"} · {sem.credits} credits · {sem.courseCount} courses
+                GPA {sem.gpa != null ? sem.gpa.toFixed(2) : "--"} · {sem.credits} credits · {sem.courseCount} courses
               </span>
               <div className="ml-auto flex items-center gap-1.5">
                 <Button
@@ -327,7 +324,7 @@ export default function GpaLab() {
               )}
               {sem.courseCount === 0 && (
                 <p className="rounded-xl bg-muted/40 px-3.5 py-3 text-xs text-muted-foreground">
-                  No courses yet — add one below.
+                  No courses yet. Add one below.
                 </p>
               )}
 
@@ -362,7 +359,7 @@ export default function GpaLab() {
                     min="0"
                     max={data.max}
                     step="0.1"
-                    placeholder={`Grade (0–${data.max})`}
+                    placeholder={`Grade (0 to ${data.max})`}
                     value={newCourse.grade}
                     onChange={(e) => setNewCourse({ ...newCourse, grade: e.target.value })}
                     className="h-8 w-28 rounded-lg text-sm"
@@ -435,7 +432,7 @@ export default function GpaLab() {
         </div>
         <p className="mt-3 flex items-start gap-1.5 text-[11px] text-muted-foreground">
           <ArrowRight className="mt-0.5 size-3 shrink-0 text-primary" />
-          Need a custom university scale? Set it from KYNEX Twin — bands of (percent → points).
+          Need a custom university scale? Set it from KYNEX Twin: bands of (percent → points).
         </p>
       </div>
     </AppShell>
@@ -549,7 +546,7 @@ function ScenarioCard({
     >
       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</p>
       <p className={cn("mt-1.5 font-display text-3xl font-extrabold", tone)}>
-        {value != null ? value.toFixed(2) : "—"}
+        {value != null ? value.toFixed(2) : "--"}
       </p>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
         <motion.div
@@ -572,7 +569,7 @@ function GradePathCard({ navigate }: { navigate: (to: string) => void }) {
   const { path } = data;
 
   return (
-    <div className="mt-5 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/5 via-card to-card p-6">
+    <div className="mt-5 rounded-3xl border border-primary/25 bg-card p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
           <Route className="size-4" /> How do I get a high grade?

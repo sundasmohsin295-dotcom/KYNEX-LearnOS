@@ -149,7 +149,7 @@ export default function AddMaterial() {
     <AppShell>
       <PageHeader eyebrow="KYNEX Vault · Knowledge ingestion" title="Add to your Vault">
         <p className="max-w-md text-sm text-muted-foreground">
-          Any source becomes structured knowledge — concepts, questions, Recall cards and mastery tracking.
+          Any source becomes structured knowledge: concepts, questions, Recall cards and mastery tracking.
         </p>
       </PageHeader>
 
@@ -218,14 +218,14 @@ export default function AddMaterial() {
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Give it a title (e.g. Chapter 4 — Subnetting)"
+                placeholder="Give it a title (e.g. Chapter 4: Subnetting)"
                 disabled={busy}
                 className="h-11 rounded-xl"
               />
               <Textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Paste your notes, a chapter, a transcript — anything you need to master…"
+                placeholder="Paste your notes, a chapter, a transcript: anything you need to master…"
                 disabled={busy}
                 className="min-h-56 rounded-xl text-sm leading-relaxed"
               />
@@ -291,7 +291,7 @@ export default function AddMaterial() {
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title (optional — we'll use the file name)"
+                placeholder="Title (optional, we'll use the file name)"
                 disabled={busy}
                 className="h-11 rounded-xl"
               />
@@ -314,7 +314,7 @@ export default function AddMaterial() {
               <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5">
                 <ProcessingPipeline stage={stage} />
                 <p className="mt-3 text-center text-xs text-muted-foreground">
-                  Deep analysis usually takes 20–60 seconds. Keep this tab open.
+                  Deep analysis usually takes 20 to 60 seconds. Keep this tab open.
                 </p>
               </div>
             )}
@@ -329,7 +329,7 @@ export default function AddMaterial() {
                   <p className="font-semibold text-destructive">Processing failed</p>
                   <p className="mt-1 text-sm text-muted-foreground">{errorMsg}</p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Nothing was faked — the material wasn't analyzed. Adjust and try again.
+                    Nothing was faked: the material wasn't analyzed. Adjust and try again.
                   </p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setPhase("idle")}>

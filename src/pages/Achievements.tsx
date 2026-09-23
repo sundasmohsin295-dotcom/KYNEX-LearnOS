@@ -43,9 +43,8 @@ export default function Achievements() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:p-8"
+          className="relative overflow-hidden rounded-3xl border border-primary/25 bg-card p-6 sm:p-8"
         >
-          <div aria-hidden className="absolute -right-16 -top-16 size-56 rounded-full bg-primary/15 blur-3xl" />
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">
@@ -82,7 +81,7 @@ export default function Achievements() {
               className={cn(
                 "card-lift rounded-3xl border p-5",
                 has
-                  ? "border-xp/40 bg-gradient-to-br from-xp/10 to-card"
+                  ? "border-xp/40 bg-xp/5"
                   : "border-border/70 bg-card opacity-70",
               )}
             >
@@ -91,7 +90,7 @@ export default function Achievements() {
                   className={cn(
                     "grid size-11 place-items-center rounded-2xl",
                     has
-                      ? "bg-gradient-to-br from-xp/30 to-xp/10 text-xp-foreground"
+                      ? "bg-xp/20 text-xp-foreground"
                       : "bg-muted text-muted-foreground",
                   )}
                 >
@@ -116,11 +115,11 @@ export default function Achievements() {
       <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6 text-center">
         <p className="font-display text-lg font-bold">
           {earnedCount === all.length
-            ? "Every badge unlocked. Legend. 👑"
+            ? "Every badge unlocked."
             : `${pct}% of the trophy case filled`}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Badges unlock from real learning — correct answers, mastery and consistency.
+          Badges unlock from real learning: correct answers, mastery and consistency.
         </p>
       </div>
     </AppShell>

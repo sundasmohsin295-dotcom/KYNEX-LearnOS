@@ -75,7 +75,7 @@ export default function MaterialDetail() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 2.4, ease: "linear" }}
-            className="mx-auto grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground shadow-xl"
+            className="mx-auto grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary"
           >
             <Brain className="size-8" />
           </motion.div>
@@ -86,7 +86,7 @@ export default function MaterialDetail() {
           <div className="mt-8">
             <ProcessingPipeline stage={material.processingStage ?? "receiving"} />
           </div>
-          <p className="mt-6 text-xs text-muted-foreground">This usually takes 20–60 seconds.</p>
+          <p className="mt-6 text-xs text-muted-foreground">This usually takes 20 to 60 seconds.</p>
         </div>
       </AppShell>
     );
@@ -101,7 +101,7 @@ export default function MaterialDetail() {
           <h1 className="mt-5 font-display text-2xl font-bold">Analysis failed</h1>
           <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">{material.error}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            The material was NOT analyzed — nothing here is guessed.
+            The material was NOT analyzed. Nothing here is guessed.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Button variant="outline" onClick={() => navigate("/add")}>Try a different source</Button>
@@ -199,7 +199,7 @@ export default function MaterialDetail() {
                 onClick={() => navigate(`/chat?material=${material._id}&mode=${m.key}`)}
                 className="card-lift group rounded-2xl border border-border/70 bg-card p-4 text-left"
               >
-                <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary/15 to-chart-4/15 text-primary transition-transform group-hover:scale-110">
+                <div className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
                   <Icon className="size-4.5" />
                 </div>
                 <p className="mt-2.5 text-sm font-bold leading-tight">{m.label}</p>
@@ -322,14 +322,14 @@ export default function MaterialDetail() {
 
       {/* ---------- Detail sections ---------- */}
       <div className="mt-9 grid gap-5 lg:grid-cols-2">
-        <SectionCard title="Key definitions" icon={BookOpen} items={(a.definitions ?? []).map((d) => `${d.term} — ${d.definition}`)} />
-        <SectionCard title="Formulas" icon={Zap} items={(a.formulas ?? []).map((f) => `${f.name}: ${f.expression} — ${f.note}`)} mono />
+        <SectionCard title="Key definitions" icon={BookOpen} items={(a.definitions ?? []).map((d) => `${d.term}: ${d.definition}`)} />
+        <SectionCard title="Formulas" icon={Zap} items={(a.formulas ?? []).map((f) => `${f.name}: ${f.expression} (${f.note})`)} mono />
         <SectionCard title="Worked examples" icon={Lightbulb} items={(a.examples ?? []).map((e) => `${e.title}: ${e.walkthrough}`)} />
         <SectionCard title="Real-world applications" icon={Network} items={a.applications ?? []} />
         <SectionCard
           title="Common misconceptions"
           icon={AlertTriangle}
-          items={(a.misconceptions ?? []).map((m) => `✗ ${m.wrong} — ${m.why} → ✓ ${m.correct}`)}
+          items={(a.misconceptions ?? []).map((m) => `✗ ${m.wrong}: ${m.why} → ✓ ${m.correct}`)}
         />
         <SectionCard title="Common mistakes" icon={X} items={a.commonMistakes} />
       </div>
@@ -352,7 +352,7 @@ export default function MaterialDetail() {
 
       {/* examiner questions */}
       {(a.examinerQuestions ?? []).length > 0 && (
-        <div className="mt-5 rounded-3xl border border-xp/40 bg-gradient-to-br from-xp/10 to-card p-6">
+        <div className="mt-5 rounded-3xl border border-xp/40 bg-xp/5 p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <GraduationCap className="size-5 text-xp-foreground" /> What an examiner could ask
           </h3>
@@ -409,7 +409,7 @@ function MindMap({ concepts, title }: { concepts: string[]; title?: string }) {
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="grid size-32 shrink-0 place-items-center rounded-3xl bg-gradient-to-br from-primary to-chart-4 p-4 text-center text-sm font-bold text-white shadow-xl"
+          className="font-data grid size-32 shrink-0 place-items-center rounded-3xl border border-primary/30 bg-primary/10 p-4 text-center text-sm font-bold text-primary"
         >
           {title ?? "Topic"}
         </motion.div>

@@ -105,7 +105,7 @@ export default function KnowledgeGraph() {
       )}
 
       {graph.weakRoots.length > 0 && (
-        <div className="mt-4 rounded-3xl border border-chart-5/30 bg-gradient-to-br from-chart-5/10 via-card to-card p-5">
+        <div className="mt-4 rounded-3xl border border-chart-5/30 bg-chart-5/5 p-5">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-chart-5">
             <Wrench className="size-4" /> Root cause detected
           </p>
@@ -132,7 +132,7 @@ export default function KnowledgeGraph() {
             ))}
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Fix the upstream concepts first — practicing the blocked topic alone won't stick until
+            Fix the upstream concepts first: practicing the blocked topic alone won't stick until
             its prerequisites are solid.
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function KnowledgeGraph() {
           <Network className="mx-auto size-10 text-muted-foreground/50" />
           <p className="mt-4 font-display text-xl font-bold">Your graph is waiting</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            Add a material to the Vault and analyze it — every concept becomes a node, and every
+            Add a material to the Vault and analyze it: every concept becomes a node, and every
             answer you give colors the map.
           </p>
           <Button className="mt-5 gap-2" onClick={() => navigate("/add")}>Add a material</Button>
@@ -187,7 +187,7 @@ export default function KnowledgeGraph() {
                       style={{ transformOrigin: `${n.x}px ${n.y}px` }}
                     >
                       {n.state === "weak" && (
-                        <circle cx={n.x} cy={n.y} r={r + 7} fill="none" stroke="var(--chart-5)" strokeOpacity={0.35} strokeWidth={2} className="animate-pulse-node" />
+                        <circle cx={n.x} cy={n.y} r={r + 7} fill="none" stroke="var(--chart-5)" strokeOpacity={0.5} strokeWidth={2} strokeDasharray="3 3" />
                       )}
                       <circle
                         cx={n.x} cy={n.y} r={r}

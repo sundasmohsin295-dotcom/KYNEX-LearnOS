@@ -26,7 +26,7 @@ const QUICK_PROMPTS = [
   "Teach me from zero",
   "Find the missing concept I need before learning this",
   "Ask me questions until you know I understand",
-  "Still confused — diagnose what I'm missing and reteach it",
+  "Still confused: diagnose what I'm missing and reteach it",
 ];
 
 export default function Chat() {
@@ -246,7 +246,7 @@ export default function Chat() {
                 ) : (
                   <button className="w-full text-left" onClick={() => { setActiveId(c._id); setShowSidebar(false); }}>
                     <p className="truncate pr-14 text-xs font-semibold">
-                      {c.starred && "⭐ "}{c.title}
+                      {c.title}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
                       {new Date(c.updatedAt).toLocaleDateString("en", { month: "short", day: "numeric" })}
@@ -315,7 +315,7 @@ export default function Chat() {
                 {material ? (
                   <>Context: <span className="font-semibold text-primary">{material.title}</span></>
                 ) : (
-                  "AI teaching system — not a human professor"
+                  "AI teaching system, not a human professor"
                 )}
               </p>
             </div>
@@ -372,7 +372,7 @@ export default function Chat() {
                 <motion.div
                   initial={{ scale: 0.7, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="mx-auto grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground shadow-lg"
+                  className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"
                 >
                   <Bot className="size-7" />
                 </motion.div>
@@ -408,7 +408,7 @@ export default function Chat() {
                 className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "justify-start")}
               >
                 {msg.role === "assistant" && (
-                  <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground">
+                  <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
                     <Bot className="size-4" />
                   </div>
                 )}
@@ -423,7 +423,7 @@ export default function Chat() {
                   {msg.role === "assistant" ? (
                     <div className="space-y-2 [&_h3]:font-display [&_h3]:text-sm [&_h3]:font-bold [&_li]:ml-4 [&_li]:list-disc [&_ol]:ml-4 [&_ol]:list-decimal [&_p+p]:mt-2 [&_strong]:text-foreground [&_table]:w-full [&_td]:border [&_td]:border-border/60 [&_td]:px-2 [&_th]:border [&_th]:border-border/60 [&_th]:px-2">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      {msg.content.startsWith("⚠️") && (
+                      {msg.content.startsWith("Notice:") && (
                         <button
                           onClick={() => navigate("/security")}
                           className="text-[11px] font-semibold text-primary underline-offset-2 hover:underline"
@@ -445,7 +445,7 @@ export default function Chat() {
             ))}
             {waiting && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground">
+                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
                   <Bot className="size-4" />
                 </div>
                 <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-border/70 bg-background px-4 py-3.5">
@@ -475,7 +475,7 @@ export default function Chat() {
                     void send();
                   }
                 }}
-                placeholder={concept ? `Learning ${concept} — tell your tutor what you already know…` : `Ask anything${material ? ` about ${material.title}` : ""}…`}
+                placeholder={concept ? `Learning ${concept}: tell your tutor what you already know…` : `Ask anything${material ? ` about ${material.title}` : ""}…`}
                 rows={1}
                 className="max-h-36 min-h-11 flex-1 resize-none rounded-xl"
               />

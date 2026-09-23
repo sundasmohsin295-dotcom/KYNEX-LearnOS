@@ -112,7 +112,7 @@ export default function Twin() {
           {/* ---------- identity card ---------- */}
           <div className="rounded-3xl border border-border/70 bg-card p-6">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground shadow-lg">
+              <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
                 <Fingerprint className="size-7" />
               </span>
               <div className="min-w-0 flex-1">
@@ -223,7 +223,7 @@ export default function Twin() {
                 <p className="text-sm text-muted-foreground">
                   {profile?.targetGpa == null
                     ? "Set a target GPA so the Twin can measure the gap."
-                    : "You're at or above your target — maintain and protect it."}
+                    : "You're at or above your target. Maintain and protect it."}
                 </p>
               )}
               <div className="mt-4 space-y-2.5">
@@ -240,7 +240,7 @@ export default function Twin() {
                 ))}
                 {weakList.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Keep practicing — weak areas appear here the moment accuracy drops below 60%.
+                    Keep practicing: weak areas appear here the moment accuracy drops below 60%.
                   </p>
                 )}
               </div>
@@ -250,7 +250,7 @@ export default function Twin() {
             <Panel title="NEXT" subtitle="highest-impact action" icon={ArrowRight} tone="text-success">
               <p className="text-sm leading-relaxed">
                 {insights.weakest
-                  ? `Repair “${insights.weakest.label}” — it is your weakest measured area at ${insights.weakest.accuracy}% accuracy.`
+                  ? `Repair “${insights.weakest.label}”: it is your weakest measured area at ${insights.weakest.accuracy}% accuracy.`
                   : insights.answeredCount === 0
                     ? "Run your first Practice session so KYNEX can locate your gaps."
                     : "Consolidate: run Recall to protect what you already know."}
@@ -290,7 +290,7 @@ export default function Twin() {
                   <div key={d.key} className="rounded-2xl border border-border/60 bg-muted/30 p-4" title={d.note}>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{d.label}</p>
                     <p className={cn("mt-1.5 font-display text-2xl font-extrabold", d.value == null ? "text-muted-foreground" : "text-foreground")}>
-                      {d.value != null ? `${d.value}%` : "—"}
+                      {d.value != null ? `${d.value}%` : "--"}
                     </p>
                     <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{d.note}</p>
                   </div>
@@ -307,11 +307,11 @@ export default function Twin() {
                   <Target className="size-5 text-chart-5" /> Gap Radar
                 </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Eight gap types — what kind of “don't know” this actually is.
+                  Eight gap types: what kind of “don't know” this actually is.
                 </p>
                 {intel.gaps.length === 0 ? (
                   <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
-                    No gaps detected yet. Practice sessions feed the radar — and gaps are useful signal, not failure.
+                    No gaps detected yet. Practice sessions feed the radar, and gaps are useful signal, not failure.
                   </p>
                 ) : (
                   <div className="mt-4 space-y-2.5">
@@ -394,7 +394,7 @@ export default function Twin() {
           {/* ---------- PROVE IT + MEMORY + YOU vs YOU ---------- */}
           {intel && (
             <div className="mt-6 grid gap-5 lg:grid-cols-2">
-              {/* PROVE IT — verified mastery */}
+              {/* PROVE IT: verified mastery */}
               <div className="rounded-3xl border border-border/70 bg-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                   <ShieldCheck className="size-5 text-success" /> Prove It
@@ -404,7 +404,7 @@ export default function Twin() {
                 </p>
                 {intel.proveIt.length === 0 ? (
                   <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
-                    No practice evidence yet — mastery claims start with real answers.
+                    No practice evidence yet. Mastery claims start with real answers.
                   </p>
                 ) : (
                   <div className="mt-4 space-y-2">
@@ -440,7 +440,7 @@ export default function Twin() {
                 <div className="rounded-3xl border border-border/70 bg-card p-6">
                   <h3 className="flex items-center gap-2 font-display text-lg font-bold">Memory Engine</h3>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Review recommendations based on your recent performance — not medical certainty.
+                    Review recommendations based on your recent performance, not medical certainty.
                   </p>
                   {intel.memory.length === 0 ? (
                     <p className="mt-5 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
@@ -468,7 +468,7 @@ export default function Twin() {
                 </div>
 
                 {/* YOU vs YOU */}
-                <div className="rounded-3xl border border-xp/40 bg-gradient-to-br from-xp/10 to-card p-6">
+                <div className="rounded-3xl border border-xp/40 bg-xp/5 p-6">
                   <h3 className="flex items-center gap-2 font-display text-lg font-bold">You vs You</h3>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Your only competition is your past self.
@@ -498,7 +498,7 @@ export default function Twin() {
           {/* ---------- Pulse detail ---------- */}
           <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
             <h3 className="font-display text-lg font-bold">Academic Pulse</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">Learning-performance indicators — not predictions or diagnoses.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Learning-performance indicators, not predictions or diagnoses.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Signal label="Mastery" value={insights.overallMastery} trend={insights.accuracyTrend?.delta} tone="text-primary" />
               <Signal label="Exam Readiness" value={insights.examReadiness} tone="text-chart-4" note="modelled estimate: mastery 50% · accuracy 30% · consistency 20%" />
@@ -507,7 +507,7 @@ export default function Twin() {
             </div>
             {insights.recallTrend && insights.recallTrend.delta < -5 && insights.accuracyTrend && insights.accuracyTrend.delta > 0 && (
               <p className="mt-4 rounded-xl bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
-                Your recall is falling while understanding is improving. A short retrieval session is recommended —{" "}
+                Your recall is falling while understanding is improving. A short retrieval session is recommended.{" "}
                 <button className="font-bold underline underline-offset-2" onClick={() => navigate("/flashcards")}>open Recall</button>.
               </p>
             )}
@@ -551,7 +551,7 @@ function Signal({
         )}
       </div>
       <p className={cn("mt-1.5 font-display text-2xl font-extrabold", tone)}>
-        {value != null ? value : "—"}{value != null ? "%" : ""}
+        {value != null ? value : "--"}{value != null ? "%" : ""}
       </p>
     </div>
   );
@@ -570,9 +570,9 @@ function Delta({
         "mt-1 font-display text-xl font-extrabold",
         delta == null ? "text-muted-foreground" : good ? "text-success" : "text-chart-5",
       )}>
-        {delta == null ? "—" : `${delta > 0 ? "+" : ""}${delta}`}
+        {delta == null ? "--" : `${delta > 0 ? "+" : ""}${delta}`}
       </p>
-      <p className="text-[10px] text-muted-foreground">now {now != null ? now : "—"}</p>
+      <p className="text-[10px] text-muted-foreground">now {now != null ? now : "--"}</p>
     </div>
   );
 }

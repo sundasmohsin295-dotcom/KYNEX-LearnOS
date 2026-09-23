@@ -81,7 +81,7 @@ export default function Library() {
           <BookOpen className="mx-auto size-10 text-muted-foreground/50" />
           <p className="mt-4 font-display text-xl font-bold">Your Vault is empty</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            Add a PDF, a YouTube link, an article or paste your notes — KYNEX turns it into a
+            Add a PDF, a YouTube link, an article or paste your notes: KYNEX turns it into a
             Subject Brain with concepts, practice and Recall in under a minute.
           </p>
           <Button size="lg" className="mt-6 gap-2 rounded-xl" onClick={() => navigate("/add")}>
@@ -111,7 +111,7 @@ export default function Library() {
                         onClick={() => navigate(`/material/${m._id}`)}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <div className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary/15 to-chart-4/15 text-primary">
+                          <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
                             {m.kind === "youtube" ? (
                               <Youtube className="size-5" />
                             ) : m.kind === "url" ? (

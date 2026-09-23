@@ -94,7 +94,7 @@ export function StreakDots({ streak, todayDone }: { streak: number; todayDone: b
             title={active ? "study day" : "no activity"}
             className={cn(
               "size-3.5 rounded-full",
-              active ? "bg-gradient-to-br from-chart-5 to-warning" : "bg-muted",
+              active ? "bg-destructive" : "bg-muted",
               isToday && !todayDone && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
               isToday && todayDone && "ring-2 ring-success/50 ring-offset-2 ring-offset-background",
             )}

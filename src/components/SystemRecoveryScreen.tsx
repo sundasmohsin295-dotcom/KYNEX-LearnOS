@@ -49,7 +49,7 @@ export function SystemRecoveryScreen({
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="relative w-full max-w-lg rounded-2xl border border-border/70 bg-card/90 p-8 text-center shadow-2xl backdrop-blur"
+        className="relative w-full max-w-lg rounded-2xl border border-border/70 bg-card p-8 text-center shadow-2xl"
       >
         <div className="mx-auto grid size-14 place-items-center rounded-2xl border border-border/70 bg-muted/40">
           <KynexMark className="size-8 text-primary" />

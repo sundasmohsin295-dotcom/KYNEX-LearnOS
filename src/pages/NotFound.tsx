@@ -21,7 +21,7 @@ export default function NotFound() {
           This page doesn't exist.
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your learning data is safe — head back and continue where you left
+          Your learning data is safe. Head back and continue where you left
           off.
         </p>
       </div>

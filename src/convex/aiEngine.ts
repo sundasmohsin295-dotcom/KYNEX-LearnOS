@@ -553,7 +553,7 @@ export function classifyAiFailure(msg: string): AiFailureClass {
     return {
       code: "ai_key_rejected",
       userMessage:
-        "⚠️ Professor AI isn't available right now — its service credential was rejected by the provider.\n\nThis is a configuration issue on the platform side, not something a retry can fix. The KYNEX team needs to reconnect the AI integration in the project's API keys settings.",
+        "Notice: Professor AI isn't available right now its service credential was rejected by the provider.\n\nThis is a configuration issue on the platform side, not something a retry can fix. The KYNEX team needs to reconnect the AI integration in the project's API keys settings.",
       retryable: false,
     };
   }
@@ -561,7 +561,7 @@ export function classifyAiFailure(msg: string): AiFailureClass {
     return {
       code: "ai_not_configured",
       userMessage:
-        "⚠️ Professor AI isn't configured yet.\n\nConnect the AI provider in the project's API keys settings to enable Professor responses.",
+        "Notice: Professor AI isn't configured yet.\n\nConnect the AI provider in the project's API keys settings to enable Professor responses.",
       retryable: false,
     };
   }
@@ -569,14 +569,14 @@ export function classifyAiFailure(msg: string): AiFailureClass {
     return {
       code: "ai_rate_limited",
       userMessage:
-        "⚠️ Professor is temporarily rate-limited by the AI provider. Please try again in a moment.",
+        "Notice: Professor is temporarily rate-limited by the AI provider. Please try again in a moment.",
       retryable: true,
     };}
   if (m.includes("quota") || m.includes("insufficient") || m.includes("billing")) {
     return {
       code: "ai_quota_exhausted",
       userMessage:
-        "⚠️ The AI service has exhausted its quota. The KYNEX team needs to top up the AI integration.",
+        "Notice: The AI service has exhausted its quota. The KYNEX team needs to top up the AI integration.",
       retryable: false,
     };
   }
@@ -596,7 +596,7 @@ export function classifyAiFailure(msg: string): AiFailureClass {
     return {
       code: "ai_provider_unavailable",
       userMessage:
-        "⚠️ The Professor AI service is temporarily unreachable. Please try again shortly.",
+        "Notice: The Professor AI service is temporarily unreachable. Please try again shortly.",
       retryable: true,
     };
   }
@@ -616,7 +616,7 @@ export function classifyAiFailure(msg: string): AiFailureClass {
   return {
     code: "ai_provider_error",
     userMessage:
-      "⚠️ Professor couldn't complete the response. Try again in a moment.",
+      "Notice: Professor couldn't complete the response. Try again in a moment.",
     retryable: true,
   };
 }

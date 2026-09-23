@@ -132,9 +132,9 @@ export default function MissionScreen() {
       }
       setFeedback({ verdict: res.verdict, correct: res.verdict === "CORRECT" });
       if (res.adaptiveNext === "escalate") {
-        toast.info("Fast and correct — difficulty rises on the next task.");
+        toast.info("Fast and correct: difficulty rises on the next task.");
       } else if (res.adaptiveNext === "repair") {
-        toast.info("No problem — we'll rebuild this from the basics.");
+        toast.info("No problem: we'll rebuild this from the basics.");
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't record that answer");
@@ -190,9 +190,8 @@ export default function MissionScreen() {
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden rounded-3xl border border-success/30 bg-gradient-to-br from-success/10 via-card to-card p-8 text-center"
+            className="relative overflow-hidden rounded-3xl border border-success/30 bg-card p-8 text-center"
           >
-            <div aria-hidden className="absolute -top-16 left-1/2 size-56 -translate-x-1/2 rounded-full bg-success/15 blur-3xl" />
             <div className="relative">
               <Trophy className="mx-auto size-12 text-success" />
               <h2 className="mt-4 font-display text-2xl font-extrabold">MISSION COMPLETE</h2>
@@ -287,7 +286,7 @@ export default function MissionScreen() {
       <PageHeader eyebrow={`Mission · ${KIND_META[task.kind].label}`} title={mission.title}>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-sm font-bold">
-            <Timer className="size-4 text-primary" /> {mission.xpReward > 0 ? `~${Math.max(5, tasks.length * 2)} min` : "—"}
+            <Timer className="size-4 text-primary" /> {mission.xpReward > 0 ? `~${Math.max(5, tasks.length * 2)} min` : "--"}
           </span>
           <Button
             variant="ghost"
@@ -296,7 +295,7 @@ export default function MissionScreen() {
             onClick={async () => {
               const ok = await abandonMission({ missionId: mission._id as Id<"missions"> });
               if (ok.ok) {
-                toast("Mission skipped — NEXT MOVE will recompute.");
+                toast("Mission skipped. NEXT MOVE will recompute.");
                 navigate("/dashboard");
               }
             }}
@@ -310,7 +309,7 @@ export default function MissionScreen() {
       <div className="flex items-center gap-3">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-chart-4"
+            className="h-full rounded-full bg-primary"
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.4 }}
           />
@@ -519,7 +518,7 @@ export default function MissionScreen() {
               onClick={task.kind === "explain" ? nextTask : submit}
             >
               {task.kind === "explain" ? (
-                <>{busy ? "…" : "Got it — continue"} <ArrowRight className="size-4.5" /></>
+                <>{busy ? "…" : "Got it, continue"} <ArrowRight className="size-4.5" /></>
               ) : (
                 <>{busy ? "Checking…" : "Check answer"} <ArrowRight className="size-4.5" /></>
               )}

@@ -67,12 +67,12 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
         </p>
       </PageHeader>
 
-      {/* weak concepts — the curiosity gap */}
+      {/* weak concepts: the curiosity gap */}
       {overview && weak.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-chart-5/25 bg-gradient-to-br from-chart-5/10 via-card to-card p-6"
+          className="rounded-3xl border border-chart-5/25 bg-chart-5/5 p-6"
         >
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -166,7 +166,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
             );
           })}
           {(attempts ?? []).length === 0 && (
-            <p className="py-4 text-sm text-muted-foreground">No sessions yet — start from a material below.</p>
+            <p className="py-4 text-sm text-muted-foreground">No sessions yet. Start from a material below.</p>
           )}
         </div>
       </div>
@@ -196,7 +196,7 @@ function PracticeMaterialPicker() {
         </button>
       ))}
       {(materials ?? []).length === 0 && (
-        <p className="text-sm text-muted-foreground">Add a material first — practice is generated from your library.</p>
+        <p className="text-sm text-muted-foreground">Add a material first: practice is generated from your library.</p>
       )}
     </div>
   );
@@ -286,7 +286,7 @@ function PracticeSession({
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Focus</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Chip active={conceptKey === null} onClick={() => setConceptKey(null)}>
-            <Brain className="size-3.5" /> Mixed — all concepts
+            <Brain className="size-3.5" /> Mixed: all concepts
           </Chip>
           {conceptRows.map((c) => {
             const key = c.name.toLowerCase().trim();
@@ -380,7 +380,7 @@ function PracticeSession({
                   </button>
                 </div>
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  The countdown is enforced server-side — closing the tab doesn't stop the clock.
+                  The countdown is enforced server-side: closing the tab doesn't stop the clock.
                   Score = correct − penalties. XP rewards stay tied to what you got right.
                 </p>
               </div>

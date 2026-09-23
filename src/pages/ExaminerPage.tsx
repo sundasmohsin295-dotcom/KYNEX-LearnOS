@@ -64,7 +64,7 @@ export default function ExaminerPage() {
         title="Examiner"
       >
         <p className="max-w-md text-sm text-muted-foreground">
-          Rigorous evaluation of your written answers — marks, missing points,
+          Rigorous evaluation of your written answers: marks, missing points,
           errors, a model answer and how to improve. Marks are{" "}
           <strong>provisional rubric marks</strong>, never official university grades.
         </p>
@@ -105,7 +105,7 @@ export default function ExaminerPage() {
                   onChange={(e) => setMaterialId(e.target.value)}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
                 >
-                  <option value="">None — general evaluation</option>
+                  <option value="">None: general evaluation</option>
                   {materials?.map((m) => (
                     <option key={m._id} value={m._id}>
                       {m.title}
@@ -126,7 +126,7 @@ export default function ExaminerPage() {
               </label>
               <label className="block sm:col-span-2">
                 <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  <ClipboardList className="size-3.5" /> Official marking scheme (optional — takes priority)
+                  <ClipboardList className="size-3.5" /> Official marking scheme (optional, takes priority)
                 </span>
                 <Textarea
                   value={scheme}
@@ -193,7 +193,7 @@ export default function ExaminerPage() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              <div className="rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-6">
+              <div className="rounded-3xl border border-primary/25 bg-card p-6">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">

@@ -49,13 +49,6 @@ export function KynexAuthShell({
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
           >
-            <div
-              className="absolute inset-0 -z-10 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(45% 45% at 50% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 72%)",
-              }}
-            />
             <KynexSunCore className="size-44" animate />
           </motion.div>
           <div>
@@ -67,7 +60,7 @@ export function KynexAuthShell({
               “{quote}”
             </p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              KYNEX builds a living model of how you learn — then turns it into
+              KYNEX builds a living model of how you learn, then turns it into
               the one next move that actually improves your grades.
             </p>
           </div>

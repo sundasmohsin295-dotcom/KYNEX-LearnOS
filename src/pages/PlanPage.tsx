@@ -92,7 +92,7 @@ export default function PlanPage() {
               </span>
               <Eye className="size-4 text-muted-foreground" />
             </CardTitle>
-            <CardDescription>Genuine value — never the bare minimum.</CardDescription>
+            <CardDescription>Genuine value, never the bare minimum.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5 text-sm">
             {Object.values(FREE).map((f) => (
@@ -140,7 +140,7 @@ export default function PlanPage() {
       <div className="mt-6 rounded-2xl border border-border/70 bg-card/60 p-5 text-sm text-muted-foreground">
         <p className="font-semibold text-foreground">How limits work</p>
         <p className="mt-1 leading-relaxed">
-          Usage is enforced server-side on every AI call — the client never decides what you're
+          Usage is enforced server-side on every AI call: the client never decides what you're
           allowed to do. Free quotas reset at midnight UTC; nothing is hidden behind confusing
           tiers. If you hit a limit, KYNEX tells you exactly what to do tomorrow rather than
           nagging you to upgrade.

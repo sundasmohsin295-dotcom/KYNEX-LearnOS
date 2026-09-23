@@ -54,7 +54,7 @@ export default function Security() {
       <PageHeader eyebrow="KYNEX Security · real controls, no theatre" title="Security">
         <p className="max-w-md text-sm text-muted-foreground">
           Each item below maps to an implemented backend control. Where a control isn't available,
-          it says so — KYNEX never shows fake green checkmarks.
+          it says so: KYNEX never shows fake green checkmarks.
         </p>
       </PageHeader>
 
@@ -68,13 +68,13 @@ export default function Security() {
             <Fingerprint className="size-5 text-primary" /> Authentication
           </h3>
           <div className="mt-4 space-y-2.5 text-sm">
-            <Row ok label={`Signed in as ${email}`} sub="Identity derived from a signed server session — never from client state." />
+            <Row ok label={`Signed in as ${email}`} sub="Identity derived from a signed server session, never from client state." />
             <Row ok label="Session expires automatically" sub="Server-side expiration time on every session; expired sessions are rejected." />
             <Row ok label="Logout revokes the server session" sub="Signing out ends the session on the server, not just locally." />
             <Row
               ok={false}
               label="Two-factor authentication (2FA / passkeys)"
-              sub="Not configured on the current authentication provider. KYNEX won't simulate it — this lights up automatically once TOTP or WebAuthn is enabled on the backend."
+              sub="Not configured on the current authentication provider. KYNEX won't simulate it: this lights up automatically once TOTP or WebAuthn is enabled on the backend."
             />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -85,7 +85,7 @@ export default function Security() {
               onClick={() => act(async () => {
                 await signOut();
                 navigate("/");
-              }, "Signed out — session revoked server-side")}
+              }, "Signed out. Session revoked server-side")}
             >
               <LogOut className="size-4" /> Sign out
             </Button>
@@ -98,7 +98,7 @@ export default function Security() {
             <Monitor className="size-5 text-primary" /> Active sessions
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Live rows from the server session table. Revoking is immediate — refresh tokens are deleted too.
+            Live rows from the server session table. Revoking is immediate, and refresh tokens are deleted too.
           </p>
           {sessions === undefined ? (
             <div className="mt-4 h-24 animate-pulse rounded-2xl bg-muted/50" />
@@ -158,7 +158,7 @@ export default function Security() {
           <div className="mt-4 space-y-2.5 text-sm">
             <Row ok label="Server-side ownership on every record" sub="Every query and mutation re-checks that the row belongs to the authenticated caller." />
             <Row ok label="Cross-user attempts are denied and audit-logged" sub="Denials return a safe result and record a content-free security event." />
-            <Row ok label="Deny-by-default foreign IDs" sub="Foreign or malformed IDs return 'not found' — no existence oracle for attackers." />
+            <Row ok label="Deny-by-default foreign IDs" sub="Foreign or malformed IDs return 'not found', with no existence oracle for attackers." />
           </div>
         </div>
 
@@ -168,12 +168,12 @@ export default function Security() {
           </h3>
           <div className="mt-4 space-y-2.5 text-sm">
             <Row ok label="API keys never reach the frontend" sub="AI calls run in server actions; the client only ever sees the answer." />
-            <Row ok label="Uploaded documents treated as untrusted data" sub="Document content is bounded and framed as data — it cannot override system instructions." />
+            <Row ok label="Uploaded documents treated as untrusted data" sub="Document content is bounded and framed as data, so it cannot override system instructions." />
             <Row ok label="Server-side input validation + rate limits" sub="Message caps, sanitized text, and fixed-window limits on expensive AI operations." />
             <Row
               ok={false}
               label="Malware scanning of uploads"
-              sub="Not available in this deployment — KYNEX does not claim uploaded files are malware-free."
+              sub="Not available in this deployment: KYNEX does not claim uploaded files are malware-free."
             />
           </div>
         </div>
@@ -184,7 +184,7 @@ export default function Security() {
         <h3 className="font-display text-lg font-bold">Audit trail</h3>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
           Security-relevant events (session revocation, cross-user denial attempts, quota
-          exhaustion, deletions) are recorded server-side with actor id, action and timestamp —
+          exhaustion, deletions) are recorded server-side with actor id, action and timestamp,
           never content, tokens, or secrets. This log is ops-only and is not exposed through any
           public query.
         </p>

@@ -61,19 +61,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     streak === 0
       ? "Learn something today to start your streak"
       : streakAlive
-        ? `${streak}-day learning streak 🔥`
+        ? `${streak}-day learning streak`
         : STREAK_MESSAGES.welcomeBack;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ambient gradient field */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/4 size-[500px] rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 size-[400px] rounded-full bg-chart-2/10 blur-3xl" />
-      </div>
-
       {/* ---------- Sidebar (desktop) ---------- */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border/70 bg-sidebar/80 backdrop-blur-xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border/70 bg-sidebar lg:flex">
         <button
           className="flex items-center gap-2.5 px-5 pt-6 pb-5 text-left"
           onClick={() => navigate("/dashboard")}
@@ -139,7 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ---------- Topbar (mobile) ---------- */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background px-4 py-3 lg:hidden">
         <button className="flex items-center gap-2" onClick={() => navigate("/dashboard")}>
           <KynexMark className="size-8" />
           <span className="font-display text-sm font-extrabold tracking-tight">KYNEX</span>
@@ -163,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ---------- Bottom nav (mobile) ---------- */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border/70 bg-background/90 py-1.5 backdrop-blur-xl lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border/70 bg-background py-1.5 lg:hidden">
         {NAV.filter((n) => [
           "/dashboard", "/practice", "/flashcards", "/mistakes", "/chat",
         ].includes(n.to)).map(({ to, label, icon: Icon }) => (
@@ -179,7 +173,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             {({ isActive }) => (
               <>
-                <Icon className={cn("size-5", isActive && "drop-shadow-[0_0_6px_var(--primary)]")} />
+                <Icon className="size-5" />
                 {label === "Command Center" ? "Home" : label.split(" ")[0]}
               </>
             )}
@@ -194,7 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className={cn("rounded-full", mobile && "size-8")}>
-            <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-chart-4 to-primary text-xs font-bold text-primary-foreground">
+            <div className="grid size-8 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               {(user?.name ?? "L").slice(0, 1).toUpperCase()}
             </div>
           </Button>
@@ -230,7 +224,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 /** KYNEX wordmark glyph — a geometric "K" node mark. */
 export function KynexMark({ className }: { className?: string }) {
   return (
-    <span className={cn("relative grid shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary via-primary to-chart-4 text-primary-foreground shadow-md", className)}>
+    <span className={cn("relative grid shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md", className)}>
       <svg viewBox="0 0 24 24" fill="none" className="size-[58%]">
         <path d="M7 4v16" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
         <path d="M17 4l-7.5 8L17 20" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -253,23 +247,13 @@ export function PageHeader({
     >
       <div>
         {eyebrow && (
-          <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-            <SparklesDot /> {eyebrow}
+          <p className="font-data mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            {eyebrow}
           </p>
         )}
         <h1 className="font-display text-2xl font-bold sm:text-3xl">{title}</h1>
       </div>
       {children}
     </motion.div>
-  );
-}
-
-function SparklesDot() {
-  return (
-    <motion.span
-      className="inline-block size-1.5 rounded-full bg-primary"
-      animate={{ scale: [1, 1.6, 1], opacity: [1, 0.6, 1] }}
-      transition={{ repeat: Infinity, duration: 2 }}
-    />
   );
 }

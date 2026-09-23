@@ -47,7 +47,7 @@ export default function Insights() {
               <BarChart3 className="size-5 text-primary" /> Academic Pulse
             </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Signals move as you practice and review. Indicators of performance — not diagnoses.
+              Signals move as you practice and review. Indicators of performance, not diagnoses.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <Trend label="Mastery" from={insights.accuracyTrend?.from ?? null} to={insights.accuracyTrend?.to ?? insights.overallMastery} note="accuracy, earlier vs recent sessions" />
@@ -59,7 +59,7 @@ export default function Insights() {
             {insights.recallTrend && insights.recallTrend.delta < -5 && insights.accuracyTrend && insights.accuracyTrend.delta > 0 && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary/5 px-4 py-3">
                 <p className="text-sm font-medium text-primary">
-                  Recall is falling while understanding improves — a short retrieval session is recommended.
+                  Recall is falling while understanding improves: a short retrieval session is recommended.
                 </p>
                 <Button size="sm" className="rounded-lg" onClick={() => navigate("/flashcards")}>Open Recall</Button>
               </div>
@@ -82,7 +82,7 @@ export default function Insights() {
               </p>
               {insights.mistakes.length === 0 ? (
                 <p className="mt-6 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
-                  No mistakes recorded yet — that will change (and that's useful).
+                  No mistakes recorded yet. That will change (and that's useful).
                 </p>
               ) : (
                 <div className="mt-4 space-y-3">
@@ -118,12 +118,12 @@ export default function Insights() {
             </div>
 
             {/* ---------- Exam Radar ---------- */}
-            <div className="rounded-3xl border border-xp/40 bg-gradient-to-br from-xp/10 to-card p-6">
+            <div className="rounded-3xl border border-xp/40 bg-xp/5 p-6">
               <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                 <Target className="size-5 text-xp-foreground" /> Exam Radar
               </h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Preparation priority from your mastery, recency and question counts — evidence-based, never a prediction of what will appear.
+                Preparation priority from your mastery, recency and question counts: evidence-based, never a prediction of what will appear.
               </p>
               {insights.radar.length === 0 ? (
                 <p className="mt-6 rounded-xl bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
@@ -208,7 +208,7 @@ function Trend({
             {from} <span className="text-muted-foreground">→</span> {to}
           </>
         ) : (
-          "—"
+          "--"
         )}
       </p>
       {delta != null && delta !== 0 && (
@@ -265,7 +265,7 @@ function WeeklyReportCard({
   const r = weekly.report;
 
   return (
-    <div className="mb-6 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/5 via-card to-card p-6">
+    <div className="mb-6 rounded-3xl border border-primary/25 bg-card p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold">
           <FileBarChart className="size-5 text-primary" /> Weekly Intelligence Report
@@ -285,7 +285,7 @@ function WeeklyReportCard({
             <Stat label="Study minutes" value={`${r.stats.minutesThisWeek}`} sub={`last week: ${r.stats.minutesLastWeek}`} />
             <Stat
               label="Practice accuracy"
-              value={r.stats.accuracyThisWeek != null ? `${r.stats.accuracyThisWeek}%` : "—"}
+              value={r.stats.accuracyThisWeek != null ? `${r.stats.accuracyThisWeek}%` : "--"}
               sub={
                 r.stats.accuracyLastWeek != null
                   ? `last week: ${r.stats.accuracyLastWeek}%`
@@ -308,7 +308,7 @@ function WeeklyReportCard({
                     </li>
                   ))
                 ) : (
-                  <li className="text-sm text-muted-foreground">No measurable improvement this week — the next action below is the fastest lever.</li>
+                  <li className="text-sm text-muted-foreground">No measurable improvement this week. The next action below is the fastest lever.</li>
                 )}
               </ul>
             </div>
@@ -331,7 +331,7 @@ function WeeklyReportCard({
 
           {r.repeatedMistakes.length > 0 && (
             <div className="mt-4 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-destructive">Repeated mistakes — break the pattern</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-destructive">Repeated mistakes: break the pattern</p>
               <ul className="mt-1.5 space-y-1">
                 {r.repeatedMistakes.map((s, i) => (
                   <li key={i} className="text-sm text-muted-foreground">• {s.evidence}</li>

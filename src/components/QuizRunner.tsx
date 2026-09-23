@@ -107,7 +107,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
       setResult(res);
       if (res.xp > 0) toast.success(`+${res.xp} XP earned`);
       if (res.leveledUp) {
-        setTimeout(() => toast.success(`🎉 Level up! You reached level ${res.newLevel}`), 600);
+        setTimeout(() => toast.success(`Level up! You reached level ${res.newLevel}`), 600);
       }
     } catch (e) {
       finishedRef.current = false;
@@ -233,7 +233,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 2.2, ease: "linear" }}
-          className="mx-auto grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary to-chart-4 text-primary-foreground shadow-xl"
+          className="mx-auto grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary"
         >
           <Brain className="size-8" />
         </motion.div>
@@ -241,7 +241,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
           {isExam ? "Preparing your exam…" : "Writing your questions…"}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          KYNEX is crafting questions that test understanding — not trivia.
+          KYNEX is crafting questions that test understanding, not trivia.
         </p>
         <div className="mx-auto mt-6 max-w-xs space-y-2">
           {["Reading the material", "Picking what to test", "Writing questions"].map((s, i) => (
@@ -266,7 +266,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
         <AlertTriangle className="mx-auto size-12 text-destructive" />
         <p className="mt-5 font-display text-2xl font-bold">Question generation failed</p>
         <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">{attempt.error}</p>
-        <p className="mt-1 text-xs text-muted-foreground">No questions were faked — nothing to grade yet.</p>
+        <p className="mt-1 text-xs text-muted-foreground">No questions were faked. Nothing to grade yet.</p>
         <div className="mt-6 flex justify-center gap-3">
           <Button onClick={() => navigate("/practice")}>Back to practice</Button>
         </div>
@@ -330,7 +330,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
               label="accuracy"
             />
             <h2 className="mt-4 font-display text-2xl font-extrabold">
-              {accuracy === 100 ? "Flawless run! 🏆" : accuracy >= 80 ? "Strong work! 🔥" : accuracy >= 50 ? "Good progress 👏" : "Found your gaps 🔍"}
+              {accuracy === 100 ? "Flawless run." : accuracy >= 80 ? "Strong work." : accuracy >= 50 ? "Good progress." : "Found your gaps."}
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
               {correctCount} of {answeredList.length} correct
@@ -364,12 +364,12 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
 
         {/* ---------- EXAM AUTOPSY ---------- */}
         {isExam && (
-          <div className="edge-glow mt-5 rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/5 via-card to-card p-6">
+          <div className="mt-5 rounded-3xl border border-primary/25 bg-card p-6">
             <h3 className="flex items-center gap-2 font-display text-lg font-bold">
               <Stethoscope className="size-5 text-primary" /> Exam Autopsy
             </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              What went wrong and why — computed from your answers, timing and confidence signals.
+              What went wrong and why, computed from your answers, timing and confidence signals.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <AutopsyCard
@@ -377,7 +377,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 tone="text-chart-5"
                 title="Weak concepts"
                 body={weakConcepts.length > 0
-                  ? `${weakConcepts.slice(0, 4).join(", ")} — these cost you the most marks.`
+                  ? `${weakConcepts.slice(0, 4).join(", ")}: these cost you the most marks.`
                   : "No concept cost you marks this time."}
               />
               <AutopsyCard
@@ -386,14 +386,14 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 title="Careless mistakes"
                 body={careless.length > 0
                   ? `${careless.length} question${careless.length === 1 ? "" : "s"} you were sure about on easy material. Slow down on the obvious ones.`
-                  : "None detected — your confident answers held."}
+                  : "None detected. Your confident answers held."}
               />
               <AutopsyCard
                 icon={Clock}
                 tone="text-chart-2"
                 title="Time management"
                 body={slowWrong.length > 0
-                  ? `${slowWrong.length} wrong answer${slowWrong.length === 1 ? "" : "s"} took over 1.5× your average time — you ground on them too long.`
+                  ? `${slowWrong.length} wrong answer${slowWrong.length === 1 ? "" : "s"} took over 1.5× your average time. You ground on them too long.`
                   : avgSec != null
                     ? `Pacing was healthy (~${avgSec}s per question).`
                     : "No timing data recorded."}
@@ -403,18 +403,18 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 tone="text-primary"
                 title="Gaps vs. guesses"
                 body={guessedWrong.length > 0
-                  ? `${guessedWrong.length} were honest guesses — that's a knowledge gap to fill, not a mistake to fix.`
+                  ? `${guessedWrong.length} were honest guesses: that's a knowledge gap to fill, not a mistake to fix.`
                   : skipped > 0 || flaggedUnanswered.length > 0
                     ? `${skipped} skipped, ${flaggedUnanswered.length} flagged and never answered.`
-                    : "Every answer was deliberate — good exam discipline."}
+                    : "Every answer was deliberate. Good exam discipline."}
               />
             </div>
             <div className="mt-4 rounded-xl bg-primary/5 px-4 py-3">
               <p className="flex items-start gap-2 text-sm font-medium text-primary">
                 <TrendingUp className="mt-0.5 size-4 shrink-0" />
                 {weakConcepts.length > 0
-                  ? `Next move: run targeted practice on ${weakConcepts[0]} — the mission engine will pick this up automatically.`
-                  : "All clear — keep the streak going with Recall review."}
+                  ? `Next move: run targeted practice on ${weakConcepts[0]}. The mission engine will pick this up automatically.`
+                  : "All clear. Keep the streak going with Recall review."}
               </p>
             </div>
           </div>
@@ -503,7 +503,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
         )}>
           <span className="flex items-center gap-2 text-sm font-bold">
             <Timer className={cn("size-4", timeCritical ? "text-destructive" : "text-primary")} />
-            {timeCritical ? "Final minute — submit what you have" : "Exam in progress"}
+            {timeCritical ? "Final minute. Submit what you have" : "Exam in progress"}
           </span>
           <span
             className={cn(
@@ -523,7 +523,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
       <div className="mt-4 flex items-center gap-3">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-chart-4"
+            className="h-full rounded-full bg-primary"
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.4 }}
           />
@@ -694,7 +694,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 >
                   <p className={cn("flex items-center gap-2 font-display font-bold", feedback.correct ? "text-success" : "text-destructive")}>
                     {feedback.correct ? <CheckCircle2 className="size-5" /> : <XCircle className="size-5" />}
-                    {feedback.correct ? "Correct!" : "Not quite — here's the gap"}
+                    {feedback.correct ? "Correct!" : "Not quite: here's the gap"}
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-foreground">{question.explanation}</p>
                   {!feedback.correct && question.whyWrong.length > 0 && (
