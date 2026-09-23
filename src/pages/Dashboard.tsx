@@ -16,6 +16,137 @@ import { MasteryRings, StreakDots } from "@/components/VisualBits";
 import { MASTERY_LOOP, levelTitle } from "@/lib/game";
 import { cn } from "@/lib/utils";
 import type { Mission } from "@/lib/learning";
+import type { FunctionComponent } from "react";
+
+/**
+ * Readiness Radar — rolling unit proficiency from the readiness engine.
+ *
+ * Every number is real: proficiency is computed server-side from verified
+ * quiz answers only (recency-weighted). Units below 70% are flagged with a
+ * structured review module; units without enough evidence say so honestly
+ * instead of showing a made-up score.
+ */
+function ReadinessRadar({ navigate }: { navigate: (to: string) => void }) {
+  const readiness = useQuery(api.readiness.readinessQuery);
+
+  if (readiness === undefined) {
+    return (
+      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+        <Skeleton className="h-5 w-44" />
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Skeleton className="h-16 rounded-2xl" />
+          <Skeleton className="h-16 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+  if (readiness === null) return null;
+
+  const { counts, units, modules } = readiness;
+  const hasAnyEvidence = counts.ready + counts.building + counts.needsRepair > 0;
+
+  const STATUS_STYLE: Record<
+    string,
+    { label: string; cls: string }
+  > = {
+    needs_repair: { label: "Repair", cls: "bg-chart-5/15 text-chart-5" },
+    building: { label: "Building", cls: "bg-xp/20 text-xp-foreground" },
+    ready: { label: "Ready", cls: "bg-success/15 text-success" },
+    unverified: { label: "No evidence", cls: "bg-muted text-muted-foreground" },
+  };
+
+  const statusIcon: Record<string, FunctionComponent<{ className?: string }>> = {
+    needs_repair: Wrench,
+    building: RefreshCw,
+    ready: ShieldCheck,
+    unverified: Info,
+  };
+
+  return (
+    <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+          <Radar className="size-5 text-primary" /> Readiness Radar
+        </h3>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          {`Repair below ${readiness.threshold}%`}
+        </span>
+      </div>
+      {counts.needsRepair > 0 && (
+        <p className="mt-2 rounded-xl bg-chart-5/10 px-3.5 py-2.5 text-xs leading-relaxed text-chart-5">
+          {counts.needsRepair} unit{counts.needsRepair === 1 ? "" : "s"} below the {readiness.threshold}% line. Each has a structured review module — relearn, recall, practice, verify.
+        </p>
+      )}
+      {!hasAnyEvidence ? (
+        <p className="mt-4 rounded-xl bg-muted/50 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
+          {counts.unverified > 0
+            ? "Units exist but none have enough practice evidence yet — answer at least 3 questions on a unit and its rolling score will appear here."
+            : "Practice a unit to start its readiness score — only verified quiz evidence moves it, never passive reading."}
+        </p>
+      ) : (
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+          {units.map((u) => {
+            const style = STATUS_STYLE[u.status] ?? STATUS_STYLE.unverified;
+            const Icon = statusIcon[u.status] ?? Info;
+            const clickable = u.status !== "unverified" && u.materialId;
+            return (
+              <button
+                key={u.unitKey}
+                onClick={() => {
+                  if (!clickable) return;
+                  navigate(`/practice/${u.materialId}?concept=${encodeURIComponent(u.unitKey)}`);
+                }}
+                disabled={!clickable}
+                className={cn(
+                  "rounded-2xl border border-border/60 bg-muted/30 p-4 text-left transition-colors",
+                  clickable && "hover:border-primary/40 hover:bg-accent/50",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                    <Icon className="size-3.5 shrink-0" />
+                    <span className="truncate">{u.unitLabel}</span>
+                  </span>
+                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold", style.cls)}>
+                    {style.label}
+                  </span>
+                </div>
+                <p className="mt-1.5 font-display text-xl font-extrabold tracking-tight">
+                  {u.proficiency !== null ? `${u.proficiency}%` : "—"}
+                </p>
+                <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={u.evidence}>
+                  {u.evidence}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {modules.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {modules.map((m) => (
+            <div key={m.unitKey} className="rounded-2xl border border-chart-5/25 bg-chart-5/5 px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-xs font-bold">Review module · {m.unitLabel}</p>
+                <span className="shrink-0 text-[10px] font-extrabold text-chart-5">{m.proficiency}%</span>
+              </div>
+              <ol className="mt-1.5 space-y-1">
+                {m.steps.map((s, i) => (
+                  <li key={s.kind} className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
+                    <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-chart-5/15 text-[9px] font-extrabold text-chart-5">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0"><span className="font-semibold text-foreground">{s.title}</span> — {s.detail}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** Live signals from the nudge engine — every line carries a REAL number from
  *  the student's own data. Recomputed server-side on load; dismissal persists. */
@@ -377,6 +508,9 @@ export default function Dashboard() {
           </Button>
         </div>
       )}
+
+      {/* ---------- Readiness Radar (rolling unit proficiency) ---------- */}
+      <ReadinessRadar navigate={navigate} />
 
       {/* ---------- Rescue mode bar ---------- */}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-destructive/25 bg-gradient-to-r from-destructive/5 via-card to-card px-6 py-4">

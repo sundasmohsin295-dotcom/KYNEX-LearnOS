@@ -238,7 +238,12 @@ export interface BreakerOps {
 
 export function aiBreaker(ctx: ActionCtx): BreakerOps {
   return {
-    gate: () => ctx.runMutation(internal.circuitBreaker.gateInternal, {}),
+    // Awaited explicitly: the internal mutation resolves to null, but the
+    // BreakerOps contract is Promise<void> — the gate's throw (when open)
+    // must propagate, its return value must not leak through the type.
+    gate: async () => {
+      await ctx.runMutation(internal.circuitBreaker.gateInternal, {});
+    },
     success: (durationMs) => {
       void ctx.runMutation(internal.circuitBreaker.recordSuccessInternal, { durationMs });
     },

@@ -10,6 +10,7 @@ import dns from "node:dns/promises";
 import net from "node:net";
 import { normalizeUntrustedText } from "./aiSanitize";
 import { aiBreaker, type BreakerOps } from "./circuitBreaker";
+import { GROUNDED_TUTOR_RULE, OUT_OF_SCOPE_MESSAGE, scopeDecision } from "./tutorScope";
 
 // ---------------------------------------------------------------------------
 // Server-side rate limiting for AI/ingest actions (actions can't import the
@@ -822,6 +823,42 @@ export const chatInternal = internalAction({
           content: frameUntrusted("selected study material", text),
         });
       }
+
+      // --- Verified grounding gate (deterministic, pre-LLM) ---
+      // The gate scores the student's LAST question against the material's
+      // own vocabulary. Out-of-scope questions never reach the provider: the
+      // fixed fallback is stored as the assistant reply. This is real
+      // verification, not a prompt promise — the model cannot answer a
+      // question it never receives.
+      const material = await ctx.runQuery(internal.materials.getInternal, {
+        id: materialId,
+      });
+      const lastStudent = [...history]
+        .reverse()
+        .find((m) => m.role === "user");
+      if (lastStudent && text) {
+        const decision = scopeDecision(lastStudent.content, {
+          materialText: text,
+          concepts: material?.analysis?.concepts.map((c) => c.name) ?? [],
+          title: material?.title,
+        });
+        if (decision && decision.verdict === "out_of_scope") {
+          console.log(
+            `[TutorScopeGate] conversationId=${conversationId} verdict=out_of_scope relevance=${decision.relevance.toFixed(2)}`,
+          );
+          await ctx.runMutation(internal.learning.appendAssistantInternal, {
+            conversationId,
+            content: OUT_OF_SCOPE_MESSAGE,
+          });
+          return;
+        }
+        // In scope: attach the hard negative-constraint rule so the response
+        // is forced to cite the material or state absence explicitly.
+        messages.push({
+          role: "system",
+          content: GROUNDED_TUTOR_RULE,
+        });
+      }
     }
     for (const m of history.slice(-16)) {
       const role = m.role === "assistant" ? "assistant" : "user";
@@ -836,7 +873,9 @@ export const chatInternal = internalAction({
         content:
           "No study material is selected (GENERAL KNOWLEDGE MODE). Teach the requested concept fully from your own subject knowledge. Do not claim the explanation is drawn from uploaded course material — it is not.",
       });
-    } else {
+    } else if (materialId) {
+      // Source-labeling still applies when the gate didn't run (no chunks or
+      // no question yet) — one fetch, reused from the gate block.
       const material = await ctx.runQuery(internal.materials.getInternal, {
         id: materialId,
       });

@@ -6,6 +6,7 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { enforceRateLimit } from "./security";
 import { BREAKER_CONFIG, closedSnapshot } from "./circuitBreaker";
 
@@ -36,7 +37,7 @@ function sanitizeClientMessage(raw: string): string {
     .slice(0, MAX_MESSAGE);
 }
 
-async function currentUserId(ctx: QueryCtx): Promise<string | null> {
+async function currentUserId(ctx: QueryCtx): Promise<Id<"users"> | null> {
   const userId = await getAuthUserId(ctx);
   return userId ?? null;
 }
