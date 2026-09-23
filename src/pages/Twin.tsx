@@ -198,13 +198,13 @@ export default function Twin() {
                   {profile?.currentGpa != null && (
                     <div>
                       <p className="text-[11px] font-semibold uppercase text-muted-foreground">Current GPA</p>
-                      <p className="font-display text-2xl font-extrabold">{profile.currentGpa}</p>
+                      <p className="font-data text-2xl font-semibold">{profile.currentGpa}</p>
                     </div>
                   )}
                   {profile?.currentCgpa != null && (
                     <div>
                       <p className="text-[11px] font-semibold uppercase text-muted-foreground">Current CGPA</p>
-                      <p className="font-display text-2xl font-extrabold">{profile.currentCgpa}</p>
+                      <p className="font-data text-2xl font-semibold">{profile.currentCgpa}</p>
                     </div>
                   )}
                 </div>
@@ -485,7 +485,7 @@ export default function Twin() {
                       {intel.you.personalBest != null && (
                         <div className="col-span-3 rounded-xl bg-card/70 px-3.5 py-2.5 text-center">
                           <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Personal best session</p>
-                          <p className="font-display text-xl font-extrabold text-success">{intel.you.personalBest}%</p>
+                          <p className="font-data text-xl font-semibold text-success">{intel.you.personalBest}%</p>
                         </div>
                       )}
                     </div>

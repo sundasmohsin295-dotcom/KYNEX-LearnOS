@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { spring } from "@/lib/motion";
 import { MODES, MODE_TO_AI, type ModeKey } from "@/lib/learning";
 
 const QUICK_PROMPTS = [
@@ -348,20 +349,31 @@ export default function Chat() {
           </div>
 
           {/* mode chips */}
-          <div className="flex gap-1.5 overflow-x-auto border-b border-border/60 px-4 py-2 scrollbar-thin">
+          {/* HIG segmented control: the selection pill slides between chips
+              with spring physics instead of remounting buttons. */}
+          <div className="relative flex gap-1.5 overflow-x-auto border-b border-border/60 px-4 py-2 scrollbar-thin">
             {MODES.map((m) => (
-              <button
+              <motion.button
                 key={m.key}
                 onClick={() => setMode(m.key)}
+                whileTap={{ scale: 0.97 }}
+                transition={spring.snappy}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1 text-[11px] font-bold transition-colors",
+                  "relative shrink-0 rounded-full px-3 py-1 text-[11px] font-bold transition-colors",
                   mode === m.key
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:text-foreground",
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {m.label}
-              </button>
+                {mode === m.key && (
+                  <motion.span
+                    layoutId="chat-mode-pill"
+                    transition={spring.snappy}
+                    className="absolute inset-0 rounded-full bg-primary"
+                  />
+                )}
+                <span className="relative z-10">{m.label}</span>
+              </motion.button>
             ))}
           </div>
 

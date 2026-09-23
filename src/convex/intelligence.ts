@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { query, mutation, type QueryCtx, type MutationCtx } from "./_generated/server";
+import { query, mutation, internalQuery, type QueryCtx, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
@@ -624,5 +624,33 @@ export const startRescuePlan = mutation({
     await logAuditEvent(ctx, userId, "rescue_plan_started_v2", cleanSituation || "unspecified");
     await ensureProfiles(ctx);
     return { created: plan.steps.length, summary: plan.summary, honestNote: plan.honestNote };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Internal data access for the adaptive drill calibrator (aiEngine). Server
+// only: internal functions have no public HTTP surface and are callable only
+// from other server functions, so the caller's own auth context governs use.
+// ---------------------------------------------------------------------------
+
+/** The student's per-concept mastery rows (internal, for drill calibration). */
+export const masteryInternal = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    return await ctx.db
+      .query("masteryScores")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+  },
+});
+
+/** The student's scheduled exams (internal, for exam-proximity calibration). */
+export const examsInternal = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    return await ctx.db
+      .query("exams")
+      .withIndex("by_user_date", (q) => q.eq("userId", userId))
+      .collect();
   },
 });

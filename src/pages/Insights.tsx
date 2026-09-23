@@ -225,7 +225,7 @@ function SignalBox({ label, value, tone, note }: { label: string; value: number;
   return (
     <div className="rounded-2xl border border-border/60 bg-muted/30 p-4" title={note}>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn("mt-1.5 font-display text-2xl font-extrabold", tone)}>{value}%</p>
+      <p className={cn("font-data mt-1.5 text-2xl font-semibold", tone)}>{value}%</p>
     </div>
   );
 }

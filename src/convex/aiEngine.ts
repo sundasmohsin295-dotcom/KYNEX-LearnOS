@@ -950,10 +950,54 @@ export const quizInternal = internalAction({
       const conceptLine = conceptKey
         ? `Focus all questions on the concept "${conceptKey}".`
         : `Cover the key concepts of the material evenly.`;
-      const difficultyLine =
-        difficulty === "adaptive"
-          ? "Order questions from easy to hard."
-          : `All questions should be ${difficulty} difficulty.`;
+
+      // Adaptive drill calibration ("Topper's Loop"): the student's own
+      // mistake history + exam proximity set the difficulty target, so the
+      // session adapts to the learner instead of a fixed easy-to-hard ramp.
+      let difficultyLine = `All questions should be ${difficulty} difficulty.`;
+      if (difficulty === "adaptive") {
+        const mastery = await ctx.runQuery(internal.intelligence.masteryInternal, {
+          userId: material.userId,
+        });
+        const rows = (mastery ?? []) as Array<{
+          conceptKey: string;
+          attempts: number;
+          correct: number;
+        }>;
+        const key = conceptKey?.toLowerCase().trim();
+        const relevant = key ? rows.filter((r) => r.conceptKey === key) : rows;
+        const attempts = relevant.reduce((n, r) => n + r.attempts, 0);
+        const correct = relevant.reduce((n, r) => n + r.correct, 0);
+        const acc = attempts > 0 ? correct / attempts : null;
+        const exams = await ctx.runQuery(internal.intelligence.examsInternal, {
+          userId: material.userId,
+        });
+        const daysToExam = exams.length
+          ? Math.min(...exams.map((e) => Math.ceil((e.examDate - Date.now()) / 86400000)))
+          : null;
+        // Calibrated bands: weak evidence or a near exam pushes down (accuracy
+        // + speed of recall under pressure beats hardest-possible questions);
+        // solid accuracy with time to spare pushes up.
+        const nearExam = daysToExam !== null && daysToExam <= 14;
+        if (attempts < 3 || acc === null) {
+          difficultyLine = "Order questions from easy to hard, starting gentle: there is little evidence on this student yet.";
+        } else if (acc < 0.6) {
+          difficultyLine = nearExam
+            ? "Mostly medium questions with a few easy ones: accuracy is low and an exam is close, so rebuild reliable recall first."
+            : "Mostly easy to medium questions: accuracy is below 60%, so rebuild foundations before harder items.";
+        } else if (acc < 0.8) {
+          difficultyLine = nearExam
+            ? "Mix of medium and a few hard questions under a light time-perception framing: solid accuracy, exam approaching."
+            : "Mix of medium and hard questions: accuracy is between 60% and 80%.";
+        } else {
+          difficultyLine = nearExam
+            ? "Mostly hard questions with exam-style wording: accuracy is above 80% and an exam is near, so stress-test application."
+            : "Mostly hard questions: accuracy is above 80%, so push application and edge cases.";
+        }
+        if (daysToExam !== null) {
+          difficultyLine += ` The student's next exam is in about ${daysToExam} day${daysToExam === 1 ? "" : "s"}.`;
+        }
+      }
 
       // Centralized provider path (identical to chat/analysis/examiner).
       const raw = await callAI(

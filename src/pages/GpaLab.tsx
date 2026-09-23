@@ -122,7 +122,8 @@ export default function GpaLab() {
             />
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Cumulative CGPA</p>
-              <p className="mt-1 font-display text-4xl font-extrabold tracking-tight">
+              {/* HIG: academic counters use tabular monospace, not display serif. */}
+              <p className="font-data mt-1 text-4xl font-semibold tracking-tight">
                 {cgpa != null ? cgpa.toFixed(2) : "--"}
                 <span className="ml-1 text-base font-bold text-muted-foreground">/ {data.max}.0</span>
               </p>
@@ -528,7 +529,7 @@ function MiniStat({
       onClick={onClick}
     >
       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
-      <p className={cn("mt-1 font-display text-xl font-extrabold", tone)}>{value}</p>
+      <p className={cn("font-data mt-1 text-xl font-semibold", tone)}>{value}</p>
     </div>
   );
 }
@@ -545,7 +546,7 @@ function ScenarioCard({
       className="rounded-3xl border border-border/70 bg-card p-5"
     >
       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</p>
-      <p className={cn("mt-1.5 font-display text-3xl font-extrabold", tone)}>
+      <p className={cn("font-data mt-1.5 text-3xl font-semibold", tone)}>
         {value != null ? value.toFixed(2) : "--"}
       </p>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
