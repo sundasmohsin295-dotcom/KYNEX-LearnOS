@@ -14,7 +14,7 @@ import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MasteryRings, StreakDots } from "@/components/VisualBits";
-import { MASTERY_LOOP, levelTitle } from "@/lib/game";
+import { MASTERY_LOOP, levelTitle, identityRank } from "@/lib/game";
 import { cn } from "@/lib/utils";
 import type { Mission } from "@/lib/learning";
 import type { FunctionComponent } from "react";
@@ -270,6 +270,28 @@ export default function Dashboard() {
   const streakAlive = stats.streakSafe;
   const daysToExam = nextExam ? Math.ceil((nextExam.examDate - Date.now()) / 86400000) : null;
 
+  // Identity rank: a deterministic mapping from the student's OWN measured
+  // numbers — no fabricated cohort comparisons KYNEX has no data to claim.
+  const rank = identityRank({ accuracy: stats.accuracy, mastered: stats.mastered, streak });
+
+  // Exam-proximity triage: honest compression cue from real coverage data.
+  // KYNEX never invents pass probabilities; urgency comes from the actual
+  // countdown and guidance from actually-measured weak/strong concepts.
+  const triageLine =
+    nextExam && daysToExam !== null
+      ? daysToExam <= 7
+        ? stats.weakCount > 0
+          ? `${stats.weakCount} concept${stats.weakCount === 1 ? " still measures" : "s still measure"} weak. Triage those first; leave mastered topics on maintenance.`
+          : stats.accuracy >= 80
+            ? "No weak concepts left. One timed pass beats new material now."
+            : "Coverage is complete but accuracy says polish: rerun your weakest sets."
+        : daysToExam <= 30
+          ? stats.weakCount > 0
+            ? `${stats.weakCount} weak concept${stats.weakCount === 1 ? "" : "s"} left to close while there's still time.`
+            : "Solid coverage. Deepen mastery while the window allows."
+          : "Coverage window is open: build understanding now, triage later."
+      : null;
+
   // NEXT MOVE evidence, computed from real data only
   const weakMastery = mission?.conceptKey
     ? mastery.find((m) => m.conceptKey === mission.conceptKey)
@@ -283,7 +305,7 @@ export default function Dashboard() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow={`KYNEX Twin · Level ${game.level} ${levelTitle(game.level)}`}
+        eyebrow={`KYNEX Twin · Level ${game.level} ${levelTitle(game.level)} · ${rank.label}`}
         title={
           profile.name ? (
             <>Your academic state, {profile.name.split(" ")[0]}.</>
@@ -717,6 +739,9 @@ export default function Dashboard() {
               <div className="text-right">
                 <p className="text-xs font-semibold text-muted-foreground">Radar · {daysToExam} days</p>
                 <p className="font-display font-bold">{nextExam.title}</p>
+                {triageLine && (
+                  <p className="mt-0.5 max-w-56 text-[11px] leading-snug text-muted-foreground">{triageLine}</p>
+                )}
               </div>
             )}
             <StreakDots streak={streak} todayDone={streakAlive} />

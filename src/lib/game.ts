@@ -26,6 +26,54 @@ export function levelTitle(level: number): string {
   return LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)];
 }
 
+/** Identity ranks (protocol: identity-driven progress). Every rank is a
+ *  deterministic mapping from the student's OWN measured numbers — accuracy,
+ *  mastered concepts, streak, questions answered — never a fabricated
+ *  cohort comparison like "top 10%", which KYNEX has no data to claim.
+ *  Checked in order; the first threshold met wins. */
+export const IDENTITY_RANKS = [
+  {
+    key: "topper_core",
+    label: "Topper Core",
+    requires: { accuracy: 85, mastered: 8, streak: 7 },
+    blurb: "Sustained accuracy across a growing set of mastered concepts.",
+  },
+  {
+    key: "sharpshooter",
+    label: "Sharpshooter",
+    requires: { accuracy: 75, mastered: 3 },
+    blurb: "Consistently high accuracy over real practice volume.",
+  },
+  {
+    key: "builder",
+    label: "Builder",
+    requires: { accuracy: 60, mastered: 1 },
+    blurb: "Momentum is real: concepts are moving into mastered territory.",
+  },
+  {
+    key: "foundation",
+    label: "Foundation",
+    requires: {},
+    blurb: "Every rank above this one is built from measured accuracy.",
+  },
+] as const;
+
+export type IdentityRankStats = {
+  accuracy: number;
+  mastered: number;
+  streak: number;
+};
+
+export function identityRank(stats: IdentityRankStats) {
+  return (
+    IDENTITY_RANKS.find((rank) =>
+      (Object.entries(rank.requires) as [keyof IdentityRankStats, number][]).every(
+        ([key, min]) => stats[key] >= min,
+      ),
+    ) ?? IDENTITY_RANKS[IDENTITY_RANKS.length - 1]
+  );
+}
+
 export const MISSION_KIND_META: Record<
   string,
   { label: string; icon: string }
