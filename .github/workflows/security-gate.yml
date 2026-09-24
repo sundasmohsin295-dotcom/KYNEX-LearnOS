@@ -1,0 +1,71 @@
+name: KYNEX Security Gate (Strix)
+
+# Autonomous penetration testing on every pull request. Strix validates
+# findings with real proofs-of-concept inside its sandbox, then exits non-zero
+# when vulnerabilities are confirmed, which blocks the merge here.
+on:
+  pull_request:
+  # Nightly full-repo sweep; PRs use fast diff-scoped quick reviews.
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+# Least privilege: nothing needs write scopes to scan.
+permissions:
+  contents: read
+
+concurrency:
+  group: security-gate-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  strix-pentest:
+    name: Strix autonomous pentest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # Full history so Strix can scope quick reviews to changed files.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install Strix
+        run: curl -sSL https://strix.ai/install | bash
+
+      - name: Run Strix scan
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        # Headless mode. Exit codes: 0 = no vulnerabilities, 1 = fatal error,
+        # 2 = confirmed findings — either non-zero status fails this job and
+        # blocks the merge (mark this workflow a required status check).
+        # --max-budget caps LLM spend for the whole scan in USD.
+        run: >-
+          strix -n -t ./ --scan-mode quick
+          --instruction-file .github/strix-instruction.md
+          --max-budget 10
+
+      - name: Upload Strix run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strix-run-${{ github.event.pull_request.number || github.run_id }}
+          path: strix_runs/
+          retention-days: 30
+
+  # Cheap deterministic guardrails that run alongside the agent scan.
+  hygiene:
+    name: Static hygiene (typecheck, tests, lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun tsc -b --noEmit
+      - name: Tests
+        run: bun vitest run
+      - name: Lint
+        run: bun run lint
