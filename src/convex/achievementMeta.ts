@@ -16,4 +16,9 @@ export const ACHIEVEMENT_META: Record<
   level_10: { title: "Double Digits", description: "Reached level 10", icon: "crown" },
   cards_50: { title: "Card Shark", description: "Reviewed 50 flashcards", icon: "cards" },
   questions_100: { title: "Century", description: "Answered 100 practice questions", icon: "hundred" },
+  // Hidden achievements: revealed only on unlock (variable reward discovery).
+  night_owl: { title: "Night Owl", description: "Studied between midnight and 5am", icon: "moon" },
+  sunrise_session: { title: "Sunrise Session", description: "Studied before 7am", icon: "dawn" },
+  comeback: { title: "The Comeback", description: "A streak freeze saved your streak and you kept going", icon: "shield" },
+  examiner_pro: { title: "Examiner's Eye", description: "Ran 3 AI Examiner evaluations", icon: "gavel" },
 };

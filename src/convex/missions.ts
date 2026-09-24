@@ -504,8 +504,14 @@ export const completeMission = mutation({
     if (!wasCompleted) {
       // XP only for real graded performance — never for clicking through.
       const xpEarned = Math.max(0, correct * 10 + (scorePct === 100 && answered >= 3 ? 40 : 0));
-      const { awardXp } = await import("./gamification");
-      await awardXp(ctx, xpEarned, `Mission: ${mission.title}`);
+      // Variable reward: a surprise burst after strong missions (>=80% with
+      // real graded answers). Deterministic seed; ~1/3 of qualifying missions.
+      const { awardXp, variableRewardXp } = await import("./gamification");
+      const burst = variableRewardXp(
+        `${mission._id}:${correct}:${answered}`,
+        answered >= 3 ? scorePct : null,
+      );
+      await awardXp(ctx, xpEarned + burst, burst > 0 ? `Mission burst: ${mission.title}` : `Mission: ${mission.title}`);
       await ctx.db.insert("studySessions", {
         userId,
         minutes: Math.max(3, Math.round(answered * 1.5)),

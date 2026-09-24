@@ -6,6 +6,7 @@ import {
   ensureProfiles,
   awardXp,
   generateNextMission,
+  variableRewardXp,
 } from "./gamification";
 import { ACHIEVEMENT_META } from "./achievementMeta";
 import { enforceRateLimit, logAuditEvent, logAccessDenied } from "./security";
@@ -503,7 +504,19 @@ export const completeQuiz = mutation({
       Math.round(correctCount * 12 + (accuracy === 1 && answeredCount >= 5 ? 60 : 0)),
     );
 
-    const { leveledUp, newLevel } = await awardXp(ctx, xpEarned, `Quiz: ${material?.title ?? "practice"}`);
+    // Variable reward: surprise burst after strong completed quizzes
+    // (>=80% with 5+ answered). Deterministic seed; ~1/3 of qualifying runs.
+    const accuracyPct = Math.round(accuracy * 100);
+    const burst = variableRewardXp(
+      `quiz:${q._id}:${correctCount}:${answeredCount}`,
+      answeredCount >= 5 ? accuracyPct : null,
+    );
+
+    const { leveledUp, newLevel } = await awardXp(
+      ctx,
+      xpEarned + burst,
+      burst > 0 ? `Quiz burst: ${material?.title ?? "practice"}` : `Quiz: ${material?.title ?? "practice"}`,
+    );
     await logStudySession(ctx, Math.max(3, Math.round(answeredCount * 0.75)), q.examMode ? "exam" : "quiz");
 
     // ---- Mistake Bank: durable records for every wrong answer ----

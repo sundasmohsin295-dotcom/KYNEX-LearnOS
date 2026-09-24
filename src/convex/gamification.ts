@@ -18,6 +18,8 @@ export function todayKey(now: number): string {
   return new Date(now).toISOString().slice(0, 10);
 }
 
+const DAY_MS = 86_400_000;
+
 function yesterdayKey(now: number): string {
   return new Date(now - 24 * 3600 * 1000).toISOString().slice(0, 10);
 }
@@ -65,6 +67,34 @@ export async function ensureProfiles(
   return { profile, game };
 }
 
+/**
+ * Grant a streak freeze when earned, capped at 2. Called on genuine study
+ * activity so freezes are always backed by real effort: one per 7-day streak
+ * multiple, plus one "weekend shield" when studying on a Friday. Idempotent
+ * per earn-day, so repeated sessions cannot farm them.
+ */
+export async function grantStreakFreezeEarn(
+  ctx: MutationCtx,
+  gameId: Id<"gameProfiles">,
+  streakCount: number,
+  currentFreezes: number,
+  lastFreezeEarnDay: string | undefined,
+  now: number,
+): Promise<void> {
+  if (currentFreezes >= 2) return;
+  const day = todayKey(now);
+  if (lastFreezeEarnDay === day) return; // one grant max per day
+  const earnedThisStreak = Math.floor(streakCount / 7);
+  const isFriday = new Date(now).getUTCDay() === 5; // weekend shield
+  const qualifies = isFriday || earnedThisStreak > 0;
+  if (!qualifies) return;
+  await ctx.db.patch(gameId, {
+    streakFreezes: currentFreezes + 1,
+    lastFreezeEarnDay: day,
+    updatedAt: now,
+  });
+}
+
 /** Get the current user id inside mutations — throws if unauthenticated. */
 export async function getAuthUserIdStrict(ctx: MutationCtx) {
   const userId = await getAuthUserId(ctx);
@@ -72,7 +102,26 @@ export async function getAuthUserIdStrict(ctx: MutationCtx) {
   return userId;
 }
 
-/** Record an XP gain, update level + streak, and log the event. */
+/**
+ * Variable reward: surprise XP burst after a genuinely strong study event.
+ * Deterministic ranges, seed = the event itself: 2/3 of qualifying events
+ * yield nothing (honest baseline), 1/3 yield a 25-60 XP burst. Never fires
+ * on weak performance, so the reward always signals real mastery progress.
+ */
+export function variableRewardXp(seed: string, scorePct: number | null): number {
+  if (scorePct === null || scorePct < 80) return 0; // strong evidence only
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const bucket = (h >>> 0) % 3; // 0, 1, 2
+  if (bucket !== 0) return 0; // ~2/3 no burst
+  const burst = 25 + ((h >>> 8) % 36); // 25..60
+  return burst;
+}
+
+/** Record an XP gain, update level + streak (with freeze protection), and log the event. */
 export async function awardXp(
   ctx: MutationCtx,
   amount: number,
@@ -86,12 +135,32 @@ export async function awardXp(
   const newLevel = levelForXp(xp);
   const leveledUp = newLevel > game.level;
 
-  // streak: only counts days with genuine learning activity
+  // streak: only counts days with genuine learning activity. A single missed
+  // day is bridged by consuming a freeze before the streak resets.
   const today = todayKey(now);
   let streakCount = game.streakCount;
   let lastStudyDay = game.lastStudyDay;
+  let freezes = game.streakFreezes ?? 0;
   if (game.lastStudyDay !== today) {
-    streakCount = game.lastStudyDay === yesterdayKey(now) ? game.streakCount + 1 : 1;
+    if (game.lastStudyDay === yesterdayKey(now)) {
+      streakCount = game.streakCount + 1;
+    } else if (
+      game.streakCount > 0 &&
+      freezes > 0 &&
+      game.lastStudyDay === yesterdayKey(now - DAY_MS)
+    ) {
+      // Exactly one day was missed: consume a freeze and continue the streak.
+      freezes -= 1;
+      streakCount = game.streakCount; // bridge day restores continuity
+      await ctx.db.insert("xpEvents", {
+        userId,
+        amount: 0,
+        reason: "Streak freeze used: gap day covered by earned protection",
+        createdAt: now,
+      });
+    } else {
+      streakCount = 1;
+    }
     lastStudyDay = today;
   }
 
@@ -100,10 +169,14 @@ export async function awardXp(
     level: newLevel,
     streakCount,
     lastStudyDay,
+    streakFreezes: freezes,
     longestStreak: Math.max(game.longestStreak, streakCount),
     updatedAt: now,
   });
   await ctx.db.insert("xpEvents", { userId, amount, reason, createdAt: now });
+
+  // Earn a freeze when the (possibly just-extended) streak qualifies.
+  await grantStreakFreezeEarn(ctx, game._id, streakCount, freezes, game.lastFreezeEarnDay, now);
 
   await maybeUnlockAchievements(ctx, userId);
   return { leveledUp, newLevel, streak: streakCount };
@@ -151,6 +224,12 @@ const ACHIEVEMENTS: Array<{ key: string; check: (s: Stats) => boolean }> = [
   { key: "level_10", check: (s) => s.level >= 10 },
   { key: "cards_50", check: (s) => s.reviewsDone >= 50 },
   { key: "questions_100", check: (s) => s.questionsAnswered >= 100 },
+  // Hidden achievements: never listed upfront; they surface only on unlock
+  // (variable-reward style discovery of habits, not effort theater).
+  { key: "night_owl", check: (s) => s.studiedLateNight },
+  { key: "sunrise_session", check: (s) => s.studiedEarlyMorning },
+  { key: "comeback", check: (s) => s.streakFreezeSaved },
+  { key: "examiner_pro", check: (s) => s.evaluations >= 3 },
 ];
 
 interface Stats {
@@ -162,6 +241,10 @@ interface Stats {
   level: number;
   reviewsDone: number;
   questionsAnswered: number;
+  studiedLateNight: boolean;
+  studiedEarlyMorning: boolean;
+  streakFreezeSaved: boolean;
+  evaluations: number;
 }
 
 /** Unlock any achievements whose criteria are now satisfied. */
@@ -206,6 +289,25 @@ async function collectStats(ctx: MutationCtx, userId: Id<"users">): Promise<Stat
     .collect();
   const { game } = await ensureProfiles(ctx);
 
+  // Hidden-achievement evidence (bounded reads): session clock times, freeze
+  // saves, and examiner volume. Bounded keeps achievement checks O(1)-ish.
+  const recentSessions = await ctx.db
+    .query("studySessions")
+    .withIndex("by_user_created", (q) => q.eq("userId", userId))
+    .order("desc")
+    .take(200);
+  const recentXp = await ctx.db
+    .query("xpEvents")
+    .withIndex("by_user_created", (q) => q.eq("userId", userId))
+    .order("desc")
+    .take(50);
+  const evaluations = await ctx.db
+    .query("examinerEvaluations")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .take(50);
+
+  const hourOf = (t: number) => new Date(t).getUTCHours();
+
   return {
     materials: materials.length,
     quizzes: quizzes.length,
@@ -218,6 +320,16 @@ async function collectStats(ctx: MutationCtx, userId: Id<"users">): Promise<Stat
     level: game.level,
     reviewsDone: reviews.length,
     questionsAnswered: quizzes.reduce((n, q) => n + q.answers.length, 0),
+    studiedLateNight: recentSessions.some((s) => {
+      const h = hourOf(s.createdAt);
+      return h >= 0 && h < 5; // midnight to 5am UTC
+    }),
+    studiedEarlyMorning: recentSessions.some((s) => {
+      const h = hourOf(s.createdAt);
+      return h >= 5 && h < 7; // 5am to 7am UTC
+    }),
+    streakFreezeSaved: recentXp.some((e) => e.reason.startsWith("Streak freeze used")),
+    evaluations: evaluations.length,
   };
 }
 

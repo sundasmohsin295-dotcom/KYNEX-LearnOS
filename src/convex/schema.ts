@@ -150,6 +150,12 @@ const schema = defineSchema(
       streakCount: v.number(),
       longestStreak: v.number(),
       lastStudyDay: v.optional(v.string()), // "YYYY-MM-DD" (UTC)
+      // Streak protection: earned (never bought). +1 at every 7-day streak
+      // multiple and +1 on Friday activity (the "weekend shield"). Consumed
+      // automatically when exactly one missed day would otherwise reset the
+      // streak. Server-authoritative; the client only displays it.
+      streakFreezes: v.optional(v.number()),
+      lastFreezeEarnDay: v.optional(v.string()), // "YYYY-MM-DD" (UTC) idempotence for freeze grants
       goalMinutesPerDay: v.number(),
       createdAt: v.number(),
       updatedAt: v.number(),
