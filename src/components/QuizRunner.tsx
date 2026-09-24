@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Ring } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
 import { conceptColor } from "@/lib/learning";
+import { spring } from "@/lib/motion";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
 
 type Confidence = "sure" | "probably" | "guess";
@@ -53,6 +54,9 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   const [feedback, setFeedback] = useState<{ correct: boolean; idx: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  // Neural fatigue monitor: dismissal is remembered per session so the nudge
+  // stays calm — it never shows more than once per quiz.
+  const [fatigueDismissed, setFatigueDismissed] = useState(false);
   const [result, setResult] = useState<{
     xp: number; leveledUp: boolean; newLevel: number; accuracy: number;
     rawScore?: number; negatives?: number; negativeMarking?: boolean;
@@ -158,6 +162,20 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   const done = attempt?.status === "completed";
   const flags = attempt?.examFlags ?? [];
   const answered = attempt?.answers ?? [];
+
+  // Neural fatigue monitoring (Topper's Edge): if the last few answers show a
+  // real, measured drop — two mistakes in the last three and lower accuracy
+  // than everything before them — recommend a short break. Purely local
+  // arithmetic on this attempt's answers; no invented cognitive thresholds.
+  const fatigueNudge = useMemo(() => {
+    if (fatigueDismissed || answered.length < 6) return false;
+    const last3 = answered.slice(-3);
+    if (last3.filter((a) => !a.correct).length < 2) return false;
+    const earlier = answered.slice(0, -3);
+    const earlierRate = earlier.filter((a) => a.correct).length / earlier.length;
+    const lastRate = last3.filter((a) => a.correct).length / 3;
+    return lastRate < earlierRate;
+  }, [answered, fatigueDismissed]);
 
   const submit = async () => {
     if (selected === null || !confidence || submitting || !attempt || !question) return;
@@ -523,6 +541,30 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
           </button>
         </div>
       )}
+      {/* neural fatigue monitor: calm, honest break nudge */}
+      <AnimatePresence>
+        {active && fatigueNudge && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={spring.snappy}
+            className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3"
+          >
+            <p className="text-sm text-muted-foreground">
+              <span className="font-bold text-foreground">Accuracy is slipping.</span>{" "}
+              A five-minute break resets attention better than pushing through.
+            </p>
+            <button
+              onClick={() => setFatigueDismissed(true)}
+              className="font-data rounded-md border border-border/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Keep going
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* exam header */}
       {isExam && (
         <div className={cn(

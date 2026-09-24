@@ -60,14 +60,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const xpPct = game ? Math.min(100, (xpInLevel / XP_PER_LEVEL) * 100) : 0;
   const streak = game?.streakCount ?? 0;
   const streakAlive = overview?.stats.streakSafe ?? false;
+  const freezes = overview?.stats.streakFreezes ?? 0;
   const dueCards = flashCount?.due ?? 0;
 
   const streakTitle =
     streak === 0
       ? "Learn something today to start your streak"
       : streakAlive
-        ? `${streak}-day learning streak`
-        : STREAK_MESSAGES.welcomeBack;
+        ? freezes > 0
+          ? `${streak}-day learning streak · ${freezes} streak freeze${freezes === 1 ? "" : "s"} in reserve`
+          : `${streak}-day learning streak`
+        : freezes > 0
+          ? `${STREAK_MESSAGES.welcomeBack} A streak freeze will cover the gap on your next study day.`
+          : STREAK_MESSAGES.welcomeBack;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -148,6 +153,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span title={streakTitle} className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-bold">
             <Flame className={cn("size-3.5", streakAlive ? "fill-chart-5/30 text-chart-5" : "text-muted-foreground")} />
             {streak}
+            {freezes > 0 && (
+              <span className="ml-0.5 rounded-full bg-primary/10 px-1.5 py-px text-[9px] font-bold text-primary" title="Streak freezes in reserve">
+                +{freezes}
+              </span>
+            )}
           </span>
           <Button size="sm" className="h-8 gap-1 rounded-lg" onClick={() => navigate("/add")}>
             <Plus className="size-3.5" /> Add

@@ -114,6 +114,7 @@ export const myOverview = query({
         ).length,
         dueCards: dueCards.length,
         streakSafe: game.lastStudyDay === todayKey(now),
+        streakFreezes: game.streakFreezes ?? 0,
       },
       nextExam: exams[0] ?? null,
     };

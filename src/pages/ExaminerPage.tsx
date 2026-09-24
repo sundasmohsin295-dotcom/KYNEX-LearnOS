@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { motion } from "framer-motion";
 import {
-  ClipboardCheck, ClipboardList, FileText, Lock, Send, Sparkles, Trash2, Wand2,
+  ClipboardCheck, ClipboardList, FileText, Gauge, Lock, Send, Sparkles, Trash2, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -29,11 +29,41 @@ const STATUS_STYLES: Record<string, string> = {
   missed: "bg-destructive/10 text-destructive",
 };
 
+/** One honest usage meter. No fake scarcity: the numbers are the server's. */
+function QuotaMeter({ label, used, cap }: { label: string; used: number; cap: number }) {
+  const pct = cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : 0;
+  const exhausted = used >= cap;
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-semibold">{label}</span>
+        <span
+          className={cn(
+            "font-data tabular-nums",
+            exhausted ? "font-bold text-destructive" : "text-muted-foreground",
+          )}
+        >
+          {used}/{cap}
+        </span>
+      </div>
+      <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+        <div
+          className={cn("h-full rounded-full", exhausted ? "bg-destructive" : "bg-primary")}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function ExaminerPage() {
   const history = useQuery(api.examinerReads.listMine);
   const materials = useQuery(api.materials.listReady);
   const evaluate = useAction(api.examiner.evaluate);
   const deleteEval = useMutation(api.account.deleteExaminerEvaluation);
+  // Value-first trial: the free plan IS the trial. Surface the caller's own
+  // server-side quota counters honestly instead of manufacturing urgency.
+  const quota = useQuery(api.security.myQuotaStatus);
 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -291,7 +321,38 @@ export default function ExaminerPage() {
         </div>
 
         {/* ---------------- history ---------------- */}
-        <div className="lg:col-span-2">
+        <div className="space-y-4 lg:col-span-2">
+          {/* value-first trial: honest daily usage, soft upgrade path */}
+          {quota === undefined && (
+            <div className="rounded-3xl border border-border/70 bg-card p-5">
+              <Skeleton className="h-5 w-44" />
+              <div className="mt-4 space-y-3">
+                <Skeleton className="h-1 w-full rounded-full" />
+                <Skeleton className="h-1 w-full rounded-full" />
+                <Skeleton className="h-1 w-full rounded-full" />
+              </div>
+            </div>
+          )}
+          {quota != null && quota.plan === "free" && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-3xl border border-border/70 bg-card p-5"
+            >
+              <h3 className="flex items-center gap-2 font-display text-base font-bold">
+                <Gauge className="size-5 text-primary" /> Today's free plan usage
+              </h3>
+              <div className="mt-4 space-y-3">
+                <QuotaMeter label="AI evaluations" used={quota.analysisUsed} cap={quota.analysisCap} />
+                <QuotaMeter label="Professor messages" used={quota.chatUsed} cap={quota.chatCap} />
+                <QuotaMeter label="Practice questions" used={quota.quizUsed} cap={quota.quizCap} />
+              </div>
+              <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                Caps reset at midnight UTC. Pro raises the ceiling on all three —
+                same engine, more headroom. Nothing else is locked away.
+              </p>
+            </motion.div>
+          )}
           <div className="rounded-3xl border border-border/70 bg-card p-6">
             <h3 className="flex items-center gap-2 font-display text-base font-bold">
               <ClipboardCheck className="size-5 text-primary" /> Recent evaluations
