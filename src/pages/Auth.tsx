@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { resolveRedirectAfterAuth } from "@/lib/redirect";
 import { KynexMark } from "@/components/brand/KynexBrand";
+import { KynexAuthShell } from "@/components/brand/KynexAuthShell";
 import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -90,20 +91,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("anonymous");
       navigate(redirect);
     } catch (error) {
+      // Account-enumeration neutralization: the failure detail stays in the
+      // console log; the student sees one indistinguishable generic message.
       console.error("Guest login error:", error);
-      setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError("Couldn't start a guest session. Please try again in a moment.");
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-
-      
+    <KynexAuthShell>
       {/* Auth Content */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex items-center justify-center h-full flex-col">
-        <Card className="min-w-[350px] pb-0 border shadow-md">
+      <div className="flex flex-1 items-center justify-center">
+        <Card className="w-full min-w-[300px] max-w-sm rounded-2xl border-border/70 shadow-sm">
           {step === "signIn" ? (
             <>
               <CardHeader className="text-center">                <div className="flex justify-center">
@@ -150,7 +150,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </Button>
                   </div>
                   {error && (
-                    <p className="mt-2 text-sm text-red-500">{error}</p>
+                    <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>
                   )}
                   
                   <div className="mt-4">
@@ -216,7 +216,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </InputOTP>
                   </div>
                   {error && (
-                    <p className="mt-2 text-sm text-red-500 text-center">
+                    <p role="alert" className="mt-2 text-center text-sm text-destructive">
                       {error}
                     </p>
                   )}
@@ -263,21 +263,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </>
           )}
 
-          <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
+          <div className="rounded-b-2xl border-t bg-muted/60 px-6 py-4 text-center text-xs text-muted-foreground">
             Secured by{" "}
             <a
               href="https://freebuff.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-primary transition-colors"
+              className="underline underline-offset-2 transition-colors hover:text-primary"
             >
               freebuff.com
             </a>
           </div>
         </Card>
-        </div>
       </div>
-    </div>
+    </KynexAuthShell>
   );
 }
 
