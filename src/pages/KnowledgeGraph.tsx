@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { DeferredMount, LockedSkeleton } from "@/components/LoadLock";
 import { spring } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -67,7 +68,9 @@ export default function KnowledgeGraph() {
   if (graph === undefined) {
     return (
       <AppShell>
-        <div className="h-96 animate-pulse rounded-3xl bg-muted/60" />
+        {/* Layout-locked (§3): pins the radial panel's box — zero CLS when
+            the graph hydrates. */}
+        <LockedSkeleton className="rounded-3xl" height="384px" label="Loading knowledge graph" />
       </AppShell>
     );
   }
@@ -139,7 +142,9 @@ export default function KnowledgeGraph() {
         </div>
       )}
 
-      {/* graph */}
+      {/* graph — heavy radial render deferred to idle + near-viewport (§3):
+          the diagnostics panel and sidebar mount immediately; the SVG only
+          enters the tree when the main thread has slack. */}
       {nodes.length === 0 ? (
         <div className="mt-6 rounded-3xl border border-dashed border-border p-14 text-center">
           <Network className="mx-auto size-10 text-muted-foreground/50" />
@@ -152,7 +157,11 @@ export default function KnowledgeGraph() {
         </div>
       ) : (
         <div className="mt-6 grid gap-5 lg:grid-cols-5">
-          <div className="overflow-hidden rounded-3xl border border-border/70 bg-card lg:col-span-3">
+          <DeferredMount
+            className="lg:col-span-3"
+            fallback={<LockedSkeleton className="rounded-3xl" aspect="520 / 480" label="Rendering graph" />}
+          >
+          <div className="overflow-hidden rounded-3xl border border-border/70 bg-card">
             <div className="grid-bg h-full w-full">
               <svg viewBox="0 0 520 480" className="h-auto w-full" role="img" aria-label="Knowledge graph of your concepts">
                 {/* edges */}
@@ -240,6 +249,7 @@ export default function KnowledgeGraph() {
               </svg>
             </div>
           </div>
+          </DeferredMount>
 
           {/* inspector */}
           <div className="rounded-3xl border border-border/70 bg-card p-5 lg:col-span-2">

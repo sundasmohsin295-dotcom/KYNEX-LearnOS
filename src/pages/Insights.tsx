@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { LockedSkeleton } from "@/components/LoadLock";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ACHIEVEMENT_META } from "@/convex/achievementMeta";
@@ -35,7 +36,9 @@ export default function Insights() {
       </PageHeader>
 
       {loading || insights === null ? (
-        <div className="h-72 animate-pulse rounded-3xl bg-muted/60" />
+        /* Layout-locked (§3): matches the hydrated panel's bounding box so
+           data arrival never shifts the page. */
+        <LockedSkeleton className="rounded-3xl" height="288px" label="Loading insights" />
       ) : (
         <>
           {/* ---------- Weekly Academic Intelligence Report ---------- */}

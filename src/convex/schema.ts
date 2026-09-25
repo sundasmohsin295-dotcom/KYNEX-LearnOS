@@ -635,12 +635,19 @@ const schema = defineSchema(
 
     // Client-side render crashes captured by the global error boundary.
     // Messages are sanitized + capped; stacks are never persisted.
+    // §1 telemetry: `fingerprint` is a one-way FNV-1a hash (message + scope +
+    // component-stack head) that lets recurring crashes be aggregated and
+    // counted server-side; `count` is how many crashes merged into the row.
+    // Legacy rows (single captures) have neither field.
     clientErrors: defineTable({
       userId: v.optional(v.id("users")),
       correlationId: v.string(),
       kind: v.string(), // "error" | "rejection"
       message: v.string(),
       route: v.string(),
+      fingerprint: v.optional(v.string()),
+      count: v.optional(v.number()),
+      scope: v.optional(v.string()),
       at: v.number(),
     })
       .index("by_user_at", ["userId", "at"])

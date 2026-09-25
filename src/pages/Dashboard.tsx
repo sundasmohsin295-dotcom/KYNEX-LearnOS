@@ -14,6 +14,7 @@ import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MasteryRings, StreakDots } from "@/components/VisualBits";
+import { LockedSkeleton } from "@/components/LoadLock";
 import { MASTERY_LOOP, levelTitle, identityRank } from "@/lib/game";
 import { cn } from "@/lib/utils";
 import type { Mission } from "@/lib/learning";
@@ -250,12 +251,14 @@ export default function Dashboard() {
     return (
       <AppShell>
         <div className="space-y-6">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-44 w-full rounded-3xl" />
+          {/* Layout-locked loaders (§3): each skeleton pins the bounding box
+              its hydrated block will occupy — zero CLS on data arrival. */}
+          <LockedSkeleton className="rounded-2xl" height="40px" />
+          <LockedSkeleton className="rounded-3xl" height="176px" />
           <div className="grid gap-5 md:grid-cols-3">
-            <Skeleton className="h-32 rounded-3xl" />
-            <Skeleton className="h-32 rounded-3xl" />
-            <Skeleton className="h-32 rounded-3xl" />
+            <LockedSkeleton className="rounded-3xl" height="128px" />
+            <LockedSkeleton className="rounded-3xl" height="128px" />
+            <LockedSkeleton className="rounded-3xl" height="128px" />
           </div>
         </div>
       </AppShell>

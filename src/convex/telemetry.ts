@@ -85,6 +85,59 @@ export const recordClientError = mutation({
   },
 });
 
+/**
+ * §1 Proactive telemetry: batched crash samples from the client aggregator.
+ * Each sample merges N crashes sharing a fingerprint into one row with a
+ * count, so a crash loop costs ONE row per flush window instead of one per
+ * crash. Hard input caps: 25 samples per call, count clamped 1..1000,
+ * fingerprint must be a lowercase 8-hex hash (never raw stack material).
+ * Counts as ONE rate-limit op regardless of batch size.
+ */
+export const recordClientErrorBatch = mutation({
+  args: {
+    samples: v.array(
+      v.object({
+        fingerprint: v.string(),
+        kind: v.union(v.literal("error"), v.literal("rejection")),
+        message: v.string(),
+        count: v.number(),
+        route: v.string(),
+        scope: v.optional(v.string()),
+      }),
+    ),
+  },
+  handler: async (ctx, { samples }) => {
+    if (samples.length === 0 || samples.length > 25) return; // reject floods
+    const userId = await getAuthUserId(ctx);
+    if (userId) {
+      await enforceRateLimit(ctx, "clientError", userId);
+    }
+    const now = Date.now();
+    for (const s of samples) {
+      // Fingerprints are client-generated FNV-1a hex; anything else is
+      // malformed telemetry and is dropped, not stored.
+      if (!/^[0-9a-f]{8}$/.test(s.fingerprint)) continue;
+      const clean = sanitizeClientMessage(s.message);
+      if (!clean) continue;
+      const count = Math.max(1, Math.min(1000, Math.floor(s.count)));
+      await ctx.db.insert("clientErrors", {
+        userId: userId ?? undefined,
+        correlationId: s.fingerprint,
+        kind: s.kind,
+        message: clean,
+        route: sanitizeClientMessage(s.route).slice(0, 200) || "/",
+        fingerprint: s.fingerprint,
+        count,
+        scope:
+          s.scope !== undefined
+            ? sanitizeClientMessage(s.scope).slice(0, 60)
+            : undefined,
+        at: now,
+      });
+    }
+  },
+});
+
 /** The signed-in user's own crash reports (privacy: never anyone else's). */
 export const myClientErrors = query({
   args: {},
@@ -96,6 +149,61 @@ export const myClientErrors = query({
       .withIndex("by_user_at", (q) => q.eq("userId", userId))
       .order("desc")
       .take(30);
+  },
+});
+
+/**
+ * §1: fingerprint-aggregated crash view over the last 7 days — total crashes
+ * per fingerprint, newest first. Admin-gated like allClientErrors. Old rows
+ * without fingerprints are ignored by the aggregation (they are still listed
+ * raw in allClientErrors).
+ */
+export const clientErrorAggregates = query({
+  args: {},
+  handler: async (ctx) => {
+    if (!(await isAdmin(ctx))) return { authorized: false as const, rows: [] };
+    const since = Date.now() - 7 * 24 * 60 * 60_000;
+    const rows = await ctx.db
+      .query("clientErrors")
+      .withIndex("by_at")
+      .order("desc")
+      .take(500);
+    const byFingerprint = new Map<
+      string,
+      {
+        fingerprint: string;
+        kind: string;
+        message: string;
+        route: string;
+        totalCrashes: number;
+        occurrences: number;
+        lastAt: number;
+      }
+    >();
+    for (const r of rows) {
+      if (!r.fingerprint || r.at < since) continue;
+      const agg = byFingerprint.get(r.fingerprint);
+      const crashes = r.count ?? 1;
+      if (agg) {
+        agg.totalCrashes += crashes;
+        agg.occurrences += 1;
+        agg.lastAt = Math.max(agg.lastAt, r.at);
+      } else {
+        byFingerprint.set(r.fingerprint, {
+          fingerprint: r.fingerprint,
+          kind: r.kind,
+          message: r.message,
+          route: r.route,
+          totalCrashes: crashes,
+          occurrences: 1,
+          lastAt: r.at,
+        });
+      }
+    }
+    const aggregated = [...byFingerprint.values()].sort(
+      (a, b) => b.totalCrashes - a.totalCrashes || b.lastAt - a.lastAt,
+    );
+    return { authorized: true as const, rows: aggregated.slice(0, 25) };
   },
 });
 

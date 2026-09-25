@@ -10,8 +10,12 @@ import {
   reportCrash,
   safeCrashMessage,
 } from "@/lib/globalErrorHandler";
+import { installCrashTelemetry } from "@/lib/crashTelemetry";
+import { routeBreakers, routeKeyFromPathname } from "@/lib/routeCircuitBreaker";
+import { DegradedRoute } from "@/components/DegradedRoute";
 import { SystemRecoveryScreen } from "@/components/SystemRecoveryScreen";
 import { MotionProvider } from "@/lib/motion";
+import { api } from "@/convex/_generated/api";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
@@ -106,15 +110,32 @@ class RootErrorBoundary extends React.Component<
 }
 
 /**
- * Route-level guard (§2): a crash inside one lazy route no longer takes down
- * the shell. Recover = re-mount the route's subtree via a key bump; Reboot =
- * full app reload via the recovery screen.
+ * Route-level guard (§2 + §1): a crash inside one lazy route no longer takes
+ * down the shell. First crash → recovery screen; "Reboot" re-mounts the
+ * route's subtree via a key bump. If the SAME route crashes again within the
+ * 60s window the route-level circuit breaker trips (§1): the boundary
+ * bypasses the broken module and renders the isolated DegradedRoute
+ * container — no crash loop, shell intact — until "Reload Module" re-arms it.
  */
 class RouteErrorBoundary extends React.Component<
   { children: React.ReactNode },
-  { hasError: boolean; message: string; correlationId: string; reloadKey: number }
+  {
+    hasError: boolean;
+    message: string;
+    correlationId: string;
+    reloadKey: number;
+    tripped: boolean;
+    routeKey: string;
+  }
 > {
-  state = { hasError: false, message: "", correlationId: "", reloadKey: 0 };
+  state = {
+    hasError: false,
+    message: "",
+    correlationId: "",
+    reloadKey: 0,
+    tripped: false,
+    routeKey: "",
+  };
   static getDerivedStateFromError(error: Error) {
     const entry = reportCrash(error, "error");
     return {
@@ -123,7 +144,32 @@ class RouteErrorBoundary extends React.Component<
       correlationId: entry.id,
     };
   }
+  componentDidCatch() {
+    // §1: record with the route circuit breaker. Parameterized paths collapse
+    // to their route key so /material/:id aggregates as one module.
+    const routeKey = routeKeyFromPathname(
+      typeof window !== "undefined" ? window.location.pathname : "/",
+    );
+    if (routeBreakers.recordCrash(routeKey)) {
+      this.setState({ tripped: true, routeKey });
+    }
+  }
   render() {
+    if (this.state.tripped) {
+      return (
+        <DegradedRoute
+          routeKey={this.state.routeKey}
+          onReload={() => {
+            routeBreakers.reset(this.state.routeKey);
+            this.setState((s) => ({
+              hasError: false,
+              tripped: false,
+              reloadKey: s.reloadKey + 1,
+            }));
+          }}
+        />
+      );
+    }
     if (this.state.hasError) {
       return (
         <SystemRecoveryScreen
@@ -143,6 +189,23 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 // §2: capture fatal errors + async rejections before anything renders.
 installGlobalErrorHandlers();
+
+// §1 Proactive telemetry: every captured crash (window errors, rejections,
+// boundary catches via reportCrash) is fingerprinted and merged into count-
+// batched samples, flushed to the server in bounded batches. Fire-and-forget
+// by contract — a telemetry failure can never surface or break the app.
+installCrashTelemetry((samples) => {
+  void convex.mutation(api.telemetry.recordClientErrorBatch, {
+    samples: samples.map((s) => ({
+      fingerprint: s.fingerprint,
+      kind: s.kind,
+      message: s.message,
+      count: s.count,
+      route: s.route,
+      scope: s.scope,
+    })),
+  });
+});
 
 
 
