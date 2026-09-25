@@ -88,7 +88,9 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
   useEffect(() => {
     if (examActive && !attempt?.examStartedAt && !examStarted.current) {
       examStarted.current = true;
-      startExam({ attemptId: attemptId as never }).catch(() => {});
+      startExam({ attemptId: attemptId as never }).catch((e) =>
+        toast.error(e instanceof Error ? e.message : "Exam clock failed to start"),
+      );
     }
   }, [examActive, attempt?.examStartedAt, startExam, attemptId]);
 
@@ -663,7 +665,11 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 </span>
                 {isExam && (
                   <button
-                    onClick={() => toggleFlag({ attemptId: attempt._id, index: idx }).catch(() => {})}
+                    onClick={() =>
+                      toggleFlag({ attemptId: attempt._id, index: idx }).catch((e) =>
+                        toast.error(e instanceof Error ? e.message : "Couldn't update flag"),
+                      )
+                    }
                     className={cn(
                       "ml-auto flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors",
                       flags[idx]

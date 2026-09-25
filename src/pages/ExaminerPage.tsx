@@ -229,14 +229,14 @@ export default function ExaminerPage() {
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                       Marks awarded · {scheme ? "official scheme" : "provisional rubric"}
                     </p>
-                    <p className="font-display text-4xl font-extrabold">
+                    <p className="font-data text-4xl font-extrabold tabular-nums">
                       {result.marksAwarded}
                       <span className="text-xl text-muted-foreground">/{result.marksTotal}</span>
                     </p>
                   </div>
                   <span
                     className={cn(
-                      "rounded-full px-3 py-1 text-xs font-bold",
+                      "font-data rounded-full px-3 py-1 text-xs font-bold tabular-nums",
                       pct !== null && pct >= 80
                         ? "bg-success/15 text-success"
                         : pct !== null && pct >= 50

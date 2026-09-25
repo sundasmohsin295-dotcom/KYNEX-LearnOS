@@ -113,7 +113,7 @@ function ReadinessRadar({ navigate }: { navigate: (to: string) => void }) {
                     {style.label}
                   </span>
                 </div>
-                <p className="mt-1.5 font-display text-xl font-extrabold tracking-tight">
+                <p className="mt-1.5 font-data text-xl font-extrabold tabular-nums tracking-tight">
                   {u.proficiency !== null ? `${u.proficiency}%` : "--"}
                 </p>
                 <p className="mt-0.5 truncate text-[11px] text-muted-foreground" title={u.evidence}>
@@ -740,7 +740,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-5">
             {daysToExam !== null && nextExam && (
               <div className="text-right">
-                <p className="text-xs font-semibold text-muted-foreground">Radar · {daysToExam} days</p>
+                <p className="font-data text-xs font-semibold text-muted-foreground">Radar · {daysToExam} days</p>
                 <p className="font-display font-bold">{nextExam.title}</p>
                 {triageLine && (
                   <p className="mt-0.5 max-w-56 text-[11px] leading-snug text-muted-foreground">{triageLine}</p>
@@ -1017,7 +1017,7 @@ function PulseTile({
         )}
       </div>
       <p className={cn(
-        "mt-1.5 font-display font-extrabold tracking-tight",
+        "mt-1.5 font-data font-extrabold tabular-nums tracking-tight",
         small ? "truncate text-sm" : "text-2xl",
         tone,
       )}>

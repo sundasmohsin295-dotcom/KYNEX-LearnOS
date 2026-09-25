@@ -419,7 +419,7 @@ function PracticeSession({
                       style={{ width: `${Math.round((c.row!.correct / c.row!.attempts) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-xs font-bold">{Math.round((c.row!.correct / c.row!.attempts) * 100)}%</span>
+                  <span className="font-data text-xs font-bold tabular-nums">{Math.round((c.row!.correct / c.row!.attempts) * 100)}%</span>
                 </div>
               </div>
             ))}

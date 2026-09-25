@@ -78,11 +78,11 @@ export default function Flashcards() {
     <AppShell>
       <PageHeader eyebrow="KYNEX Recall · spaced repetition" title="Recall">
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-sm font-bold">
+          <span className="font-data flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-sm font-bold tabular-nums">
             <Layers className="size-4 text-primary" />
             {counts ? counts.total : "--"} cards
           </span>
-          <span className="flex items-center gap-1.5 rounded-full border border-xp/30 bg-xp/10 px-3.5 py-1.5 text-sm font-bold text-xp-foreground">
+          <span className="font-data flex items-center gap-1.5 rounded-full border border-xp/30 bg-xp/10 px-3.5 py-1.5 text-sm font-bold tabular-nums text-xp-foreground">
             <Flame className="size-4" />
             {counts ? counts.due : "--"} due
           </span>
