@@ -170,7 +170,17 @@ function RouteSyncer() {
 }
 
 
-createRoot(document.getElementById("root")!).render(
+// §1 zero-crash boot: #root must exist before React mounts. A missing mount
+// node (bad HTML, an over-eager extension wiping <body>) is a fatal boot
+// failure — render a visible diagnostic instead of a blank page/undefined deref.
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  document.body.innerHTML =
+    '<div style="font-family:system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;color:#111;background:#fff;text-align:center;padding:24px"><div><h1 style=\"font-size:20px;font-weight:700\">KYNEX failed to mount</h1><p style=\"margin-top:8px;font-size:14px;color:#555\">The app root element is missing. Reload the page; if it repeats, contact support.</p></div></div>';
+  throw new Error("KYNEX boot failure: #root element not found");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <RootErrorBoundary>
       <ToolbarErrorBoundary>
