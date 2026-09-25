@@ -43,15 +43,29 @@ export default function Flashcards() {
 
   const card = cards[index];
 
+  /**
+   * Zero-latency grading (§ optimistic sync): the deck is a local snapshot,
+   * so the next card can advance the instant the student taps — before the
+   * server confirms. The server's own commit is what makes the reactive
+   * counters (due badge, streak, mastery) move; the mutation await only
+   * guards persistence, so it must never gate the tap→next-card transition.
+   * On failure we roll back to the exact card so the grade can be retried.
+   */
   const grade = async (g: Grade) => {
     if (!card) return;
+    const targetIndex = index + 1;
+    setFlipped(false);
+    setIndex(targetIndex);
+    if (g !== "again") setDoneCount((n) => n + 1);
+    setReviewedThisSession((n) => n + 1);
     try {
       await review({ cardId: card._id, grade: g });
-      setReviewedThisSession((n) => n + 1);
-      if (g !== "again") setDoneCount((n) => n + 1);
-      setFlipped(false);
-      setIndex((i) => i + 1);
     } catch (e) {
+      // Roll back only if no newer grade already advanced past this card.
+      setIndex((i) => (i === targetIndex ? targetIndex - 1 : i));
+      if (g !== "again") setDoneCount((n) => Math.max(0, n - 1));
+      setReviewedThisSession((n) => Math.max(0, n - 1));
+      setFlipped(true); // re-open the answer so the grade can be retried
       toast.error(e instanceof Error ? e.message : "Couldn't save that review");
     }
   };
