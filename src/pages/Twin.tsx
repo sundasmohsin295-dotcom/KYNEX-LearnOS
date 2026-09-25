@@ -110,7 +110,7 @@ export default function Twin() {
       ) : (
         <>
           {/* ---------- identity card ---------- */}
-          <div className="rounded-3xl border border-border/70 bg-card p-6">
+          <div className="kynex-glass spectrum-border rounded-3xl p-6">
             <div className="flex flex-wrap items-center gap-4">
               <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
                 <Fingerprint className="size-7" />
@@ -268,7 +268,7 @@ export default function Twin() {
 
           {/* ---------- MASTER SCORE ---------- */}
           {intel && (
-            <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+            <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                   <ShieldCheck className="size-5 text-primary" /> Master Score
@@ -302,7 +302,7 @@ export default function Twin() {
           {/* ---------- GAP RADAR + CONFIDENCE CALIBRATION ---------- */}
           {intel && (
             <div className="mt-6 grid gap-5 lg:grid-cols-2">
-              <div className="rounded-3xl border border-border/70 bg-card p-6">
+              <div className="kynex-glass spectrum-border rounded-3xl p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                   <Target className="size-5 text-chart-5" /> Gap Radar
                 </h3>
@@ -340,7 +340,7 @@ export default function Twin() {
                 )}
               </div>
 
-              <div className="rounded-3xl border border-border/70 bg-card p-6">
+              <div className="kynex-glass spectrum-border rounded-3xl p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                   <Scale className="size-5 text-primary" /> Confidence Calibration
                 </h3>
@@ -395,7 +395,7 @@ export default function Twin() {
           {intel && (
             <div className="mt-6 grid gap-5 lg:grid-cols-2">
               {/* PROVE IT: verified mastery */}
-              <div className="rounded-3xl border border-border/70 bg-card p-6">
+              <div className="kynex-glass spectrum-border rounded-3xl p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                   <ShieldCheck className="size-5 text-success" /> Prove It
                 </h3>
@@ -437,7 +437,7 @@ export default function Twin() {
 
               <div className="space-y-5">
                 {/* MEMORY ENGINE */}
-                <div className="rounded-3xl border border-border/70 bg-card p-6">
+                <div className="kynex-glass spectrum-border rounded-3xl p-6">
                   <h3 className="flex items-center gap-2 font-display text-lg font-bold">Memory Engine</h3>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Review recommendations based on your recent performance, not medical certainty.
@@ -496,7 +496,7 @@ export default function Twin() {
           )}
 
           {/* ---------- Pulse detail ---------- */}
-          <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+          <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
             <h3 className="font-display text-lg font-bold">Academic Pulse</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">Learning-performance indicators, not predictions or diagnoses.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -524,7 +524,7 @@ function Panel({
   title: string; subtitle: string; icon: typeof Brain; tone: string; children: React.ReactNode;
 }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border/70 bg-card p-6">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="kynex-glass spectrum-border rounded-3xl p-6">
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em]">
         <Icon className={cn("size-4", tone)} /> <span className={tone}>{title}</span>
       </p>

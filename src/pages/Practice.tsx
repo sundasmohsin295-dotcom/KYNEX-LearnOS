@@ -92,7 +92,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
               <button
                 key={m._id}
                 onClick={() => void focusPractice(m.conceptKey, m.materialId ?? undefined)}
-                className="card-lift rounded-2xl border border-border/70 bg-card p-4 text-left"
+                className="card-lift kynex-glass spectrum-border rounded-2xl p-4 text-left"
               >
                 <p className="font-display font-bold">{m.conceptLabel}</p>
                 <div className="mt-2 flex items-center gap-3">
@@ -116,7 +116,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
       )}
 
       {/* all concepts */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <div className="flex items-center justify-between">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <TrendingUp className="size-5 text-primary" /> Your mastery map
@@ -132,7 +132,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
       </div>
 
       {/* recent attempts */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold">
           <History className="size-5 text-primary" /> Recent sessions
         </h3>
@@ -172,7 +172,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
       </div>
 
       {/* pick a material */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <h3 className="font-display text-lg font-bold">Start from a material</h3>
         <PracticeMaterialPicker />
       </div>
@@ -265,7 +265,7 @@ function PracticeSession({
   if (material === null || !material.analysis) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-xl rounded-3xl border border-border/70 bg-card p-10 text-center">
+        <div className="mx-auto max-w-xl kynex-glass spectrum-border rounded-3xl p-10 text-center">
           <p className="font-display text-xl font-bold">This material isn't ready yet</p>
           <Button className="mt-5" onClick={() => navigate("/library")}>Back to library</Button>
         </div>
@@ -281,7 +281,7 @@ function PracticeSession({
         </p>
       </PageHeader>
 
-      <div className="rounded-3xl border border-border/70 bg-card p-6 sm:p-8">
+      <div className="kynex-glass spectrum-border rounded-3xl p-6 sm:p-8">
         {/* concept focus */}
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Focus</p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -400,7 +400,7 @@ function PracticeSession({
 
       {/* per-concept accuracy hint */}
       {conceptRows.some((c) => c.row && c.row.attempts > 0) && (
-        <div className="mt-5 rounded-3xl border border-border/70 bg-card p-6">
+        <div className="mt-5 kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <Target className="size-5 text-primary" /> Where you stand
           </h3>

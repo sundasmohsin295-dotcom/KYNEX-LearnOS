@@ -112,7 +112,7 @@ export default function Achievements() {
       </div>
 
       {/* completion */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6 text-center">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6 text-center">
         <p className="font-display text-lg font-bold">
           {earnedCount === all.length
             ? "Every badge unlocked."

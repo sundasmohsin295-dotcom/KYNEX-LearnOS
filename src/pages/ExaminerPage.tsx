@@ -103,7 +103,7 @@ export default function ExaminerPage() {
       <div className="grid gap-6 lg:grid-cols-5">
         {/* ---------------- form ---------------- */}
         <div className="space-y-4 lg:col-span-3">
-          <div className="rounded-3xl border border-border/70 bg-card p-6">
+          <div className="kynex-glass spectrum-border rounded-3xl p-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block sm:col-span-2">
                 <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -211,7 +211,7 @@ export default function ExaminerPage() {
 
           {/* ---------------- result ---------------- */}
           {busy && (
-            <div className="space-y-3 rounded-3xl border border-border/70 bg-card p-6">
+            <div className="space-y-3 kynex-glass spectrum-border rounded-3xl p-6">
               <Skeleton className="h-8 w-48" />
               <Skeleton className="h-20 w-full rounded-2xl" />
               <Skeleton className="h-32 w-full rounded-2xl" />
@@ -270,7 +270,7 @@ export default function ExaminerPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-border/70 bg-card p-6">
+              <div className="kynex-glass spectrum-border rounded-3xl p-6">
                 <h3 className="flex items-center gap-2 font-display text-base font-bold">
                   <Sparkles className="size-4 text-primary" /> Model answer
                 </h3>
@@ -281,7 +281,7 @@ export default function ExaminerPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 {result.missingPoints.length > 0 && (
-                  <div className="rounded-3xl border border-border/70 bg-card p-5">
+                  <div className="kynex-glass spectrum-border rounded-3xl p-5">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Missing points</p>
                     <ul className="mt-2 space-y-1.5 text-sm">
                       {result.missingPoints.map((p, i) => (
@@ -294,7 +294,7 @@ export default function ExaminerPage() {
                   </div>
                 )}
                 {result.errors.length > 0 && (
-                  <div className="rounded-3xl border border-border/70 bg-card p-5">
+                  <div className="kynex-glass spectrum-border rounded-3xl p-5">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Errors</p>
                     <ul className="mt-2 space-y-1.5 text-sm">
                       {result.errors.map((p, i) => (
@@ -324,7 +324,7 @@ export default function ExaminerPage() {
         <div className="space-y-4 lg:col-span-2">
           {/* value-first trial: honest daily usage, soft upgrade path */}
           {quota === undefined && (
-            <div className="rounded-3xl border border-border/70 bg-card p-5">
+            <div className="kynex-glass spectrum-border rounded-3xl p-5">
               <Skeleton className="h-5 w-44" />
               <div className="mt-4 space-y-3">
                 <Skeleton className="h-1 w-full rounded-full" />
@@ -337,7 +337,7 @@ export default function ExaminerPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl border border-border/70 bg-card p-5"
+              className="kynex-glass spectrum-border rounded-3xl p-5"
             >
               <h3 className="flex items-center gap-2 font-display text-base font-bold">
                 <Gauge className="size-5 text-primary" /> Today's free plan usage
@@ -353,7 +353,7 @@ export default function ExaminerPage() {
               </p>
             </motion.div>
           )}
-          <div className="rounded-3xl border border-border/70 bg-card p-6">
+          <div className="kynex-glass spectrum-border rounded-3xl p-6">
             <h3 className="flex items-center gap-2 font-display text-base font-bold">
               <ClipboardCheck className="size-5 text-primary" /> Recent evaluations
             </h3>

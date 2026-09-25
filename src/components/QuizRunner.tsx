@@ -339,7 +339,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-8 text-center"
+          className="relative overflow-hidden kynex-glass spectrum-border rounded-3xl p-8 text-center"
         >
           <div aria-hidden className="absolute -top-20 left-1/2 size-72 -translate-x-1/2 rounded-full bg-success/10 blur-3xl" />
           <div className="relative">
@@ -451,7 +451,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-2xl border border-border/70 bg-card p-5"
+                className="kynex-glass spectrum-border rounded-2xl p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm font-semibold leading-snug">{i + 1}. {q.question}</p>
@@ -646,7 +646,7 @@ export function QuizRunner({ attemptId }: { attemptId: string }) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
           transition={{ duration: 0.25 }}
-          className="mt-4 rounded-3xl border border-border/70 bg-card p-6 sm:p-8"
+          className="mt-4 kynex-glass spectrum-border rounded-3xl p-6 sm:p-8"
         >
           {question && (
             <>
@@ -814,7 +814,7 @@ function AutopsyCard({
 
 function CenteredPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-2xl rounded-3xl border border-border/70 bg-card p-10 text-center">
+    <div className="mx-auto max-w-2xl kynex-glass spectrum-border rounded-3xl p-10 text-center">
       {children}
     </div>
   );

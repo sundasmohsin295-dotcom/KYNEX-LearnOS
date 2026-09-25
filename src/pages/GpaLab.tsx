@@ -88,7 +88,7 @@ export default function GpaLab() {
   if (data === null) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-xl rounded-3xl border border-border/70 bg-card p-10 text-center">
+        <div className="mx-auto max-w-xl kynex-glass spectrum-border rounded-3xl p-10 text-center">
           <p className="font-display text-xl font-bold">Sign in to open the GPA Lab</p>
           <Button className="mt-5" onClick={() => navigate("/auth")}>Sign in</Button>
         </div>
@@ -210,7 +210,7 @@ export default function GpaLab() {
 
       {/* ---------- Semester GPA chart ---------- */}
       {data.semesters.length > 0 && (
-        <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+        <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <TrendingUp className="size-5 text-primary" /> Semester trajectory
           </h3>
@@ -270,7 +270,7 @@ export default function GpaLab() {
         )}
 
         {data.semesters.map((sem) => (
-          <div key={sem.id} className="rounded-3xl border border-border/70 bg-card p-5">
+          <div key={sem.id} className="kynex-glass spectrum-border rounded-3xl p-5">
             <div className="flex flex-wrap items-center gap-3">
               <input
                 defaultValue={sem.name}
@@ -407,7 +407,7 @@ export default function GpaLab() {
       </div>
 
       {/* ---------- Grading scale ---------- */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold">
           <Info className="size-5 text-primary" /> Grading scale
         </h3>
@@ -543,7 +543,7 @@ function ScenarioCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-border/70 bg-card p-5"
+      className="kynex-glass spectrum-border rounded-3xl p-5"
     >
       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</p>
       <p className={cn("font-data mt-1.5 text-3xl font-semibold", tone)}>

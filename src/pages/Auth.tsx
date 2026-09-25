@@ -103,7 +103,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     <KynexAuthShell>
       {/* Auth Content */}
       <div className="flex flex-1 items-center justify-center">
-        <Card className="w-full min-w-[300px] max-w-sm rounded-2xl border-border/70 shadow-sm">
+        <Card className="kynex-glass spectrum-border w-full min-w-[300px] max-w-sm rounded-3xl shadow-2xl shadow-primary/10">
           {step === "signIn" ? (
             <>
               <CardHeader className="text-center">                <div className="flex justify-center">

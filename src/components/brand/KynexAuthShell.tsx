@@ -18,14 +18,8 @@ export function KynexAuthShell({
 
   return (
     <div className="relative min-h-screen bg-background">
-      {/* intelligent background: radial light + faint orbital rings */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(55% 45% at 22% 40%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%), radial-gradient(40% 35% at 85% 80%, color-mix(in oklab, var(--chart-4, #8b5cf6) 7%, transparent), transparent 70%)",
-        }}
-      />
+      {/* intelligent background: spectrum-reactive haze + orbital geometry */}
+      <div className="aurora-panel pointer-events-none absolute inset-0" />
       <svg
         aria-hidden="true"
         className="pointer-events-none absolute left-[-18%] top-1/2 hidden size-[70vmin] -translate-y-1/2 opacity-[0.16] lg:block"

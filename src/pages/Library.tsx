@@ -104,7 +104,7 @@ export default function Library() {
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="card-lift group relative rounded-3xl border border-border/70 bg-card p-5"
+                      className="card-lift group relative kynex-glass spectrum-border rounded-3xl p-5"
                     >
                       <button
                         className="w-full text-left"

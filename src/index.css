@@ -89,6 +89,25 @@
   --success-foreground: oklch(0.985 0.01 165);
   --warning: oklch(0.78 0.14 70);
   --warning-foreground: oklch(0.35 0.08 70);
+
+  /* ---------- KYNEX dynamic spectrum (route-reactive accent engine) ----------
+     --accent-h/--accent-c are consumed by EVERY utility below and by Tailwind
+     via --color-primary, so the whole interface recolors per academic module.
+     One million+ color states from the continuous (hue, chroma) plane. */
+  --accent-h: 255;
+  --accent-c: 0.2;
+  --accent-lift: 0.55;
+  /* Solar Gold — Exam Radar / assessment surfaces */
+  --spectrum-gold: oklch(0.83 0.15 85);
+  /* Bioluminescent Emerald — Recall / spaced repetition */
+  --spectrum-emerald: oklch(0.8 0.17 165);
+  /* Deep Quantum Indigo — Professor / Socratic dialogues */
+  --spectrum-indigo: oklch(0.6 0.21 290);
+  /* Neon Cyber-Amethyst — Twin / identity surfaces */
+  --spectrum-amethyst: oklch(0.65 0.2 315);
+  --glow-a: 0.12;
+  --glow-b: 0.07;
+  --glow-c: 0.05;
 }
 
 .dark {
@@ -129,10 +148,39 @@
   --sidebar-ring: oklch(0.66 0.19 255);
   --xp: oklch(0.82 0.14 80);
   --xp-foreground: oklch(0.2 0.05 80);
-  --success: oklch(0.74 0.15 165);
+  --success: oklch(0.76 0.16 165);
   --success-foreground: oklch(0.15 0.04 165);
   --warning: oklch(0.8 0.13 75);
   --warning-foreground: oklch(0.22 0.06 75);
+
+  /* dark spectrum: obsidian bases (#030712 / #020617 family) with a faint
+     cool cast; the route-reactive accent breathes chroma into the room. */
+  --background: oklch(0.128 0.02 265);
+  --card: oklch(0.168 0.024 265);
+  --popover: oklch(0.185 0.025 265);
+  --sidebar: oklch(0.14 0.02 265);
+
+  --accent-h: 255;
+  --accent-c: 0.19;
+  --accent-lift: 0.66;
+  --glow-a: 0.22;
+  --glow-b: 0.13;
+  --glow-c: 0.08;
+}
+
+/* Route-reactive accent: --primary/--ring derive from the spectrum position
+   set per academic module (see useAccentSpectrum). Light mode lifts chroma
+   for legibility; dark mode keeps a floor so accents never go gray. */
+:root {
+  --primary: oklch(var(--accent-lift) var(--accent-c) var(--accent-h));
+  --ring: oklch(var(--accent-lift) var(--accent-c) var(--accent-h));
+  --chart-1: oklch(var(--accent-lift) var(--accent-c) var(--accent-h));
+}
+.dark {
+  --primary: oklch(0.68 max(var(--accent-c), 0.14) var(--accent-h));
+  --ring: oklch(0.68 max(var(--accent-c), 0.14) var(--accent-h));
+  --primary-foreground: oklch(0.14 0.05 var(--accent-h));
+  --chart-1: oklch(0.68 max(var(--accent-c), 0.14) var(--accent-h));
 }
 
 @theme inline {
@@ -230,6 +278,194 @@
     font-family: var(--font-mono);
     letter-spacing: -0.01em;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* KYNEX ambient field: layered conic/radial aurora riding the active   */
+/* spectrum. Fixed, pointer-transparent, GPU-composited.                */
+/* ------------------------------------------------------------------ */
+.aurora-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--glow-a);
+  background:
+    radial-gradient(42rem 30rem at 18% -10%,
+      oklch(from var(--primary) l c h / 0.9), transparent 70%),
+    radial-gradient(36rem 26rem at 85% 8%,
+      oklch(from var(--primary) calc(l + 0.08) c calc(h + 55) / 0.6), transparent 70%),
+    radial-gradient(50rem 34rem at 50% 115%,
+      oklch(from var(--primary) calc(l + 0.12) calc(c * 0.75) calc(h + 120) / 0.5), transparent 72%),
+    conic-gradient(from 220deg at 70% 30%,
+      oklch(from var(--primary) calc(l + 0.14) c calc(h + 90) / 0.35),
+      transparent 40%,
+      oklch(from var(--primary) l c h / 0.25) 75%,
+      transparent);
+  transition: opacity 0.6s ease;
+}
+html.dark .aurora-field {
+  background:
+    radial-gradient(42rem 30rem at 18% -10%,
+      oklch(from var(--primary) 0.4 c h / 0.95), transparent 70%),
+    radial-gradient(36rem 26rem at 85% 8%,
+      oklch(from var(--primary) 0.42 c calc(h + 55) / 0.65), transparent 70%),
+    radial-gradient(50rem 34rem at 50% 115%,
+      oklch(from var(--primary) 0.38 calc(c * 0.8) calc(h + 120) / 0.55), transparent 72%),
+    conic-gradient(from 220deg at 70% 30%,
+      oklch(from var(--primary) 0.45 c calc(h + 90) / 0.4),
+      transparent 40%,
+      oklch(from var(--primary) 0.4 c h / 0.3) 75%,
+      transparent);
+}
+
+/* Light mode keeps surfaces calm: the field becomes a whisper. */
+:root:not(.dark) .aurora-field { opacity: calc(var(--glow-a) * 0.38); }
+
+/* ------------------------------------------------------------------ */
+/* Glass containment: deep translucent base + specular crown + inner    */
+/* shadow. The single source of KYNEX panel surfaces.                   */
+/* ------------------------------------------------------------------ */
+.kynex-glass {
+  position: relative;
+  background:
+    linear-gradient(180deg,
+      oklch(from var(--primary) calc(l + 0.16) calc(c * 0.4) h / calc(var(--glow-c) * 1.4)) 0%,
+      transparent 18%),
+    color-mix(in oklch, var(--card) 80%, transparent);
+  backdrop-filter: blur(24px) saturate(1.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 0 oklch(from var(--primary) calc(l + 0.3) calc(c * 0.5) h / calc(var(--glow-b) * 1.6)),
+    0 24px 48px -24px oklch(from var(--primary) 0.5 c h / var(--glow-b));
+}
+
+/* ------------------------------------------------------------------ */
+/* Spectrum borders: a 1px multi-stop gradient stroke composited via    */
+/* mask, plus a corner-swept conic highlight. Zero layout cost.         */
+/* ------------------------------------------------------------------ */
+.spectrum-border {
+  position: relative;
+}
+.spectrum-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    oklch(from var(--primary) calc(l + 0.25) calc(c * 0.35) h / var(--glow-b)),
+    oklch(from var(--primary) calc(l + 0.1) c h / var(--glow-c)) 30%,
+    transparent 55%,
+    oklch(from var(--primary) calc(l + 0.18) calc(c * 0.7) calc(h + 80) / var(--glow-c)) 80%,
+    oklch(from var(--primary) calc(l + 0.32) calc(c * 0.5) calc(h + 140) / var(--glow-b))
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.spectrum-border::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--sweep, 200deg) at 30% 0%,
+    oklch(from var(--primary) calc(l + 0.35) c h / calc(var(--glow-a) * 2.2)),
+    transparent 22%,
+    transparent 78%,
+    oklch(from var(--primary) calc(l + 0.3) c calc(h + 70) / calc(var(--glow-a) * 1.6))
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* --- Gleam: cursor-tracked light sweep for primary action zones --- */
+.gleam {
+  position: relative;
+  overflow: hidden;
+}
+.gleam::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    11rem circle at var(--gleam-x, 50%) var(--gleam-y, 50%),
+    oklch(from var(--primary) calc(l + 0.3) c h / 0.22),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.gleam:hover::before { opacity: 1; }
+@media (hover: none) { .gleam::before { display: none; } }
+
+/* Gleam on gradient CTA surfaces needs white light, not tinted. */
+.gleam-strong::before {
+  background: radial-gradient(
+    12rem circle at var(--gleam-x, 50%) var(--gleam-y, 50%),
+    oklch(1 0 0 / 0.28),
+    transparent 70%
+  );
+}
+
+/* --- Hero aurora panel: spectrum haze + grounding grid --- */
+.aurora-panel {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 85% 0%,
+      oklch(from var(--primary) 0.55 c h / 0.16), transparent 60%),
+    radial-gradient(100% 80% at 0% 100%,
+      oklch(from var(--primary) 0.55 c calc(h + 120) / 0.09), transparent 55%);
+}
+.aurora-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(oklch(from var(--primary) l c h / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(from var(--primary) l c h / 0.06) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(80% 70% at 65% 20%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(80% 70% at 65% 20%, #000 30%, transparent 75%);
+  pointer-events: none;
+}
+
+/* --- Hover lift with accent-tinted shadow --- */
+.lift-spectrum {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s;
+}
+.lift-spectrum:hover {
+  transform: translateY(-2px);
+  border-color: oklch(from var(--primary) calc(l + 0.2) c h / 0.4);
+  box-shadow:
+    inset 0 1px 0 0 oklch(from var(--primary) calc(l + 0.3) calc(c * 0.5) h / calc(var(--glow-b) * 1.6)),
+    0 28px 56px -26px oklch(from var(--primary) 0.5 c h / var(--glow-a));
+}
+@media (prefers-reduced-motion: reduce) {
+  .lift-spectrum { transition: box-shadow 0.2s, border-color 0.2s; }
+  .lift-spectrum:hover { transform: none; }
+}
+
+/* Skeleton shimmer sweep (used by ui/skeleton) */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after { animation: none; }
 }
 
 /* Honor reduced-motion preferences for decorative animation */

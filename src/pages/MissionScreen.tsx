@@ -351,7 +351,7 @@ export default function MissionScreen() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
           transition={{ ...spring.expressive, opacity: { duration: 0.16 } }}
-          className="mt-4 rounded-3xl border border-border/70 bg-card p-6 sm:p-8"
+          className="mt-4 kynex-glass spectrum-border rounded-3xl p-6 sm:p-8"
         >
           <div className="flex flex-wrap items-center gap-2">
             <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase", KIND_META[task.kind].cls)}>

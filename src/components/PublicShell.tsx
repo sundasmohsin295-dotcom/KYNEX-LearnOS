@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KynexMark } from "@/components/AppShell";
+import { AuroraField } from "@/lib/spectrum";
 import { applySeo, SEO } from "@/lib/seo";
 
 /**
@@ -28,8 +29,9 @@ export function PublicShell({
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background">
+    <div className="relative min-h-screen bg-background text-foreground">
+      <AuroraField />
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2.5">
             <KynexMark className="size-8" />
@@ -49,7 +51,7 @@ export function PublicShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 pt-28 pb-20 sm:px-6">
+      <main className="relative z-10 mx-auto max-w-3xl px-4 pt-28 pb-20 sm:px-6">
         <p className="font-data text-xs font-semibold uppercase tracking-[0.22em] text-primary">
           {path.replace("/", "").replace("-", " ")}
         </p>
@@ -57,7 +59,7 @@ export function PublicShell({
         <div className="mt-10">{children}</div>
       </main>
 
-      <footer className="border-t border-border/70 py-8">
+      <footer className="relative z-10 border-t border-border/70 py-8">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <p className="font-data text-xs">{SEO.keywords[0]}</p>
           <div className="flex gap-5">

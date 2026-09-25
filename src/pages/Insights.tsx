@@ -45,7 +45,7 @@ export default function Insights() {
           <WeeklyReportCard weekly={weekly} />
 
           {/* ---------- Pulse trends ---------- */}
-          <div className="rounded-3xl border border-border/70 bg-card p-6">
+          <div className="kynex-glass spectrum-border rounded-3xl p-6">
             <h3 className="flex items-center gap-2 font-display text-lg font-bold">
               <BarChart3 className="size-5 text-primary" /> Academic Pulse
             </h3>
@@ -76,7 +76,7 @@ export default function Insights() {
 
           <div className="mt-6 grid gap-5 lg:grid-cols-2">
             {/* ---------- Mistake Intelligence ---------- */}
-            <div className="rounded-3xl border border-border/70 bg-card p-6">
+            <div className="kynex-glass spectrum-border rounded-3xl p-6">
               <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                 <Wrench className="size-5 text-chart-5" /> Mistake Intelligence
               </h3>
@@ -167,7 +167,7 @@ export default function Insights() {
           </div>
 
           {/* ---------- Trophy case ---------- */}
-          <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+          <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                 <Trophy className="size-5 text-xp-foreground" /> Achievements

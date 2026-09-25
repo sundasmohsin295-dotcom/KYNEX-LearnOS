@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import { useEffect } from "react";
-import { NavLink, useNavigate } from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
   BarChart3, BookOpen, Flame, GraduationCap, Gauge, LayoutDashboard, LogOut,
@@ -21,6 +21,7 @@ import { XP_PER_LEVEL, STREAK_MESSAGES } from "@/lib/game";
 import { CommandBar } from "@/components/CommandBar";
 import { applyPrivateSeo } from "@/lib/seo";
 import { spring } from "@/lib/motion";
+import { AuroraField, gleamProps, routeSpectrumKey, useAccentSpectrum } from "@/lib/spectrum";
 
 const NAV = [
   { to: "/dashboard", label: "Command Center", icon: LayoutDashboard },
@@ -46,6 +47,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const ensureProfile = useMutation(api.learning.ensureGameProfile);
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+
+  // Dynamic spectrum: every module breathes its own hue into the whole OS —
+  // primary, ring, charts, aurora field, glow borders all follow.
+  const location = useLocation();
+  useAccentSpectrum(routeSpectrumKey(location.pathname));
 
   // Ensure profile/game rows exist for brand-new accounts (idempotent).
   useEffect(() => {
@@ -75,9 +81,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           : STREAK_MESSAGES.welcomeBack;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen bg-background text-foreground">
+      <AuroraField />
+
       {/* ---------- Sidebar (desktop) ---------- */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border/70 bg-sidebar lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border/70 bg-sidebar/75 backdrop-blur-2xl lg:flex">
         <button
           className="flex items-center gap-2.5 px-5 pt-6 pb-5 text-left"
           onClick={() => navigate("/dashboard")}
@@ -98,7 +106,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 cn(
                   "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )
               }
@@ -119,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <CommandBar />
         </div>
 
-        <div className="mx-3 mb-3 rounded-2xl border border-border/70 bg-card/70 p-4">
+        <div className="kynex-glass spectrum-border mx-3 mb-3 rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">LEVEL {game?.level ?? 1}</span>
             <span className="flex items-center gap-1 text-xs font-bold text-xp-foreground">
@@ -134,7 +142,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <Button
           onClick={() => navigate("/add")}
-          className="mx-3 mb-4 gap-2 rounded-xl shadow-lg shadow-primary/25"
+          {...gleamProps()}
+          className="gleam gleam-strong mx-3 mb-4 gap-2 rounded-xl shadow-lg shadow-primary/25"
         >
           <Plus className="size-4" /> Add to Vault
         </Button>
@@ -143,7 +152,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ---------- Topbar (mobile) ---------- */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background px-4 py-3 lg:hidden">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <button className="flex items-center gap-2" onClick={() => navigate("/dashboard")}>
           <KynexMark className="size-8" />
           <span className="font-display text-sm font-extrabold tracking-tight">KYNEX</span>
@@ -172,7 +181,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ---------- Bottom nav (mobile) ---------- */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border/70 bg-background py-1.5 lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border/70 bg-background/80 py-1.5 backdrop-blur-xl lg:hidden">
         {NAV.filter((n) => [
           "/dashboard", "/practice", "/flashcards", "/mistakes", "/chat",
         ].includes(n.to)).map(({ to, label, icon: Icon }) => (
@@ -239,7 +248,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 /** KYNEX wordmark glyph — a geometric "K" node mark. */
 export function KynexMark({ className }: { className?: string }) {
   return (
-    <span aria-hidden="true" className={cn("relative grid shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md", className)}>
+    <span
+      aria-hidden="true"
+      className={cn(
+        "relative grid shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(from_var(--primary)_calc(l_-_0.12)_c_calc(h_+_45))] text-primary-foreground shadow-md shadow-primary/30 ring-1 ring-inset ring-white/20",
+        className,
+      )}
+    >
       <svg viewBox="0 0 24 24" fill="none" className="size-[58%]">
         <path d="M7 4v16" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
         <path d="M17 4l-7.5 8L17 20" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />

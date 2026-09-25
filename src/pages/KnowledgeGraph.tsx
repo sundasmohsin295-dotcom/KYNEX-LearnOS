@@ -77,7 +77,7 @@ export default function KnowledgeGraph() {
   if (graph === null) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-xl rounded-3xl border border-border/70 bg-card p-10 text-center">
+        <div className="mx-auto max-w-xl kynex-glass spectrum-border rounded-3xl p-10 text-center">
           <p className="font-display text-xl font-bold">Sign in to open the KYNEX Map</p>
           <Button className="mt-5" onClick={() => navigate("/auth")}>Sign in</Button>
         </div>
@@ -99,7 +99,7 @@ export default function KnowledgeGraph() {
 
       {/* legend + weak-root banner */}
       {graph.nodes.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3 kynex-glass spectrum-border rounded-2xl px-4 py-3">
           {Object.entries(STATE_META).map(([k, meta]) => (
             <span key={k} className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
               <span className={cn("size-2.5 rounded-full", meta.dot)} /> {meta.label}
@@ -161,7 +161,7 @@ export default function KnowledgeGraph() {
             className="lg:col-span-3"
             fallback={<LockedSkeleton className="rounded-3xl" aspect="520 / 480" label="Rendering graph" />}
           >
-          <div className="overflow-hidden rounded-3xl border border-border/70 bg-card">
+          <div className="overflow-hidden kynex-glass spectrum-border rounded-3xl">
             <div className="grid-bg h-full w-full">
               <svg viewBox="0 0 520 480" className="h-auto w-full" role="img" aria-label="Knowledge graph of your concepts">
                 {/* edges */}
@@ -252,7 +252,7 @@ export default function KnowledgeGraph() {
           </DeferredMount>
 
           {/* inspector */}
-          <div className="rounded-3xl border border-border/70 bg-card p-5 lg:col-span-2">
+          <div className="kynex-glass spectrum-border rounded-3xl p-5 lg:col-span-2">
             {selected ? (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="flex items-start justify-between gap-2">

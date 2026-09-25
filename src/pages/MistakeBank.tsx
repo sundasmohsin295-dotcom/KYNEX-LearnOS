@@ -66,7 +66,7 @@ export default function MistakeBank() {
   if (data === null) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-xl rounded-3xl border border-border/70 bg-card p-10 text-center">
+        <div className="mx-auto max-w-xl kynex-glass spectrum-border rounded-3xl p-10 text-center">
           <p className="font-display text-xl font-bold">Sign in to open the Mistake Bank</p>
           <Button className="mt-5" onClick={() => navigate("/auth")}>Sign in</Button>
         </div>
@@ -101,7 +101,7 @@ export default function MistakeBank() {
           <p className="text-xs font-bold uppercase tracking-wide text-success">Fixed</p>
           <p className="mt-1 font-display text-3xl font-extrabold text-success">{resolved.length}</p>
         </div>
-        <div className="rounded-3xl border border-border/70 bg-card p-5">
+        <div className="kynex-glass spectrum-border rounded-3xl p-5">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Fix rate</p>
           <p className="mt-1 font-display text-3xl font-extrabold">
             {unresolved.length + resolved.length > 0
@@ -179,7 +179,7 @@ export default function MistakeBank() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                className="rounded-2xl border border-border/70 bg-card p-5"
+                className="kynex-glass spectrum-border rounded-2xl p-5"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase", meta.cls)}>
@@ -243,7 +243,7 @@ export default function MistakeBank() {
 
       {/* resolved archive */}
       {resolved.length > 0 && (
-        <div className="mt-8 rounded-3xl border border-border/70 bg-card p-6">
+        <div className="mt-8 kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <Layers className="size-5 text-success" /> Fixed ({resolved.length})
           </h3>

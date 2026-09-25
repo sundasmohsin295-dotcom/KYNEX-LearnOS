@@ -63,7 +63,7 @@ export default function Security() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* ---------- identity + authentication ---------- */}
-        <div className="rounded-3xl border border-border/70 bg-card p-6">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <Fingerprint className="size-5 text-primary" /> Authentication
           </h3>
@@ -93,7 +93,7 @@ export default function Security() {
         </div>
 
         {/* ---------- session management ---------- */}
-        <div className="rounded-3xl border border-border/70 bg-card p-6">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <Monitor className="size-5 text-primary" /> Active sessions
           </h3>
@@ -151,7 +151,7 @@ export default function Security() {
         </div>
 
         {/* ---------- data isolation + AI boundary ---------- */}
-        <div className="rounded-3xl border border-border/70 bg-card p-6">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <ShieldCheck className="size-5 text-success" /> Data isolation
           </h3>
@@ -162,7 +162,7 @@ export default function Security() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-border/70 bg-card p-6">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <KeyRound className="size-5 text-chart-4" /> AI & input safety
           </h3>
@@ -180,7 +180,7 @@ export default function Security() {
       </div>
 
       {/* ---------- audit trail note ---------- */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <h3 className="font-display text-lg font-bold">Audit trail</h3>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
           Security-relevant events (session revocation, cross-user denial attempts, quota

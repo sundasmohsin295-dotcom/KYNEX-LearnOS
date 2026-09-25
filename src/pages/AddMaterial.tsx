@@ -154,7 +154,7 @@ export default function AddMaterial() {
       </PageHeader>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 rounded-2xl border border-border/70 bg-card p-1.5">
+      <div className="flex gap-1.5 kynex-glass spectrum-border rounded-2xl p-1.5">
         {(
           [
             { key: "url", label: "Link / YouTube", icon: Link2 },
@@ -179,7 +179,7 @@ export default function AddMaterial() {
       </div>
 
       {/* Body */}
-      <div className="mt-5 rounded-3xl border border-border/70 bg-card p-6 sm:p-8">
+      <div className="mt-5 kynex-glass spectrum-border rounded-3xl p-6 sm:p-8">
         <AnimatePresence mode="wait">
           {tab === "url" && (
             <motion.div

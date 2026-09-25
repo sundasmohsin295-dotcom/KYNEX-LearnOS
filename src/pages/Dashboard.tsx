@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { spring, TiltCard } from "@/lib/motion";
+import { gleamProps } from "@/lib/spectrum";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,7 +34,7 @@ function ReadinessRadar({ navigate }: { navigate: (to: string) => void }) {
 
   if (readiness === undefined) {
     return (
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <Skeleton className="h-5 w-44" />
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <Skeleton className="h-16 rounded-2xl" />
@@ -65,7 +66,7 @@ function ReadinessRadar({ navigate }: { navigate: (to: string) => void }) {
   };
 
   return (
-    <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+    <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold">
           <Radar className="size-5 text-primary" /> Readiness Radar
@@ -175,7 +176,7 @@ function NudgeStrip() {
           key={n._id}
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card/80 px-4 py-3"
+          className="flex items-start gap-3 kynex-glass spectrum-border rounded-2xl/80 px-4 py-3"
         >
           <Radar className="mt-0.5 size-4 shrink-0 text-primary" />
           <button
@@ -335,7 +336,7 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring.expressive}
-          className="relative overflow-hidden rounded-3xl border border-primary/25 bg-card p-6 sm:p-8"
+          className="aurora-panel kynex-glass spectrum-border relative overflow-hidden rounded-3xl p-6 sm:p-8"
         >
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-xl">
@@ -394,7 +395,8 @@ export default function Dashboard() {
             <div className="flex flex-col gap-2">
               <Button
                 size="lg"
-                className="h-14 gap-2 rounded-2xl px-8 text-base font-bold shadow-xl shadow-primary/30"
+                {...gleamProps()}
+                className="gleam gleam-strong h-14 gap-2 rounded-2xl px-8 text-base font-bold shadow-xl shadow-primary/30"
                 disabled={startingMission}
                 onClick={async () => {
                   setStartingMission(true);
@@ -420,7 +422,7 @@ export default function Dashboard() {
           </div>
         </TiltCard>
       ) : (
-        <div className="rounded-3xl border border-border/70 bg-card p-8 text-center">
+        <div className="kynex-glass spectrum-border rounded-3xl p-8 text-center">
           <p className="font-display text-xl font-bold">No active mission</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Add a material to the Vault and KYNEX will compute your first Next Move from it.
@@ -434,7 +436,7 @@ export default function Dashboard() {
       {/* ---------- Daily Brief + Oracle ---------- */}
       {intel && (
         <div className="mt-6 grid gap-5 lg:grid-cols-3">
-          <div className="rounded-3xl border border-border/70 bg-card p-6 lg:col-span-2">
+          <div className="kynex-glass spectrum-border rounded-3xl p-6 lg:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                 <Sparkles className="size-5 text-primary" /> Your Academic Brief
@@ -474,7 +476,7 @@ export default function Dashboard() {
           </div>
 
           {/* KYNEX Oracle */}
-          <div className="rounded-3xl border border-border/70 bg-card p-6">
+          <div className="kynex-glass spectrum-border rounded-3xl p-6">
             <div className="flex items-center justify-between">
               <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                 <Info className="size-5 text-primary" /> KYNEX Oracle
@@ -554,7 +556,7 @@ export default function Dashboard() {
       </div>
 
       {/* ---------- Academic Pulse ---------- */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             <Sparkles className="size-5 text-primary" /> Academic Pulse
@@ -608,7 +610,7 @@ export default function Dashboard() {
 
       {/* ---------- Rhythm + mastery ---------- */}
       <div className="mt-6 grid gap-5 lg:grid-cols-5">
-        <div className="rounded-3xl border border-border/70 bg-card p-6 lg:col-span-3">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6 lg:col-span-3">
           <div className="flex items-center justify-between">
             <h3 className="font-display text-lg font-bold">Study rhythm</h3>
             <span className="text-xs font-semibold text-muted-foreground">last 7 days · {Math.round(weekTotal)}m</span>
@@ -650,7 +652,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-border/70 bg-card p-6 lg:col-span-2">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
             <h3 className="font-display text-lg font-bold">Mastery map</h3>
             <span className="text-xs font-semibold text-muted-foreground">{mastery.length} concepts</span>
@@ -672,7 +674,7 @@ export default function Dashboard() {
 
       {/* ---------- Vault + wins ---------- */}
       <div className="mt-6 grid gap-5 lg:grid-cols-3">
-        <div className="rounded-3xl border border-border/70 bg-card p-6 lg:col-span-2">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
             <h3 className="font-display text-lg font-bold">Vault · recent sources</h3>
             <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/library")}>
@@ -703,7 +705,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-border/70 bg-card p-6">
+        <div className="kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="font-display text-lg font-bold">Recent progress</h3>
           <div className="mt-4 space-y-3">
             {recentXp.map((e) => (
@@ -723,7 +725,7 @@ export default function Dashboard() {
       </div>
 
       {/* consistency */}
-      <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+      <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-display text-lg font-bold">
@@ -793,7 +795,7 @@ function GpaStrip({ navigate }: { navigate: (to: string) => void }) {
   const gpa = useQuery(api.gpa.overview);
   if (!gpa || (gpa.currentCgpa == null && !gpa.targetCgpa)) {
     return (
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/70 bg-card px-6 py-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 kynex-glass spectrum-border rounded-3xl px-6 py-4">
         <div>
           <p className="font-display text-sm font-bold">GPA Command Center</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -811,7 +813,7 @@ function GpaStrip({ navigate }: { navigate: (to: string) => void }) {
       ? +(gpa.targetCgpa - gpa.currentCgpa).toFixed(2)
       : null;
   return (
-    <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6">
+    <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold">GPA Command Center</h3>
         <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/gpa")}>
@@ -922,7 +924,7 @@ function RescueModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={spring.expressive}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl border border-border/70 bg-card p-6 shadow-2xl"
+        className="w-full max-w-md kynex-glass spectrum-border rounded-3xl p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between">
           <div>

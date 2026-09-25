@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { KynexMark } from "@/components/AppShell";
 import { applySeo } from "@/lib/seo";
 import { spring, TiltCard } from "@/lib/motion";
+import { AuroraField, gleamProps } from "@/lib/spectrum";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 const FEATURES = [
@@ -68,9 +69,10 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* ---------- Nav (solid, no glass) ---------- */}
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background">
+    <div className="relative min-h-screen bg-background text-foreground">
+      <AuroraField />
+      {/* ---------- Nav ---------- */}
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <a href="#top" className="flex items-center gap-2.5">
             <KynexMark className="size-9" />
@@ -92,8 +94,8 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* ---------- Hero: typographic split, no parallax, no orbs ---------- */}
-      <section id="top" className="border-b border-border/70 pt-32 pb-20 sm:pt-40">
+      {/* ---------- Hero: typographic split over the spectrum field ---------- */}
+      <section id="top" className="aurora-panel relative z-10 border-b border-border/70 pt-32 pb-20 sm:pt-40">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr]">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -112,12 +114,12 @@ export default function Landing() {
               going, and the gap between.
             </p>
             <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row">
-              <Button asChild size="lg" className="h-12 rounded-lg px-8 text-base">
+              <Button asChild size="lg" {...gleamProps()} className="gleam gleam-strong h-12 rounded-xl px-8 text-base shadow-lg shadow-primary/30">
                 <Link to="/auth">
                   Start learning free <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-12 rounded-lg px-8 text-base">
+              <Button asChild size="lg" variant="outline" className="h-12 rounded-xl px-8 text-base">
                 <a href="#system">See how KYNEX works</a>
               </Button>
             </div>
@@ -132,7 +134,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={spring.expressive}
-            className="rounded-xl border border-border bg-card"
+            className="kynex-glass spectrum-border rounded-3xl"
           >
             <div className="flex items-center justify-between border-b border-border/70 px-5 py-3.5">
               <p className="font-data text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -181,7 +183,7 @@ export default function Landing() {
       </section>
 
       {/* ---------- Core loop: numbered, mono, no icon tiles ---------- */}
-      <section id="system" className="border-b border-border/70 bg-sidebar/60 py-16">
+      <section id="system" className="relative z-10 border-b border-border/70 bg-sidebar/60 py-16">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <p className="font-data text-center text-xs font-semibold uppercase tracking-[0.25em] text-primary">
             The KYNEX core loop
@@ -207,7 +209,7 @@ export default function Landing() {
       </section>
 
       {/* ---------- Features: spec-sheet rows, not icon cards ---------- */}
-      <section id="features" className="py-20">
+      <section id="features" className="relative z-10 py-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="max-w-2xl">
             <p className="font-data text-xs font-semibold uppercase tracking-[0.25em] text-primary">
@@ -237,14 +239,14 @@ export default function Landing() {
       </section>
 
       {/* ---------- FAQ ---------- */}
-      <section id="faq" className="border-t border-border/70 bg-sidebar/60 py-20">
+      <section id="faq" className="relative z-10 border-t border-border/70 bg-sidebar/60 py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
           <h2 className="text-center font-display text-3xl font-bold tracking-tight">
             Questions, answered
           </h2>
           <div className="mt-10 space-y-3">
             {FAQS.map((f, i) => (
-              <div key={f.q} className="rounded-xl border border-border bg-card">
+              <div key={f.q} className="kynex-glass spectrum-border rounded-xl transition-colors hover:border-border/80">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="flex w-full items-center justify-between gap-4 rounded-xl px-5 py-4 text-left"
@@ -268,7 +270,7 @@ export default function Landing() {
       </section>
 
       {/* ---------- Final CTA: plain, solid ---------- */}
-      <section className="py-24">
+      <section className="relative z-10 py-24">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
           <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
             KYNEX knows where you are.
@@ -278,13 +280,13 @@ export default function Landing() {
           <p className="mt-5 text-muted-foreground">
             Add one chapter to the Vault. Let the OS find your gaps. Walk in ready.
           </p>
-          <Button asChild size="lg" className="mt-8 h-12 rounded-lg px-10 text-base">
+            <Button asChild size="lg" {...gleamProps()} className="gleam gleam-strong mt-8 h-12 rounded-xl px-10 text-base shadow-lg shadow-primary/30">
             <Link to="/auth">Create your free account</Link>
           </Button>
         </div>
       </section>
 
-      <footer className="border-t border-border/70 py-10">
+      <footer className="relative z-10 border-t border-border/70 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <KynexMark className="size-7" />

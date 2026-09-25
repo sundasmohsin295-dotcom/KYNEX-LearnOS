@@ -137,7 +137,7 @@ export default function PlanPage() {
       </div>
 
       {/* ---------- Transparency strip ---------- */}
-      <div className="mt-6 rounded-2xl border border-border/70 bg-card/60 p-5 text-sm text-muted-foreground">
+      <div className="mt-6 kynex-glass spectrum-border rounded-2xl/60 p-5 text-sm text-muted-foreground">
         <p className="font-semibold text-foreground">How limits work</p>
         <p className="mt-1 leading-relaxed">
           Usage is enforced server-side on every AI call: the client never decides what you're
@@ -176,7 +176,7 @@ function UsageCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-border/70 bg-card p-6"
+      className="kynex-glass spectrum-border rounded-3xl p-6"
     >
       <div className="flex items-center justify-between">
         <p className="flex items-center gap-2 text-sm font-semibold">

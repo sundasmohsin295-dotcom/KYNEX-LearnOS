@@ -175,7 +175,7 @@ export default function Chat() {
 
   return (
     <AppShell>
-      <div className="flex h-[calc(100vh-8.5rem)] overflow-hidden rounded-3xl border border-border/70 bg-card lg:h-[calc(100vh-7rem)]">
+      <div className="flex h-[calc(100vh-8.5rem)] overflow-hidden kynex-glass spectrum-border rounded-3xl lg:h-[calc(100vh-7rem)]">
         {/* ---------- Conversation sidebar ---------- */}
         <aside
           className={cn(

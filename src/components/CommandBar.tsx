@@ -177,7 +177,7 @@ export function CommandBar() {
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={spring.spatial}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-xl overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl"
+              className="w-full max-w-xl overflow-hidden kynex-glass spectrum-border rounded-2xl shadow-2xl"
             >
               <div className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
                 <Command className="size-4 text-primary" />

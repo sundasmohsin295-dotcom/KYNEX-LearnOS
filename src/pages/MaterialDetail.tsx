@@ -59,7 +59,7 @@ export default function MaterialDetail() {
   if (material === null) {
     return (
       <AppShell>
-        <div className="rounded-3xl border border-border/70 bg-card p-14 text-center">
+        <div className="kynex-glass spectrum-border rounded-3xl p-14 text-center">
           <p className="font-display text-xl font-bold">Material not found</p>
           <Button className="mt-4" onClick={() => navigate("/library")}>Back to library</Button>
         </div>
@@ -197,7 +197,7 @@ export default function MaterialDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => navigate(`/chat?material=${material._id}&mode=${m.key}`)}
-                className="card-lift group rounded-2xl border border-border/70 bg-card p-4 text-left"
+                className="card-lift group kynex-glass spectrum-border rounded-2xl p-4 text-left"
               >
                 <div className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
                   <Icon className="size-4.5" />
@@ -211,7 +211,7 @@ export default function MaterialDetail() {
       </section>
 
       {/* ---------- Visual engine ---------- */}
-      <section className="mt-9 rounded-3xl border border-border/70 bg-card p-6">
+      <section className="mt-9 kynex-glass spectrum-border rounded-3xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold">
             <Network className="size-5 text-primary" /> KYNEX Map
@@ -264,7 +264,7 @@ export default function MaterialDetail() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="overflow-hidden rounded-2xl border border-border/70 bg-card"
+                className="overflow-hidden kynex-glass spectrum-border rounded-2xl"
               >
                 <button
                   className="flex w-full items-center gap-3 px-5 py-4 text-left"
@@ -336,7 +336,7 @@ export default function MaterialDetail() {
 
       {/* cause-effect list */}
       {(a.causeEffect ?? []).length > 0 && (
-        <div className="mt-5 rounded-3xl border border-border/70 bg-card p-6">
+        <div className="mt-5 kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="font-display text-lg font-bold">Cause → Effect</h3>
           <div className="mt-4 space-y-2.5">
             {a.causeEffect!.map((p, i) => (
@@ -388,7 +388,7 @@ export default function MaterialDetail() {
 
       {/* concept mastery overview */}
       {mastery && mastery.mastery.length > 0 && (
-        <div className="mt-5 rounded-3xl border border-border/70 bg-card p-6">
+        <div className="mt-5 kynex-glass spectrum-border rounded-3xl p-6">
           <h3 className="font-display text-lg font-bold">Your mastery on this material</h3>
           <MasteryRings
             rows={mastery.mastery.filter((m) => m.materialId === material._id).slice(0, 6)}
@@ -519,7 +519,7 @@ function SectionCard({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-border/70 bg-card p-6"
+      className="kynex-glass spectrum-border rounded-3xl p-6"
     >
       <h3 className="flex items-center gap-2 font-display text-lg font-bold">
         <Icon className="size-5 text-primary" /> {title}

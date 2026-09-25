@@ -126,7 +126,7 @@ export function ProfessorHealthCard({ className }: { className?: string }) {
   const meta = result ? statusMeta(result.status) : null;
 
   return (
-    <div className={cn("rounded-3xl border border-border/70 bg-card p-6", className)}>
+    <div className={cn("kynex-glass spectrum-border rounded-3xl p-6", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold">
           <Activity className="size-5 text-chart-4" /> Professor AI service status
