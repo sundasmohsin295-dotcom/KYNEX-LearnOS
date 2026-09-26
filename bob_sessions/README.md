@@ -21,6 +21,7 @@ logs covering the major architectural iterations of Project KYNEX.
 | 02 | [`session-02-white-screen-recovery.md`](./session-02-white-screen-recovery.md) | White-screen emergency recovery: error boundaries, route circuit breakers, crash telemetry, versioned storage codec, chaos tests. |
 | 03 | [`session-03-security-hardening.md`](./session-03-security-hardening.md) | Zero-trust hardening: server-side identity re-verification, AI Perturbation Shield, circuit breakers, quota fail-closed, adversarial test suites. |
 | 04 | [`session-04-dual-mode-design-system.md`](./session-04-dual-mode-design-system.md) | Dual-mode design system: paper-white light mode, zero-FOUC theme bootstrap, auth revolution, typography triad enforcement. |
+| 05 | [`session-05-final-audit-mesh-auth.md`](./session-05-final-audit-mesh-auth.md) | Final compliance audit (cascading deletes, zero-trust authorization, AI gateway) + living mesh canvas and auth suite execution. |
 
 ## Re-run the verification evidence
 
