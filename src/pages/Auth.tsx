@@ -1,18 +1,11 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { Label } from "@/components/ui/label";
 
 import { useAuth } from "@/hooks/use-auth";
 import { resolveRedirectAfterAuth } from "@/lib/redirect";
@@ -39,6 +32,12 @@ const RESEND_COOLDOWN_S = 30;
 
 type Step = "signIn" | "verify" | "recover";
 
+/**
+ * AUTH SUITE — centered spatial card, rounded-2xl inputs, enumeration-safe
+ * errors. Every failure that could reveal whether an account exists is worded
+ * identically regardless of account state (OTP sign-in is enumeration-proof
+ * by contract: "log in or sign up" from one field).
+ */
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
   const navigate = useNavigate();
@@ -82,10 +81,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       setResendIn(RESEND_COOLDOWN_S);
     } catch (error) {
       console.error("Email sign-in error:", error);
+      // Enumeration-safe: identical wording whether or not the address exists.
       setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to send verification code. Please try again.",
+        "We couldn't send a code to that address. Double-check it and try again in a moment.",
       );
     } finally {
       setIsLoading(false);
@@ -104,7 +102,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       navigate(redirect);
     } catch (error) {
       console.error("OTP verification error:", error);
-      setError("The verification code you entered is incorrect.");
+      // Enumeration-safe: never distinguish "no account" from "wrong code".
+      setError("That code didn't work. Request a fresh one or check the address.");
       setOtp("");
     } finally {
       setIsLoading(false);
@@ -125,9 +124,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     } catch (error) {
       console.error("OTP resend error:", error);
       setError(
-        error instanceof Error
-          ? error.message
-          : "Could not send a new code. Please try again in a moment.",
+        "We couldn't send a new code right now. Please try again in a moment.",
       );
     } finally {
       setIsLoading(false);
@@ -152,283 +149,284 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   return (
     <KynexAuthShell quote="Turn studying into intelligence.">
       <div className="flex w-full flex-1 items-center justify-center">
-        <Card className="kynex-glass spectrum-border w-full min-w-[300px] max-w-sm rounded-3xl shadow-2xl shadow-primary/10">
+        {/* Centered spatial card: quiet paper surface, hairline border,
+            generous internal rhythm — no heavy glass, no floating orbs. */}
+        <div className="w-full max-w-sm rounded-3xl border border-border/80 bg-card/95 p-7 shadow-[0_16px_48px_-28px_oklch(0.45_0.04_60/0.22)] sm:p-8">
           {step === "signIn" && (
             <>
-              <CardHeader className="text-center">
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    aria-label="KYNEX home"
-                    className="mb-4 mt-4 cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={() => navigate("/")}
-                  >
-                    <KynexMark className="size-16" />
-                  </button>
-                </div>
-                <CardTitle className="font-display text-2xl font-bold tracking-tight">
-                  Get started
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Enter your email to log in or sign up
-                </CardDescription>
-              </CardHeader>
-              <form onSubmit={handleEmailSubmit}>
-                <CardContent className="space-y-4">
-                  <div className="relative flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        name="email"
-                        placeholder="name@example.com"
-                        type="email"
-                        autoComplete="email"
-                        className="pl-9"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      variant="outline"
-                      size="icon"
+              <div className="flex flex-col items-center text-center">
+                <button
+                  type="button"
+                  aria-label="KYNEX home"
+                  className="cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => navigate("/")}
+                >
+                  <KynexMark className="size-14" />
+                </button>
+                <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">
+                  Welcome to KYNEX
+                </h1>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  One code logs you in — or signs you up.
+                </p>
+              </div>
+
+              <form onSubmit={handleEmailSubmit} className="mt-7 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="kynex-email" className="text-sm font-medium">
+                    Email address
+                  </Label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="kynex-email"
+                      name="email"
+                      placeholder="name@example.com"
+                      type="email"
+                      autoComplete="email"
+                      className="h-11 rounded-2xl pl-10"
                       disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-4 w-4" />
-                      )}
-                    </Button>
+                      required
+                    />
                   </div>
-                  {error && (
-                    <p role="alert" className="text-sm text-destructive">
-                      {error}
-                    </p>
+                </div>
+                {error && (
+                  <p role="alert" className="text-sm leading-relaxed text-destructive">
+                    {error}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  className="h-11 w-full rounded-2xl text-[15px] font-semibold"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending your code…
+                    </>
+                  ) : (
+                    <>
+                      Continue with email
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
                   )}
-
-                  <div className="relative pt-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">
-                        Or
-                      </span>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleGuestLogin}
-                    disabled={isLoading}
-                  >
-                    <UserX className="mr-2 h-4 w-4" />
-                    Continue as Guest
-                  </Button>
-                </CardContent>
+                </Button>
               </form>
+
+              <div className="relative my-5">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-card px-3 text-xs uppercase tracking-wider text-muted-foreground">
+                    or
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full rounded-2xl font-medium"
+                onClick={handleGuestLogin}
+                disabled={isLoading}
+              >
+                <UserX className="mr-2 h-4 w-4" />
+                Continue as guest
+              </Button>
+
+              <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">
+                Guest sessions keep everything you build — vault, progress and
+                history stay attached to this browser.
+              </p>
             </>
           )}
 
           {step === "verify" && (
             <>
-              <CardHeader className="text-center">
-                <div className="mb-1 mt-4 flex justify-center">
-                  <span className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
-                    <KeyRound className="size-5" />
-                  </span>
-                </div>
-                <CardTitle className="font-display text-2xl font-bold tracking-tight">
+              <div className="flex flex-col items-center text-center">
+                <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <KeyRound className="size-5" />
+                </span>
+                <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">
                   Check your email
-                </CardTitle>
-                <CardDescription className="text-sm">
+                </h1>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                   We sent a 6-digit code to{" "}
                   <span className="font-data font-semibold text-foreground">
                     {email}
                   </span>
-                </CardDescription>
-              </CardHeader>
+                </p>
+              </div>
+
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   void submitOtp();
                 }}
+                className="mt-7 space-y-4"
               >
-                <CardContent className="pb-4">
-                  <div className="flex justify-center">
-                    <InputOTP
-                      value={otp}
-                      onChange={setOtp}
-                      maxLength={6}
-                      disabled={isLoading}
-                    >
-                      <InputOTPGroup>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <InputOTPSlot key={index} index={index} />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
-                  </div>
-                  {error && (
-                    <p
-                      role="alert"
-                      className="mt-2 text-center text-sm text-destructive"
-                    >
-                      {error}
-                    </p>
-                  )}
-                  {notice && (
-                    <p className="mt-2 text-center text-sm text-success">
-                      {notice}
-                    </p>
-                  )}
-                  <p className="mt-4 text-center text-sm text-muted-foreground">
-                    Didn't receive a code?{" "}
-                    {resendIn > 0 ? (
-                      <span className="font-data font-semibold">
-                        resend in {resendIn}s
-                      </span>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="h-auto p-0"
-                        onClick={() => void handleResend()}
-                        disabled={isLoading}
-                      >
-                        Resend code
-                      </Button>
-                    )}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex-col gap-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading || otp.length !== 6}
+                {/* OTP auto-advance: Radix InputOTP moves focus between slots
+                    on entry and on backspace; Enter submits when complete. */}
+                <div className="flex justify-center">
+                  <InputOTP
+                    value={otp}
+                    onChange={setOtp}
+                    maxLength={6}
+                    disabled={isLoading}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verifying…
-                      </>
-                    ) : (
-                      <>
-                        Verify code
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                  <div className="flex w-full items-center justify-between">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setStep("signIn");
-                        setOtp("");
-                        setError(null);
-                        setNotice(null);
-                      }}
-                      disabled={isLoading}
-                      className="gap-1.5"
-                    >
-                      <ArrowLeft className="h-4 w-4" /> Different email
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="gap-1.5 text-muted-foreground"
-                      onClick={() => {
-                        setStep("recover");
-                        setError(null);
-                        setNotice(null);
-                      }}
-                      disabled={isLoading}
-                    >
-                      <LifeBuoy className="h-4 w-4" /> Need help
-                    </Button>
-                  </div>
-                </CardFooter>
+                    <InputOTPGroup className="gap-2">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <InputOTPSlot
+                          key={index}
+                          index={index}
+                          className="rounded-2xl border-border/80"
+                        />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                {error && (
+                  <p
+                    role="alert"
+                    className="text-center text-sm leading-relaxed text-destructive"
+                  >
+                    {error}
+                  </p>
+                )}
+                {notice && (
+                  <p className="text-center text-sm text-success">{notice}</p>
+                )}
+                <Button
+                  type="submit"
+                  className="h-11 w-full rounded-2xl text-[15px] font-semibold"
+                  disabled={isLoading || otp.length !== 6}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying…
+                    </>
+                  ) : (
+                    <>
+                      Verify and continue
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
               </form>
+
+              <div className="mt-5 flex items-center justify-between text-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto gap-1.5 p-0 text-muted-foreground"
+                  onClick={() => {
+                    setStep("signIn");
+                    setOtp("");
+                    setError(null);
+                    setNotice(null);
+                  }}
+                  disabled={isLoading}
+                >
+                  <ArrowLeft className="h-4 w-4" /> Different email
+                </Button>
+                {resendIn > 0 ? (
+                  <span className="font-data text-muted-foreground" aria-live="polite">
+                    resend in {resendIn}s
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold text-primary"
+                    onClick={() => void handleResend()}
+                    disabled={isLoading}
+                  >
+                    Resend code
+                  </Button>
+                )}
+              </div>
+
+              <div className="mt-5 border-t border-border/70 pt-4 text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto gap-1.5 p-0 text-sm text-muted-foreground"
+                  onClick={() => {
+                    setStep("recover");
+                    setError(null);
+                    setNotice(null);
+                  }}
+                  disabled={isLoading}
+                >
+                  <LifeBuoy className="h-4 w-4" /> Not getting the code?
+                </Button>
+              </div>
             </>
           )}
 
           {step === "recover" && (
             <>
-              <CardHeader className="text-center">
-                <div className="mb-1 mt-4 flex justify-center">
-                  <span className="grid size-11 place-items-center rounded-2xl bg-warning/15 text-warning-foreground">
-                    <LifeBuoy className="size-5" />
-                  </span>
-                </div>
-                <CardTitle className="font-display text-2xl font-bold tracking-tight">
-                  Can't access this email?
-                </CardTitle>
-                <CardDescription className="mx-auto max-w-[16rem] text-sm leading-relaxed">
-                  Codes expire after 15 minutes. Check spam, verify the address
-                  is spelled correctly, or start a guest session now and link
-                  your email later.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2.5">
+              <div className="flex flex-col items-center text-center">
+                <span className="grid size-12 place-items-center rounded-2xl bg-warning/15 text-warning-foreground">
+                  <LifeBuoy className="size-5" />
+                </span>
+                <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">
+                  Not getting the code?
+                </h1>
+                <p className="mt-1.5 max-w-[17rem] text-sm leading-relaxed text-muted-foreground">
+                  Codes expire after 15 minutes. Check spam, confirm the address
+                  is spelled correctly, or start a guest session now.
+                </p>
+              </div>
+
+              <div className="mt-7 space-y-2.5">
                 <Button
                   type="button"
-                  className="w-full"
+                  className="h-11 w-full rounded-2xl text-[15px] font-semibold"
                   onClick={handleGuestLogin}
                   disabled={isLoading}
                 >
                   <UserX className="mr-2 h-4 w-4" />
-                  Continue as Guest
+                  Continue as guest
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
+                  className="h-11 w-full rounded-2xl font-medium"
                   onClick={() => void handleResend()}
                   disabled={isLoading || resendIn > 0}
                 >
                   <Mail className="mr-2 h-4 w-4" />
                   {resendIn > 0
                     ? `Resend available in ${resendIn}s`
-                    : "Resend code"}
+                    : "Try my email again"}
                 </Button>
-                <p className="pt-1 text-center text-[11px] leading-relaxed text-muted-foreground">
-                  Guest sessions keep everything you build — vault, progress and
-                  history stay attached to this browser.
-                </p>
-              </CardContent>
-              <CardFooter>
+              </div>
+
+              <div className="mt-6 border-t border-border/70 pt-4">
                 <Button
                   type="button"
                   variant="ghost"
-                  className="w-full"
+                  className="h-auto w-full gap-1.5 text-sm text-muted-foreground"
                   onClick={() => {
                     setStep("verify");
                     setError(null);
                   }}
                   disabled={isLoading}
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to verification
+                  <ArrowLeft className="h-4 w-4" /> Back to verification
                 </Button>
-              </CardFooter>
+              </div>
             </>
           )}
 
-          <div className="rounded-b-2xl border-t bg-muted/60 px-6 py-4 text-center text-xs text-muted-foreground">
-            Secured by{" "}
-            <a
-              href="https://freebuff.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 transition-colors hover:text-primary"
-            >
-              freebuff.com
-            </a>
-          </div>
-        </Card>
+          <p className="mt-7 text-center text-[11px] leading-relaxed text-muted-foreground">
+            By continuing you agree to our Terms of Service and Privacy Policy.
+          </p>
+        </div>
       </div>
     </KynexAuthShell>
   );

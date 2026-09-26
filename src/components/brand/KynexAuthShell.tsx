@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import { KynexSunCore } from "./KynexBrand";
 
@@ -72,17 +71,6 @@ export function KynexAuthShell({
             <p className="font-display text-lg font-extrabold tracking-[0.2em]">KYNEX</p>
           </div>
           {children}
-          <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-            By continuing you agree to our{" "}
-            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
-              Privacy Policy
-            </Link>
-            .
-          </p>
         </div>
       </div>
     </div>
