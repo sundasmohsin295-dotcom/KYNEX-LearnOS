@@ -37,6 +37,35 @@ const CHAT_MODES = [
 ] as const;
 type ChatMode = (typeof CHAT_MODES)[number];
 
+/** Generational persona allowlist. The client sends one of these fixed keys;
+ *  the backend maps each to a fixed directive block. The raw string is NEVER
+ *  interpolated into a prompt — this is the same allowlist discipline as
+ *  modes. Tone-only by design: grounding rules, scope gating and the
+ *  UNTRUSTED_DATA_RULES apply identically under every persona. */
+const PERSONA_MODES = ["classic", "millennial", "genz", "alpha"] as const;
+type PersonaMode = (typeof PERSONA_MODES)[number];
+
+const PERSONA_DIRECTIVES: Record<PersonaMode, string> = {
+  classic:
+    "PERSONA TONE (professional/classic): authoritative academic mentor. Socratic maieutic questioning, formal register, rigorous structure. Ground claims and prefer citation-style references to the material. Depth over brevity, but never ramble.",
+  millennial:
+    "PERSONA TONE (millennial): supportive professional mentor. Structured, goal-oriented guidance: tie each explanation to long-term skill acquisition, portfolios and career outcomes. Warm but efficient; concrete milestones over hype.",
+  genz:
+    "PERSONA TONE (Gen Z): fast, casual, direct. Zero corporate fluff. Lead with the answer, then bullet-point breakdowns. Meme-literate brevity is welcome, but every technical claim stays rigorous — humor never replaces accuracy.",
+  alpha:
+    "PERSONA TONE (Gen Alpha): playful high-energy coach. Simplify with gamified metaphors, XP-style milestones and bite-sized chunks. Celebrate progress briefly. Simplified language must never distort the underlying concept — correctness first, fun second.",
+};
+
+/** Allowlist-gated persona directive resolution. Exported for the tone
+ *  contract tests; invalid/unknown values return null (tone simply not
+ *  applied — never an error, never echoed into a prompt). */
+export function resolvePersonaDirective(persona: string | undefined): string | null {
+  if (typeof persona !== "string") return null;
+  return PERSONA_MODES.includes(persona as PersonaMode)
+    ? PERSONA_DIRECTIVES[persona as PersonaMode]
+    : null;
+}
+
 // ---------------------------------------------------------------------------
 // SSRF defenses for server-side URL fetching
 // ---------------------------------------------------------------------------
@@ -798,19 +827,26 @@ Mode instructions (follow the mode the user picked):
 - zero: teach from absolute zero, assume no prior knowledge, define every term.
 - diagnose: identify what the student needs to understand BEFORE this topic. Ask what they already know first.
 - application: give a realistic scenario where the concept is used and walk through it.
-- debugmyunderstanding: DIAGNOSTIC — the student believes something wrong. First state the misconception you think they hold as a question ("Are you assuming that…?"), then correct it with a minimal counterexample. Never dump a full lecture.`;
+- debugmyunderstanding: DIAGNOSTIC — the student believes something wrong. First state the misconception you think they hold as a question ("Are you assuming that…?"), then correct it with a minimal counterexample. Never dump a full lecture.
+
+Persona tone: when a PERSONA TONE directive appears in this conversation, it adjusts HOW you speak (register, energy, structure) — never WHAT is true. All grounding, source-labeling and untrusted-data rules above override persona style in every conflict.`;
 
 export const chatInternal = internalAction({
   args: {
     conversationId: v.id("conversations"),
     materialId: v.optional(v.id("materials")),
     mode: v.string(),
+    persona: v.optional(v.string()),
     history: v.array(v.object({ role: v.string(), content: v.string() })),
   },
-  handler: async (ctx, { conversationId, materialId, mode, history }) => {
+  handler: async (ctx, { conversationId, materialId, mode, persona, history }) => {
     const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
       { role: "system", content: CHAT_SYSTEM },
     ];
+    const personaDirective = resolvePersonaDirective(persona);
+    if (personaDirective) {
+      messages.push({ role: "system", content: personaDirective });
+    }
     if (materialId) {
       const chunks = await ctx.runQuery(internal.materials.getChunksInternal, { materialId });
       const text = chunks
@@ -1086,8 +1122,9 @@ export const chat = action({
     conversationId: v.id("conversations"),
     materialId: v.optional(v.id("materials")),
     mode: v.string(),
+    persona: v.optional(v.string()),
   },
-  handler: async (ctx, { conversationId, materialId, mode }) => {
+  handler: async (ctx, { conversationId, materialId, mode, persona }) => {
     const userId = await ctx.runQuery(api.securityGet.userId);
     if (!userId) throw new Error("Not authenticated");
 
@@ -1123,6 +1160,7 @@ export const chat = action({
       conversationId,
       materialId,
       mode: safeMode,
+      persona,
       history: history.map((m: { role: string; content: string }) => ({
         role: m.role,
         content: m.content,

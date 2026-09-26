@@ -19,6 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MasteryRings, StreakDots } from "@/components/VisualBits";
 import { LockedSkeleton } from "@/components/LoadLock";
 import { MASTERY_LOOP, levelTitle, identityRank } from "@/lib/game";
+import { PERSONA_COPY } from "@/lib/uiPrefs";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
 import { cn } from "@/lib/utils";
 import type { Mission } from "@/lib/learning";
 import type { FunctionComponent } from "react";
@@ -227,6 +229,7 @@ function useMissionAction() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { persona } = useUiPrefs();
   const overview = useQuery(api.profiles.myOverview);
   const insights = useQuery(api.profiles.myInsights);
   const materials = useQuery(api.materials.list);
@@ -307,6 +310,7 @@ export default function Dashboard() {
     : null;
   const missionIcon = MISSION_ICON[mission?.kind ?? "practice"] ?? Target;
   const MissionIcon = missionIcon;
+  const personaCopy = PERSONA_COPY[persona];
 
   return (
     <AppShell>
@@ -314,9 +318,9 @@ export default function Dashboard() {
         eyebrow={`KYNEX Twin · Level ${game.level} ${levelTitle(game.level)} · ${rank.label}`}
         title={
           profile.name ? (
-            <>Your academic state, {profile.name.split(" ")[0]}.</>
+            <>{personaCopy.greeting(profile.name.split(" ")[0])}</>
           ) : (
-            <>Your academic state.</>
+            <>{personaCopy.greeting()}</>
           )
         }
       >

@@ -19,6 +19,7 @@ import {
 import { useTheme } from "next-themes";
 import { XP_PER_LEVEL, STREAK_MESSAGES } from "@/lib/game";
 import { CommandBar } from "@/components/CommandBar";
+import { UiCustomizer } from "@/components/UiCustomizer";
 import { applyPrivateSeo } from "@/lib/seo";
 import { spring } from "@/lib/motion";
 import { AuroraField, gleamProps, routeSpectrumKey, useAccentSpectrum } from "@/lib/spectrum";
@@ -124,9 +125,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Command bar + level card */}
-        <div className="mx-3 mb-3">
-          <CommandBar />
+        {/* Command bar + design customizer + level card */}
+        <div className="mx-3 mb-3 flex items-center gap-1.5">
+          <div className="min-w-0 flex-1">
+            <CommandBar />
+          </div>
+          <UiCustomizer />
         </div>
 
         <div className="kynex-glass spectrum-border mx-3 mb-3 rounded-2xl p-4">
@@ -161,6 +165,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
         <div className="flex items-center gap-2">
           <CommandBar />
+          <UiCustomizer />
           <span title={streakTitle} className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-bold">
             <Flame className={cn("size-3.5", streakAlive ? "fill-chart-5/30 text-chart-5" : "text-muted-foreground")} />
             {streak}

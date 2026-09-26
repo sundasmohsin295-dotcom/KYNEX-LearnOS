@@ -25,6 +25,39 @@
       } catch (e) {
         // Storage can throw in private mode — default to light silently.
       }
+      try {
+        // UI Style Matrix + generational persona: resolve pre-paint so the
+        // first frame already carries the chosen design language (zero FOUC,
+        // zero layout shift). Mirrors src/lib/uiPrefs.ts — the KYNEX-owned
+        // keys use the versioned {v,p} envelope; legacy bare strings are
+        // honored; anything invalid resets to the defaults silently. The
+        // React provider (UiPrefsProvider) takes over after mount.
+        var STYLE_ATTR = "data-ui-style";
+        var GEN_ATTR = "data-gen";
+        var STYLES = ["glass", "minimal", "neumorph", "clay", "bento"];
+        var PERSONAS = ["classic", "millennial", "genz", "alpha"];
+        var pick = function (raw, valid, fallback) {
+          try {
+            var parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object" && "p" in parsed) parsed = parsed.p;
+            return valid.indexOf(parsed) !== -1 ? parsed : fallback;
+          } catch (e) {
+            return fallback;
+          }
+        };
+        var style = null;
+        var gen = null;
+        try {
+          style = pick(localStorage.getItem("kynex.uiStyle.v1"), STYLES, "glass");
+        } catch (e) {}
+        try {
+          gen = pick(localStorage.getItem("kynex.genPersona.v1"), PERSONAS, "classic");
+        } catch (e) {}
+        if (style) document.documentElement.setAttribute(STYLE_ATTR, style);
+        if (gen) document.documentElement.setAttribute(GEN_ATTR, gen);
+      } catch (e) {
+        // Attributes are cosmetic — never block boot.
+      }
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />

@@ -16,6 +16,7 @@ import { routeBreakers, routeKeyFromPathname } from "@/lib/routeCircuitBreaker";
 import { DegradedRoute } from "@/components/DegradedRoute";
 import { SystemRecoveryScreen } from "@/components/SystemRecoveryScreen";
 import { MotionProvider } from "@/lib/motion";
+import { UiPrefsProvider } from "@/components/UiPrefsProvider";
 import { api } from "@/convex/_generated/api";
 import { sweepCorruptedStorage } from "@/lib/storageSweep";
 import { createRoot } from "react-dom/client";
@@ -269,6 +270,10 @@ createRoot(rootElement).render(
         {/* Dual-mode theme: class-based tokens, no FOUC (index.html pre-sets
             the class before paint using the same "theme" storage key). */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        {/* UI Style Matrix + generational persona: same contract as the theme
+            — index.html pre-paints data-ui-style/data-gen, this provider
+            owns attribute + persistence updates after mount. */}
+        <UiPrefsProvider>
         <MotionProvider>
         <BrowserRouter>
           <RouteSyncer />
@@ -492,6 +497,7 @@ createRoot(rootElement).render(
           </Suspense>
         </BrowserRouter>
         </MotionProvider>
+        </UiPrefsProvider>
         <Toaster />
         </ThemeProvider>
       </ConvexAuthProvider>

@@ -694,3 +694,147 @@ html.kynex-focus header:hover {
     transition: none;
   }
 }
+
+/* ================================================================== */
+/* UI STYLE MATRIX — runtime design-language switcher                  */
+/*                                                                      */
+/* <html data-ui-style="glass|minimal|neumorph|clay|bento"> drives      */
+/* profile-scoped token overrides. The default (no attribute or         */
+/* "glass") keeps the shipped KYNEX look byte-identical — every rule    */
+/* below is opt-in per attribute. Color tokens are never reduced by any */
+/* profile: foreground/background pairs stay the AAA pairs defined      */
+/* above, so text contrast holds in every style and both modes.         */
+/* ================================================================== */
+
+/* --- Profile: MINIMAL — flat editorial. Kill glass, glow and all      */
+/*     elevation shadows; hairline solid borders do the separation. --- */
+html[data-ui-style="minimal"] {
+  --kynex-glass-alpha: 1;
+  --glow-a: 0;
+  --glow-b: 0;
+  --glow-c: 0;
+  --radius: 0.5rem;
+}
+html[data-ui-style="minimal"] .kynex-glass {
+  background: var(--card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+html[data-ui-style="minimal"] .aurora-field,
+html[data-ui-style="minimal"] .aurora-panel::before,
+html[data-ui-style="minimal"] .aurora-panel::after {
+  display: none;
+}
+html[data-ui-style="minimal"] .spectrum-border::before,
+html[data-ui-style="minimal"] .glare3d::after,
+html[data-ui-style="minimal"] .gleam {
+  display: none;
+}
+html[data-ui-style="minimal"] .lift-spectrum:hover {
+  transform: none;
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+/* --- Profile: NEUMORPH — same-tone extrusion. Surfaces take the exact */
+/*     background color; dual shadows (light from top-left, dark from   */
+/*     bottom-right) do all the work. AAA text tokens are untouched. --- */
+html[data-ui-style="neumorph"] {
+  --kynex-glass-alpha: 1;
+  --kynex-neu-light: oklch(1 0 0 / 0.85);
+  --kynex-neu-dark: oklch(0.55 0.02 262 / 0.28);
+  --radius: 1.25rem;
+}
+html.dark[data-ui-style="neumorph"] {
+  --kynex-neu-light: oklch(1 0 0 / 0.07);
+  --kynex-neu-dark: oklch(0 0 0 / 0.55);
+}
+html[data-ui-style="neumorph"] .kynex-glass {
+  background: var(--background);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid transparent;
+  box-shadow:
+    -6px -6px 12px var(--kynex-neu-light),
+    6px 6px 12px var(--kynex-neu-dark);
+}
+html[data-ui-style="neumorph"] .aurora-field {
+  opacity: 0.35;
+}
+html[data-ui-style="neumorph"] .spectrum-border::before,
+html[data-ui-style="neumorph"] .glare3d::after,
+html[data-ui-style="neumorph"] .gleam {
+  display: none;
+}
+
+/* --- Profile: CLAY — inflated, extra-rounded, puffy dual ambient      */
+/*     shadows. The squishy look without touching text colors.       --- */
+html[data-ui-style="clay"] {
+  --kynex-glass-alpha: 1;
+  --kynex-clay-ambient-a: oklch(from var(--primary) l c h / 0.18);
+  --kynex-clay-ambient-b: oklch(0.45 0.04 262 / 0.16);
+  --radius: 2rem;
+}
+html.dark[data-ui-style="clay"] {
+  --kynex-clay-ambient-a: oklch(from var(--primary) l c h / 0.28);
+  --kynex-clay-ambient-b: oklch(0 0 0 / 0.5);
+}
+html[data-ui-style="clay"] .kynex-glass {
+  background: var(--card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) + 0.5rem);
+  box-shadow:
+    inset 0 2px 4px 0 oklch(1 0 0 / 0.35),
+    var(--kynex-clay-ambient-a) 0 10px 24px -6px,
+    var(--kynex-clay-ambient-b) 0 18px 40px -12px;
+}
+html[data-ui-style="clay"] .aurora-field {
+  opacity: 0.55;
+}
+html[data-ui-style="clay"] .spectrum-border::before,
+html[data-ui-style="clay"] .glare3d::after {
+  display: none;
+}
+
+/* --- Profile: BENTO — dense modular blocks. Tighter radius, flatter   */
+/*     hover, crisper hairlines; grid structure comes from the pages. --- */
+html[data-ui-style="bento"] {
+  --kynex-glass-alpha: 0.88;
+  --radius: 0.75rem;
+}
+html[data-ui-style="bento"] .kynex-glass {
+  background: oklch(from var(--card) l c h / 0.92);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 0 0 var(--border);
+}
+html[data-ui-style="bento"] .lift-spectrum:hover {
+  transform: none;
+  border-color: oklch(from var(--primary) calc(l + 0.2) c h / 0.5);
+  box-shadow: none;
+}
+html[data-ui-style="bento"] .glare3d::after {
+  display: none;
+}
+
+/* Accessibility: the persona attribute never changes colors by design —
+/* it is a token-and-copy layer only, so every WCAG AAA pairing defined
+/* in the light/dark token blocks above holds across all four personas.
+/* (data-gen may adjust emphasis in future without touching contrast.) */
+html[data-gen] {
+  /* reserved: persona-scoped tokens keep this selector anchor stable */
+}
+
+/* Style switching is visual-only decoration: reduce-motion users get an
+/* instant, animation-free switch. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-ui-style] .kynex-glass,
+  html[data-ui-style] .lift-spectrum {
+    transition: none;
+  }
+}

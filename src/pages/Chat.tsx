@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
 import { MODES, MODE_TO_AI, type ModeKey } from "@/lib/learning";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
 
 const QUICK_PROMPTS = [
   // KYNEX Professor quick intents
@@ -32,6 +33,7 @@ const QUICK_PROMPTS = [
 
 export default function Chat() {
   const navigate = useNavigate();
+  const { persona } = useUiPrefs();
   const [params, setParams] = useSearchParams();
   const conversations = useQuery(api.learning.listConversations);
   const materials = useQuery(api.materials.listReady);
@@ -135,7 +137,7 @@ export default function Chat() {
       setWaiting(true);
       await sendUser({ conversationId: convId, content });
       persisted = true;
-      await runChat({ conversationId: convId, materialId: materialId ?? undefined, mode: MODE_TO_AI[mode] });
+      await runChat({ conversationId: convId, materialId: materialId ?? undefined, mode: MODE_TO_AI[mode], persona });
     } catch (e) {
       // If the message never reached the database, give the student their
       // text back — losing composed work to a network drop is a data-loss

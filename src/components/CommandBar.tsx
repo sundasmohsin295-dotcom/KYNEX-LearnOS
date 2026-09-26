@@ -11,6 +11,15 @@ import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
+import {
+  PERSONAS,
+  PERSONA_META,
+  UI_STYLES,
+  UI_STYLE_META,
+  type Persona,
+  type UiStyle,
+} from "@/lib/uiPrefs";
 
 interface Action {
   id: string;
@@ -24,6 +33,7 @@ interface Action {
 /** KYNEX Command Bar — global ⌘K router that sends intent to the right feature. */
 export function CommandBar() {
   const navigate = useNavigate();
+  const { style, persona, setStyle, setPersona } = useUiPrefs();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -104,8 +114,31 @@ export function CommandBar() {
         run: () => navigate(`/material/${m._id}`),
       });
     }
+    // Design controls — real-time style/persona switching from the palette.
+    for (const s of UI_STYLES) {
+      if (s === style) continue;
+      base.push({
+        id: `style-${s}`,
+        label: `Style: ${UI_STYLE_META[s].label}`,
+        group: "Design",
+        icon: Shapes,
+        hint: UI_STYLE_META[s].blurb,
+        run: () => setStyle(s as UiStyle),
+      });
+    }
+    for (const p of PERSONAS) {
+      if (p === persona) continue;
+      base.push({
+        id: `persona-${p}`,
+        label: `Persona: ${PERSONA_META[p].label}`,
+        group: "Design",
+        icon: User,
+        hint: PERSONA_META[p].blurb,
+        run: () => setPersona(p as Persona),
+      });
+    }
     return base;
-  }, [q, materials, navigate]);
+  }, [q, materials, navigate, style, persona, setStyle, setPersona]);
 
   const smartActions = useMemo<Action[]>(() => {
     const kindIcon: Record<string, typeof Target> = {
