@@ -17,6 +17,7 @@ import { DegradedRoute } from "@/components/DegradedRoute";
 import { SystemRecoveryScreen } from "@/components/SystemRecoveryScreen";
 import { MotionProvider } from "@/lib/motion";
 import { api } from "@/convex/_generated/api";
+import { sweepCorruptedStorage } from "@/lib/storageSweep";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
@@ -88,6 +89,18 @@ class RootErrorBoundary extends React.Component<
 > {
   state = { hasError: false, message: "", correlationId: "" };
   static getDerivedStateFromError(error: Error) {
+    // Zero-crash hardening: before rendering recovery, sweep KYNEX-owned
+    // localStorage entries that are structurally broken — a poisoned payload
+    // re-parsed on every boot would otherwise crash the same view again.
+    let swept = 0;
+    try {
+      swept = sweepCorruptedStorage().removed.length;
+    } catch {
+      // sweep is best-effort; never let it mask the original error
+    }
+    if (swept > 0) {
+      console.warn(`[KYNEX] Root crash: swept ${swept} corrupted storage entr${swept === 1 ? "y" : "ies"}`);
+    }
     const entry = reportCrash(error, "error");
     return {
       hasError: true,
