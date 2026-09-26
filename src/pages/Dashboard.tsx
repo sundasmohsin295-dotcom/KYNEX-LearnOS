@@ -572,18 +572,21 @@ export default function Dashboard() {
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <PulseTile
+            staggerIndex={0}
             label="Overall Mastery"
             value={`${insights?.overallMastery ?? stats.accuracy}%`}
             trend={insights?.accuracyTrend?.delta}
             tone="text-primary"
           />
           <PulseTile
+            staggerIndex={1}
             label="Exam Readiness"
             value={`${insights?.examReadiness ?? 0}%`}
             tone="text-chart-4"
             note="modelled estimate from mastery, accuracy & consistency"
           />
           <PulseTile
+            staggerIndex={2}
             label="Weakest Area"
             value={insights?.weakest?.label ?? "--"}
             sub={insights?.weakest ? `${insights.weakest.accuracy}% accuracy` : "practice to reveal"}
@@ -591,6 +594,7 @@ export default function Dashboard() {
             small
           />
           <PulseTile
+            staggerIndex={3}
             label="Strongest Area"
             value={insights?.strongest?.label ?? "--"}
             sub={insights?.strongest ? `${insights.strongest.accuracy}% accuracy` : "practice to reveal"}
@@ -916,7 +920,8 @@ function RescueModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-background/80 px-4"
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="animate-overlay-fade fixed inset-0 z-[80] flex items-center justify-center bg-background/80 px-4"
       onClick={onClose}
     >
       <motion.div
@@ -992,7 +997,7 @@ function RescueModal({
 }
 
 function PulseTile({
-  label, value, sub, note, tone, small = false, trend,
+  label, value, sub, note, tone, small = false, trend, staggerIndex,
 }: {
   label: string;
   value: string;
@@ -1001,12 +1006,15 @@ function PulseTile({
   tone: string;
   small?: boolean;
   trend?: number;
+  /** 0-based position in the metric grid — drives the 50ms stagger delay. */
+  staggerIndex?: number;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-border/60 bg-muted/30 p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ ["--stagger-i" as string]: staggerIndex ?? 0 }}
+      className="animate-card-stagger rounded-2xl border border-border/60 bg-muted/30 p-4"
       title={note}
     >
       <div className="flex items-center justify-between gap-2">

@@ -111,8 +111,8 @@
 }
 
 .dark {
-  /* deep neutral obsidian/slate: #0A0A0C to #16161A family. Near-zero
-     chroma with a faint cool cast; blue is reserved for interaction. */
+  /* deep midnight obsidian (#020617 family) with a faint cool cast; blue
+     stays reserved for interaction. */
   --background: oklch(0.13 0.005 260);
   --foreground: oklch(0.93 0.004 260);
   --card: oklch(0.165 0.006 260);
@@ -153,12 +153,12 @@
   --warning: oklch(0.8 0.13 75);
   --warning-foreground: oklch(0.22 0.06 75);
 
-  /* dark spectrum: obsidian bases (#030712 / #020617 family) with a faint
-     cool cast; the route-reactive accent breathes chroma into the room. */
-  --background: oklch(0.128 0.02 265);
-  --card: oklch(0.168 0.024 265);
-  --popover: oklch(0.185 0.025 265);
-  --sidebar: oklch(0.14 0.02 265);
+  /* dark spectrum: deep midnight obsidian (#020617 family) so chromatic
+     accents bloom against true black-adjacent surfaces. */
+  --background: oklch(0.115 0.018 262);
+  --card: oklch(0.152 0.022 263);
+  --popover: oklch(0.168 0.023 263);
+  --sidebar: oklch(0.128 0.018 262);
 
   --accent-h: 255;
   --accent-c: 0.19;
@@ -307,15 +307,15 @@
 html.dark .aurora-field {
   background:
     radial-gradient(42rem 30rem at 18% -10%,
-      oklch(from var(--primary) 0.4 c h / 0.95), transparent 70%),
+      oklch(from var(--primary) 0.42 c h / 1), transparent 70%),
     radial-gradient(36rem 26rem at 85% 8%,
-      oklch(from var(--primary) 0.42 c calc(h + 55) / 0.65), transparent 70%),
+      oklch(from var(--primary) 0.44 c calc(h + 55) / 0.7), transparent 70%),
     radial-gradient(50rem 34rem at 50% 115%,
-      oklch(from var(--primary) 0.38 calc(c * 0.8) calc(h + 120) / 0.55), transparent 72%),
+      oklch(from var(--primary) 0.4 calc(c * 0.8) calc(h + 120) / 0.6), transparent 72%),
     conic-gradient(from 220deg at 70% 30%,
-      oklch(from var(--primary) 0.45 c calc(h + 90) / 0.4),
+      oklch(from var(--primary) 0.48 c calc(h + 90) / 0.45),
       transparent 40%,
-      oklch(from var(--primary) 0.4 c h / 0.3) 75%,
+      oklch(from var(--primary) 0.42 c h / 0.35) 75%,
       transparent);
 }
 
@@ -512,6 +512,81 @@ html.dark .aurora-field {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* PROFESSIONAL ANIMATION FORMULAS                                      */
+/* 150–300ms rule, isolated moving parts (transform/opacity only),      */
+/* zero layout shift — every keyframe animates compositor properties.   */
+/* ------------------------------------------------------------------ */
+
+/* 1 · Micro-interaction: 100ms scale-down to 0.96 on press (ease-in),
+       200ms ease-out back to full size on release. Transform-only, so the
+       press never reflows layout. */
+.press-micro {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+.press-micro:active {
+  transform: scale(0.96);
+  transition: transform 100ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* 2 · Screen & page entry: header titles slide down from -10px over 250ms. */
+@keyframes kynex-header-slide {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-header-entry {
+  animation: kynex-header-slide 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 3 · Metric cards stagger-fade upwards from +15px; per-card delay via
+       --stagger-i so one keyframe serves the whole grid (total run stays
+       under 350ms with the recommended 50ms step). */
+@keyframes kynex-card-fade-up {
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-card-stagger {
+  animation: kynex-card-fade-up 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger-i, 0) * 50ms);
+}
+
+/* 4 · Bottom sheets: spring up from 100% over 300ms; overlays fade 0→0.5
+       over 200ms. Sheet animates itself; the overlay animates independently
+       (isolated moving parts — the sheet never re-parents the overlay). */
+@keyframes kynex-sheet-spring {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0%); }
+}
+.animate-sheet-spring {
+  animation: kynex-sheet-spring 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes kynex-overlay-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-overlay-fade {
+  animation: kynex-overlay-fade 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Reduced motion: every formula collapses to a 120ms opacity fade — no
+   travel, no scale, no stagger delay. */
+@media (prefers-reduced-motion: reduce) {
+  .press-micro,
+  .press-micro:active {
+    transition: opacity 120ms ease;
+    transform: none;
+  }
+  .animate-header-entry,
+  .animate-card-stagger,
+  .animate-sheet-spring {
+    animation: kynex-overlay-fade 120ms ease both;
+    animation-delay: 0ms;
+  }
+  .animate-overlay-fade {
+    animation-duration: 120ms;
   }
 }
 

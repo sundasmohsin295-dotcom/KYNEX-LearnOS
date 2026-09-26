@@ -272,10 +272,10 @@ export function PageHeader({
 }: { eyebrow?: string; title: React.ReactNode; children?: React.ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={spring.smooth}
-      className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="animate-header-entry mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
     >
       <div>
         {eyebrow && (

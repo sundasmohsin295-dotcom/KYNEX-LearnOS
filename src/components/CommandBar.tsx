@@ -170,7 +170,7 @@ export function CommandBar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] flex items-start justify-center bg-background/70 px-4 pt-[14vh]"
+            className="animate-overlay-fade fixed inset-0 z-[80] flex items-start justify-center bg-background/70 px-4 pt-[14vh]"
             onClick={() => setOpen(false)}
           >
             <motion.div
