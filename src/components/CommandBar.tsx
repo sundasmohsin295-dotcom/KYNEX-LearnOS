@@ -4,8 +4,8 @@ import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, BookOpen, Brain, Calculator, Command, Flame, Gauge,
-  GraduationCap, Layers, MessagesSquare, Network, Play, Plus, RefreshCw, Search, ShieldCheck,
-  Stethoscope, Target, User, Wrench, Zap,
+  GraduationCap, Layers, MessagesSquare, Network, PenLine, Play, Plus, RefreshCw, Search, ShieldCheck,
+  Shapes, Stethoscope, Target, User, Wrench, Zap,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
@@ -80,6 +80,8 @@ export function CommandBar() {
       { id: "gpa", label: "Open GPA Lab", group: "GPA Lab", icon: Calculator, hint: "CGPA, required GPA & scenarios", run: () => navigate("/gpa") },
       { id: "mistakes", label: "Open Mistake Bank", group: "Practice", icon: Wrench, hint: "Every miss, classified & fixable", run: () => navigate("/mistakes") },
       { id: "graph", label: "Open KYNEX Map", group: "Knowledge", icon: Network, hint: "Concept graph & weak roots", run: () => navigate("/graph") },
+      { id: "visualize", label: "Visualize a topic", group: "Knowledge", icon: Shapes, hint: "AI mind maps, flows & timelines", run: () => navigate("/visualize") },
+      { id: "writer", label: "Open the Writer", group: "Knowledge", icon: PenLine, hint: "Evidence-first drafting with citations", run: () => navigate("/writer") },
       { id: "exam", label: "Start a timed exam", group: "Practice", icon: Stethoscope, hint: "Server-timed simulator + autopsy", run: () => navigate("/practice") },
     ];
     if (q.trim().length >= 4) {

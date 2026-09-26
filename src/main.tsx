@@ -41,6 +41,8 @@ const KnowledgeGraph = lazy(() => import("./pages/KnowledgeGraph.tsx"));
 const MissionScreen = lazy(() => import("./pages/MissionScreen.tsx"));
 const Planner = lazy(() => import("./pages/Planner.tsx"));
 const ExaminerPage = lazy(() => import("./pages/ExaminerPage.tsx"));
+const Writer = lazy(() => import("./pages/Writer.tsx"));
+const Visualize = lazy(() => import("./pages/Visualize.tsx"));
 const Security = lazy(() => import("./pages/Security.tsx"));
 const PlanPage = lazy(() => import("./pages/PlanPage.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
@@ -417,6 +419,41 @@ createRoot(rootElement).render(
                 element={
                   <RequireAuth>
                     <ExaminerPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/writer"
+                element={
+                  <RequireAuth>
+                    <Writer />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/writer/:id"
+                element={
+                  <RequireAuth>
+                    <Writer />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/visualize"
+                element={
+                  <RequireAuth>
+                    <Visualize />
+                  </RequireAuth>
+                }
+              />
+              {/* Personal Memory Vault alias: /vault is the same surface as
+                  the Vault (library). Kept as a real route so deep links and
+                  the sidebar label resolve without a redirect loop. */}
+              <Route
+                path="/vault"
+                element={
+                  <RequireAuth>
+                    <Library />
                   </RequireAuth>
                 }
               />

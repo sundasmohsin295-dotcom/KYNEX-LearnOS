@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   BarChart3, BookOpen, Flame, GraduationCap, Gauge, LayoutDashboard, LogOut,
   Moon, Network, Plus, Sun, Target, Wrench, Zap, RefreshCw, Fingerprint, Calculator,
-  CalendarDays, ClipboardCheck, ShieldCheck,
+  CalendarDays, ClipboardCheck, ShieldCheck, PenLine, Shapes,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,8 @@ const NAV = [
   { to: "/flashcards", label: "Recall", icon: RefreshCw },
   { to: "/mistakes", label: "Mistake Bank", icon: Wrench },
   { to: "/graph", label: "KYNEX Map", icon: Network },
+  { to: "/visualize", label: "Visualize", icon: Shapes },
+  { to: "/writer", label: "Writer", icon: PenLine },
   { to: "/planner", label: "Planner", icon: CalendarDays },
   { to: "/gpa", label: "GPA Lab", icon: Calculator },
   { to: "/insights", label: "Insights", icon: BarChart3 },

@@ -42,6 +42,10 @@ export const MODULE_SPECTRA: Record<string, Exclude<Spectrum, null>> = {
   "/insights": { h: 300, c: 0.16 },
   // Mint — material intake
   "/add": { h: 150, c: 0.14 },
+  // Deep amber — Citation Writer (evidence, craft)
+  "/writer": { h: 60, c: 0.13 },
+  // Rose — Visualize (diagrams, spatial structure)
+  "/visualize": { h: 15, c: 0.13 },
 };
 
 const BASE: Exclude<Spectrum, null> = { h: 255, c: 0.2 };
@@ -135,6 +139,7 @@ export function routeSpectrumKey(pathname: string): string | null {
   if (seg === "/" || seg === "") return null;
   if (seg === "/material") return "/library";
   if (seg === "/quiz") return "/practice";
+  if (seg === "/writer" || seg === "/visualize" || seg === "/vault") return seg;
   return seg;
 }
 

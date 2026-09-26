@@ -711,6 +711,92 @@ const schema = defineSchema(
     })
       .index("by_user", ["userId"])
       .index("by_user_created", ["userId", "createdAt"]),
+
+    // ---- Citation-Aware Writer ----
+    // A structured writing document (essay, lab report, literature review).
+    // Content is plain text with lightweight paragraph breaks — the client
+    // renders it; the server stores, sanitizes and ownership-checks it.
+    writerDocs: defineTable({
+      userId: v.id("users"),
+      // Optional grounding: the cited material lives in the Vault. Owned
+      // references only — validated server-side on every write path.
+      materialId: v.optional(v.id("materials")),
+      title: v.string(),
+      content: v.string(),
+      wordGoal: v.optional(v.number()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_updated", ["userId", "updatedAt"]),
+
+    // One row per citation attached to a writer document. sourceText is the
+    // exact supporting passage from the Vault material (normalized through
+    // the Perturbation Shield on insert); the writer UI renders it as the
+    // inline evidence so claims stay traceable to the student's source.
+    citations: defineTable({
+      userId: v.id("users"),
+      docId: v.id("writerDocs"),
+      materialId: v.optional(v.id("materials")),
+      // "paragraph" locates the claim in the doc; ord anchors [n] numbering.
+      paragraphIndex: v.number(),
+      ord: v.number(),
+      sourceText: v.string(),
+      locator: v.optional(v.string()), // e.g. "ch. 3, p. 41"
+      createdAt: v.number(),
+    })
+      .index("by_doc", ["docId", "ord"])
+      .index("by_material", ["materialId"]),
+
+    // ---- Visual Explanations ----
+    // A validated, renderer-ready diagram specification produced by the AI
+    // gateway and schema-checked BEFORE persistence (structured output
+    // validation, same discipline as analysis/quiz/examiner outputs).
+    visualDiagrams: defineTable({
+      userId: v.id("users"),
+      materialId: v.optional(v.id("materials")),
+      title: v.string(),
+      kind: v.union(
+        v.literal("mindmap"),
+        v.literal("flow"),
+        v.literal("hierarchy"),
+        v.literal("timeline"),
+        v.literal("compare"),
+      ),
+      spec: v.object({
+        root: v.string(),
+        nodes: v.array(
+          v.object({
+            id: v.string(),
+            label: v.string(),
+            parent: v.optional(v.string()),
+            detail: v.optional(v.string()),
+            when: v.optional(v.string()), // timeline ordering label
+          }),
+        ),
+        edges: v.optional(
+          v.array(
+            v.object({
+              from: v.string(),
+              to: v.string(),
+              label: v.optional(v.string()),
+            }),
+          ),
+        ),
+        sides: v.optional(
+          v.object({
+            leftTitle: v.string(),
+            rightTitle: v.string(),
+            left: v.array(v.string()),
+            right: v.array(v.string()),
+          }),
+        ),
+      }),
+      model: v.string(),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_material", ["materialId"]),
   },
   // SECURITY (ASVS 5.5.1 / API property-level authorization): enforce the
   // declared validators on every write. All code paths already use explicit

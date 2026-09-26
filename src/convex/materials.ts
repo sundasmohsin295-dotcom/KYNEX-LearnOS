@@ -199,12 +199,34 @@ export const remove = mutation({
       }
       await ctx.db.delete(f._id);
     }
+    // Cascade into the Citation Writer + Visual Explanations BEFORE the
+    // material row disappears: citations and diagrams die with the material,
+    // grounded writer docs keep their text but lose the dangling reference.
+    for (const c of await ctx.db
+      .query("citations")
+      .withIndex("by_material", (q) => q.eq("materialId", id))
+      .collect()) {
+      await ctx.db.delete(c._id);
+    }
+    for (const d of await ctx.db
+      .query("writerDocs")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect()) {
+      if (d.materialId === id) {
+        await ctx.db.patch(d._id, { materialId: undefined });
+      }
+    }
+    for (const g of await ctx.db
+      .query("visualDiagrams")
+      .withIndex("by_material", (q) => q.eq("materialId", id))
+      .collect()) {
+      await ctx.db.delete(g._id);
+    }
+
     await ctx.db.delete(id);
     await logAuditEvent(ctx, userId, "material_deleted", "cascade");
   },
-});
-
-/** Internal: fetch a material (for server-side actions). */
+});/** Internal: fetch a material (for server-side actions). */
 export const getInternal = internalQuery({
   args: { id: v.id("materials") },
   handler: async (ctx, { id }) => {

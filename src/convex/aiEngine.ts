@@ -1158,6 +1158,7 @@ export const generateQuiz = action({
   },
 });
 
+
 /** Fetch a URL server-side (no CORS), extract readable text, create + analyze.
  *  Hardened: allowlisted schemes, DNS-based SSRF guard, response size cap,
  *  redirect budget, HTTP-status classification (429/Retry-After honored with
@@ -1299,6 +1300,178 @@ export const ingestUrl = action({
     });
     await ctx.runAction(internal.aiEngine.analyzeMaterial, { materialId });
     return materialId as unknown as string;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// VISUAL EXPLANATIONS — diagram generation inside the node gateway. Same
+// hardened pipeline as every AI feature: breaker gate → bounded retries →
+// structured-output validation → QC telemetry on rejection.
+// ---------------------------------------------------------------------------
+
+const VISUAL_SYSTEM =
+  "You convert study material into clean diagram data. Reply with ONLY JSON, no prose, no code fences. " +
+  'Shape: {"root":"<id of the main node>","nodes":[{"id":"n1","label":"<2-5 words>","parent":"<id or omit for root>","detail":"<one sentence>"}' +
+  '(,"edges":[{"from":"n1","to":"n2","label":"<2-4 words>"}])' +
+  '(,"sides":{"leftTitle":"...","rightTitle":"...","left":["..."],"right":["..."]} only for compare diagrams)}. ' +
+  "Use 8 to 18 nodes. Labels are short. Detail sentences must be grounded ONLY in the material.";
+
+type VisualSpec = {
+  root: string;
+  nodes: { id: string; label: string; parent?: string; detail?: string; when?: string }[];
+  edges?: { from: string; to: string; label?: string }[];
+  sides?: { leftTitle: string; rightTitle: string; left: string[]; right: string[] };
+};
+
+const VISUAL_MAX_NODES = 40;
+
+function validateVisualSpec(raw: unknown): VisualSpec {
+  const obj = (typeof raw === "object" && raw !== null ? raw : {}) as Record<string, unknown>;
+  const nodesRaw = Array.isArray(obj.nodes) ? obj.nodes : [];
+  if (nodesRaw.length < 2) {
+    throw new Error("The diagram came back malformed.");
+  }
+  const seen = new Set<string>();
+  const nodes: VisualSpec["nodes"] = [];
+  for (const n of nodesRaw.slice(0, VISUAL_MAX_NODES)) {
+    const node = (n ?? {}) as Record<string, unknown>;
+    const id = typeof node.id === "string" ? node.id.trim().slice(0, 60) : "";
+    const label = typeof node.label === "string" ? node.label.trim().slice(0, 90) : "";
+    if (!id || !label || seen.has(id)) continue;
+    seen.add(id);
+    nodes.push({
+      id,
+      label,
+      // `parent` may reference a node declared later — the renderer skips
+      // unknown parents, so no insert-time resolution is needed.
+      parent: typeof node.parent === "string" ? node.parent.trim().slice(0, 60) || undefined : undefined,
+      detail: typeof node.detail === "string" ? node.detail.slice(0, 240) : undefined,
+      when: typeof node.when === "string" ? node.when.slice(0, 60) : undefined,
+    });
+  }
+  if (nodes.length < 2) throw new Error("The diagram came back malformed.");
+
+  const edgesRaw = Array.isArray(obj.edges) ? obj.edges : [];
+  const edges: VisualSpec["edges"] = [];
+  for (const e of edgesRaw.slice(0, VISUAL_MAX_NODES * 2)) {
+    const edge = (e ?? {}) as Record<string, unknown>;
+    const from = typeof edge.from === "string" ? edge.from : "";
+    const to = typeof edge.to === "string" ? edge.to : "";
+    if (seen.has(from) && seen.has(to) && from !== to) {
+      edges.push({
+        from,
+        to,
+        label: typeof edge.label === "string" ? edge.label.slice(0, 60) : undefined,
+      });
+    }
+  }
+
+  let sides: VisualSpec["sides"];
+  if (obj.sides && typeof obj.sides === "object") {
+    const s = obj.sides as Record<string, unknown>;
+    const left = Array.isArray(s.left)
+      ? s.left.filter((x): x is string => typeof x === "string").slice(0, 12)
+      : [];
+    const right = Array.isArray(s.right)
+      ? s.right.filter((x): x is string => typeof x === "string").slice(0, 12)
+      : [];
+    if (left.length > 0 && right.length > 0) {
+      sides = {
+        leftTitle: typeof s.leftTitle === "string" ? s.leftTitle.slice(0, 60) : "Left",
+        rightTitle: typeof s.rightTitle === "string" ? s.rightTitle.slice(0, 60) : "Right",
+        left,
+        right,
+      };
+    }
+  }
+
+  return { root: nodes[0]!.id, nodes, edges: edges.length > 0 ? edges : undefined, sides };
+}
+
+/** Generate a diagram for a material the caller owns and store the validated
+ *  spec. Returns the diagram id. Full quota/breaker/telemetry discipline. */
+export const generateVisual = action({
+  args: {
+    materialId: v.id("materials"),
+    kind: v.union(
+      v.literal("mindmap"),
+      v.literal("flow"),
+      v.literal("hierarchy"),
+      v.literal("timeline"),
+      v.literal("compare"),
+    ),
+    focus: v.optional(v.string()),
+  },
+  handler: async (ctx, { materialId, kind, focus }): Promise<string> => {
+    const userId = await ctx.runQuery(api.securityGet.userId);
+    if (!userId) throw new Error("Not authenticated");
+    await rateLimitAction(ctx, "aiAnalyze", userId);
+    await ctx.runMutation(internal.security.consumeQuotaInternal, {
+      key: "dailyAnalysis",
+      userId: userId as Id<"users">,
+    });
+
+    const material = await ctx.runQuery(api.materials.get, { id: materialId });
+    if (!material) throw new Error("Material not found");
+    const chunks = await ctx.runQuery(internal.materials.getChunksInternal, { materialId });
+    const text = chunks
+      .slice(0, 10)
+      .map((c: { text: string }) => c.text)
+      .join("\n\n")
+      .slice(0, 40000);
+    if (text.trim().length < 40) {
+      throw new Error("This material doesn't have enough readable content to visualize yet.");
+    }
+
+    const KIND_PROMPT: Record<string, string> = {
+      mindmap: "a MIND MAP radiating from the central topic",
+      flow: "a FLOWCHART of the process with directed steps",
+      hierarchy: "a HIERARCHY tree from general to specific",
+      timeline: "a TIMELINE of developments in order",
+      compare: "a COMPARISON of the two most important opposing ideas",
+    };
+
+    const raw = await callAI(
+      [
+        { role: "system", content: VISUAL_SYSTEM },
+        {
+          role: "user",
+          content: `Diagram type: ${KIND_PROMPT[kind] ?? KIND_PROMPT.mindmap}.\n\nMaterial:\n${text}`,
+        },
+      ],
+      2600,
+      0.3,
+      aiBreaker(ctx),
+    );
+
+    let spec: VisualSpec;
+    try {
+      spec = validateVisualSpec(parseJson(raw));
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : "diagram spec rejected";
+      await ctx.runMutation(internal.telemetry.recordQcInternal, {
+        source: "analysis",
+        claimType: "structured_output",
+        result: "flagged",
+        reason: `visual spec rejected: ${reason.slice(0, 120)}`,
+        severity: "warning",
+        refId: materialId,
+      });
+      throw new Error(
+        "The diagram engine couldn't structure this material — try a different diagram type.",
+      );
+    }
+
+    const title = (focus ? focus.slice(0, 90) : material.title).trim() || material.title.slice(0, 90);
+    const diagramId = await ctx.runMutation(internal.visuals.ingestInternal, {
+      userId: userId as Id<"users">,
+      materialId,
+      title,
+      kind,
+      spec,
+      model: "kynex-visual-engine",
+    });
+    return diagramId as unknown as string;
   },
 });
 

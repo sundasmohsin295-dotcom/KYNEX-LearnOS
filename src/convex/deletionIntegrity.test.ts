@@ -155,6 +155,73 @@ test("markFailedInternal on an already-deleted material is a silent no-op", asyn
   });
 });
 
+test("deleting a material removes its citations and diagrams; grounded writer docs lose only the reference", async () => {
+  const t = convexTest(schema, modules);
+  const userId = await createUser(t, "Hana");
+  const hana = identityFor(userId);
+
+  const materialId = await t.withIdentity(hana).mutation(api.materials.createText, {
+    title: "Neural networks chapter",
+    text: TEXT,
+    kind: "text",
+  });
+
+  // A grounded writer doc with a citation anchored to the material.
+  const docId = await t.withIdentity(hana).mutation(api.writer.create, {
+    title: "Backpropagation essay",
+    content: "Backpropagation adjusts weights by flowing error gradients backward.\n\nThe chain rule makes this decomposition possible.",
+    materialId,
+  });
+  await t.withIdentity(hana).mutation(api.writer.addCitation, {
+    docId,
+    paragraphIndex: 0,
+    sourceText: "Gradient descent iteratively reduces prediction error across the network.",
+    materialId,
+    locator: "ch. 4",
+  });
+
+  // A generated diagram tied to the same material.
+  const diagramId = await t.run(async (ctx) => {
+    return (await ctx.db.insert("visualDiagrams", {
+      userId,
+      materialId: materialId as Id<"materials">,
+      title: "Backpropagation flow",
+      kind: "flow" as const,
+      spec: {
+        root: "n1",
+        nodes: [
+          { id: "n1", label: "Forward pass" },
+          { id: "n2", label: "Loss", parent: "n1" },
+          { id: "n3", label: "Backward pass", parent: "n2" },
+        ],
+      },
+      model: "kynex-visual-engine",
+      createdAt: Date.now(),
+    })) as Id<"visualDiagrams">;
+  });
+
+  // Delete the material through the public (owner-checked) path.
+  await t.withIdentity(hana).mutation(api.materials.remove, { id: materialId });
+
+  // Citations and diagrams are gone — no orphaned evidence.
+  const leftoverCitations = await t.run((ctx) =>
+    ctx.db.query("citations").withIndex("by_material", (q) => q.eq("materialId", materialId)).collect(),
+  );
+  expect(leftoverCitations).toHaveLength(0);
+  const leftoverDiagrams = await t.run((ctx) =>
+    ctx.db.query("visualDiagrams").withIndex("by_material", (q) => q.eq("materialId", materialId)).collect(),
+  );
+  expect(leftoverDiagrams).toHaveLength(0);
+  void diagramId;
+
+  // The writer doc SURVIVES (the student's own writing is theirs), but no
+  // longer references the deleted material — its text is intact.
+  const doc = await t.withIdentity(hana).query(api.writer.get, { id: docId });
+  expect(doc).not.toBeNull();
+  expect(doc!.content).toContain("chain rule");
+  expect(doc!.materialId).toBeUndefined();
+});
+
 test("failInternal still marks a LIVE attempt as failed (guard did not overcorrect)", async () => {
   const t = convexTest(schema, modules);
   const userId = await createUser(t, "Gita");
