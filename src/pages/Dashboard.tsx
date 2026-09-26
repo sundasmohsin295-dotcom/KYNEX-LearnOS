@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { spring } from "@/lib/motion";
 import { Interactive3DCard } from "@/components/ui/Interactive3DCard";
+import { AwwwardsGalleryCard } from "@/components/ui/AwwwardsGalleryCard";
 import { gleamProps } from "@/lib/spectrum";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -433,6 +434,9 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ---------- MODULE SHOWCASE — editorial floating grid ---------- */}
+      <ModuleShowcase navigate={navigate} />
+
       {/* ---------- Daily Brief + Oracle ---------- */}
       {intel && (
         <div className="mt-6 grid gap-5 lg:grid-cols-3">
@@ -791,6 +795,59 @@ function Evidence({ children }: { children: React.ReactNode }) {
       <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
       {children}
     </li>
+  );
+}
+
+/**
+ * MODULE SHOWCASE — Awwwards-style editorial floating grid over the same
+ * ref-driven 3D engine as the hero. Cards navigate to the real modules;
+ * header hues come from each module's spectrum position.
+ */
+function ModuleShowcase({ navigate }: { navigate: (to: string) => void }) {
+  return (
+    <section className="mt-10" aria-label="Cognitive intelligence modules">
+      <div className="flex flex-col justify-between gap-4 border-b border-border/70 pb-6 md:flex-row md:items-end">
+        <div>
+          <span className="font-data text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+            Cognitive Intelligence Modules
+          </span>
+          <h2 className="mt-1.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Navigate your knowledge in space
+          </h2>
+        </div>
+        <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+          Immersive spatial navigation over the same zero-trust engine — every card
+          opens a live, secure module wired to Convex reactivity.
+        </p>
+      </div>
+
+      <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <AwwwardsGalleryCard
+          category="Neural Graph"
+          hue={255}
+          chroma={0.2}
+          title="Vector Clustering & Map"
+          description="Synthesize disparate study documents into interactive knowledge trees with real-time dependency tracking."
+          onClick={() => navigate("/graph")}
+        />
+        <AwwwardsGalleryCard
+          category="Socratic Maieutic"
+          hue={290}
+          chroma={0.17}
+          title="AI Professor & Diagnostic Chat"
+          description="Engage in active recall loops driven by Socratic counter-questions instead of passive answers."
+          onClick={() => navigate("/chat")}
+        />
+        <AwwwardsGalleryCard
+          category="Citation Writer"
+          hue={60}
+          chroma={0.13}
+          title="Evidence-Grounded Authoring"
+          description="Draft academic essays backed by paragraph-level citation mapping and secure Vault references."
+          onClick={() => navigate("/writer")}
+        />
+      </div>
+    </section>
   );
 }
 
