@@ -516,6 +516,84 @@ html.dark .aurora-field {
 }
 
 /* ------------------------------------------------------------------ */
+/* INTERACTIVE 3D CARD ENGINE — pointer-tracked perspective tilt with   */
+/* specular glare. The pointer writes --tilt-x/--tilt-y/--glare-* on the */
+/* element (ref-driven, no React re-renders); this stylesheet does the   */
+/* rest. Transform + opacity only → compositor-owned, zero reflow.       */
+/* ------------------------------------------------------------------ */
+.tilt3d {
+  /* rest state + spring-back (enter/leave) */
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform:
+    perspective(1000px)
+    rotateX(var(--tilt-x, 0deg))
+    rotateY(var(--tilt-y, 0deg))
+    scale3d(var(--tilt-scale, 1), var(--tilt-scale, 1), 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+/* tracking window while the pointer is inside: 50ms ease-out */
+.tilt3d:hover {
+  transition: transform 50ms ease-out;
+  --tilt-scale: 1.02;
+}
+/* specular glare: pointer-positioned radial highlight, fades with hover */
+.glare3d {
+  position: relative;
+  isolation: isolate;
+}
+.glare3d::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  background: radial-gradient(
+    circle at var(--glare-x, 50%) var(--glare-y, 50%),
+    oklch(1 0 0 / var(--glare-strength, 0.18)) 0%,
+    transparent 60%
+  );
+}
+.glare3d:hover::after {
+  opacity: 1;
+}
+/* dark mode glare reads better slightly softer against obsidian glass */
+html.dark .glare3d::after {
+  background: radial-gradient(
+    circle at var(--glare-x, 50%) var(--glare-y, 50%),
+    oklch(1 0 0 / calc(var(--glare-strength, 0.18) * 0.75)) 0%,
+    transparent 60%
+  );
+}
+/* touch: a finger drag must never fight page scroll with a tilt */
+@media (hover: none) {
+  .tilt3d {
+    transition: none;
+    transform: none;
+  }
+  .glare3d::after {
+    display: none;
+  }
+}
+/* reduced motion: flat card, gentle border emphasis instead of movement */
+@media (prefers-reduced-motion: reduce) {
+  .tilt3d {
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+    transform: none;
+  }
+  .tilt3d:hover {
+    transition: none;
+    --tilt-scale: 1;
+  }
+  .glare3d::after {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* PROFESSIONAL ANIMATION FORMULAS                                      */
 /* 150–300ms rule, isolated moving parts (transform/opacity only),      */
 /* zero layout shift — every keyframe animates compositor properties.   */

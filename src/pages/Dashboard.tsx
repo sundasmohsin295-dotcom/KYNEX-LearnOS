@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
-import { spring, TiltCard } from "@/lib/motion";
+import { spring } from "@/lib/motion";
+import { Interactive3DCard } from "@/components/ui/Interactive3DCard";
 import { gleamProps } from "@/lib/spectrum";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -330,13 +331,12 @@ export default function Dashboard() {
 
       <NudgeStrip />
 
-      {/* ---------- NEXT MOVE ---------- */}
+      {/* ---------- NEXT MOVE — 3D glare response (reduced-motion/touch safe) ---------- */}
       {mission ? (
-        <TiltCard
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={spring.expressive}
-          className="aurora-panel kynex-glass spectrum-border relative overflow-hidden rounded-3xl p-6 sm:p-8"
+        <Interactive3DCard
+          depth={8}
+          glareStrength={0.12}
+          className="aurora-panel kynex-glass spectrum-border overflow-hidden p-6 sm:p-8"
         >
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-xl">
@@ -420,7 +420,7 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
-        </TiltCard>
+        </Interactive3DCard>
       ) : (
         <div className="kynex-glass spectrum-border rounded-3xl p-8 text-center">
           <p className="font-display text-xl font-bold">No active mission</p>

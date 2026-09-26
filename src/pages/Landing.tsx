@@ -5,9 +5,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { KynexMark } from "@/components/AppShell";
 import { applySeo } from "@/lib/seo";
-import { spring, TiltCard } from "@/lib/motion";
+import { spring } from "@/lib/motion";
 import { AuroraField, gleamProps } from "@/lib/spectrum";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { Interactive3DCard } from "@/components/ui/Interactive3DCard";
+import { AppWindowMockup } from "@/components/ui/AppWindowMockup";
+import { ArrowRight } from "lucide-react";
 
 const FEATURES = [
   {
@@ -128,57 +130,19 @@ export default function Landing() {
             </p>
           </motion.div>
 
-          {/* Product panel: the real interface idea, on a solid surface.
-              TiltCard degrades to a static panel under reduced motion. */}
-          <TiltCard
+          {/* Product showcase: the live 3D app window — pointer-tracked
+              perspective tilt + specular glare, with REAL module tabs that
+              navigate into the product. Degrades to a flat panel under
+              reduced motion and on touch. */}
+          <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={spring.expressive}
-            className="kynex-glass spectrum-border rounded-3xl"
           >
-            <div className="flex items-center justify-between border-b border-border/70 px-5 py-3.5">
-              <p className="font-data text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Next Move
-              </p>
-              <span className="rounded-md bg-primary/10 px-2 py-0.5 font-data text-[11px] font-semibold text-primary">
-                22 min
-              </span>
-            </div>
-            <div className="px-5 py-5">
-              <p className="font-display text-lg font-bold">Fix: Subnetting</p>
-              <div className="mt-3 rounded-lg border border-border/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">Why: </span>
-                2 repeated mistakes,{" "}
-                <span className="font-data font-semibold text-chart-5">61%</span> recent accuracy,
-                prerequisite for 3 upcoming topics.
-              </div>
-              <div className="mt-5 space-y-3.5">
-                {[
-                  { label: "Mastery", pct: 68, cls: "bg-primary" },
-                  { label: "Recall", pct: 58, cls: "bg-chart-4" },
-                  { label: "Readiness", pct: 67, cls: "bg-success" },
-                ].map((b) => (
-                  <div key={b.label}>
-                    <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
-                      <span>{b.label}</span>
-                      <span className="font-data font-semibold text-foreground">{b.pct}%</span>
-                    </div>
-                    <div className="mt-1.5 h-1 overflow-hidden rounded-sm bg-muted">
-                      <motion.div
-                        className={`h-full rounded-sm ${b.cls}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${b.pct}%` }}
-                        transition={{ duration: 0.9, delay: 0.5 }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-5 flex items-center gap-1.5 border-t border-border/60 pt-3.5 text-[11px] font-medium text-success">
-                <CheckCircle2 className="size-3.5" /> Concept mastered: IP addressing
-              </p>
-            </div>
-          </TiltCard>
+            <Interactive3DCard depth={12} glareStrength={0.16} className="kynex-glass spectrum-border">
+              <AppWindowMockup />
+            </Interactive3DCard>
+          </motion.div>
         </div>
       </section>
 
