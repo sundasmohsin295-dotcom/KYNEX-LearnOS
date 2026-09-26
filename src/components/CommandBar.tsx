@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, BookOpen, Brain, Calculator, Command, Flame, Gauge,
-  GraduationCap, Layers, MessagesSquare, Network, PenLine, Play, Plus, RefreshCw, Search, ShieldCheck,
+  GraduationCap, Languages, Layers, MessagesSquare, Network, PenLine, Play, Plus, RefreshCw, Search, ShieldCheck,
   Shapes, Stethoscope, Target, User, Wrench, Zap,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
@@ -20,6 +20,7 @@ import {
   type Persona,
   type UiStyle,
 } from "@/lib/uiPrefs";
+import { LANGUAGES, type LanguageCode } from "@/lib/languages";
 
 interface Action {
   id: string;
@@ -33,7 +34,7 @@ interface Action {
 /** KYNEX Command Bar — global ⌘K router that sends intent to the right feature. */
 export function CommandBar() {
   const navigate = useNavigate();
-  const { style, persona, setStyle, setPersona } = useUiPrefs();
+  const { style, persona, lang, setStyle, setPersona, setLang } = useUiPrefs();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -137,8 +138,20 @@ export function CommandBar() {
         run: () => setPersona(p as Persona),
       });
     }
+    // Language switching — instant, RTL-aware, persisted.
+    for (const l of LANGUAGES) {
+      if (l.code === lang) continue;
+      base.push({
+        id: `lang-${l.code}`,
+        label: `Language: ${l.name} (${l.native})`,
+        group: "Language",
+        icon: Languages,
+        hint: l.rtl ? "Right-to-left layout" : undefined,
+        run: () => setLang(l.code as LanguageCode),
+      });
+    }
     return base;
-  }, [q, materials, navigate, style, persona, setStyle, setPersona]);
+  }, [q, materials, navigate, style, persona, lang, setStyle, setPersona, setLang]);
 
   const smartActions = useMemo<Action[]>(() => {
     const kindIcon: Record<string, typeof Target> = {

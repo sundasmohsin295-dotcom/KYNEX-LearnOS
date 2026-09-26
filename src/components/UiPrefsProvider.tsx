@@ -16,13 +16,24 @@ import {
   type Persona,
   type UiStyle,
 } from "@/lib/uiPrefs";
+import {
+  applyLanguageAttributes,
+  DEFAULT_LANGUAGE,
+  isLanguage,
+  LANGUAGE_KEY,
+  loadLanguage,
+  saveLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
 import { readWithFallback } from "@/lib/storageCodec";
 
 interface UiPrefsContextValue {
   style: UiStyle;
   persona: Persona;
+  lang: LanguageCode;
   setStyle: (s: UiStyle) => void;
   setPersona: (p: Persona) => void;
+  setLang: (l: LanguageCode) => void;
 }
 
 const UiPrefsContext = createContext<UiPrefsContextValue | null>(null);
@@ -63,6 +74,17 @@ function readPersonaRaw(): string | null {
   }
 }
 
+function readLangAttr(): LanguageCode {
+  try {
+    const el = document.documentElement;
+    const v = el.getAttribute("lang");
+    if (isLanguage(v)) return v;
+  } catch {
+    /* no document — fall through */
+  }
+  return loadLanguage();
+}
+
 /**
  * Runtime UI preference runtime: reads the attributes the pre-paint
  * bootstrap set (falling back to the persisted payload when the attribute
@@ -73,6 +95,7 @@ function readPersonaRaw(): string | null {
 export function UiPrefsProvider({ children }: { children: React.ReactNode }) {
   const [style, setStyleState] = useState<UiStyle>(readStyleAttr);
   const [persona, setPersonaState] = useState<Persona>(readPersonaAttr);
+  const [lang, setLangState] = useState<LanguageCode>(readLangAttr);
 
   const setStyle = useCallback((s: UiStyle) => {
     if (!isUiStyle(s)) return;
@@ -88,9 +111,16 @@ export function UiPrefsProvider({ children }: { children: React.ReactNode }) {
     savePersona(p);
   }, []);
 
+  const setLang = useCallback((l: LanguageCode) => {
+    if (!isLanguage(l)) return;
+    setLangState(l);
+    applyLanguageAttributes(l);
+    saveLanguage(l);
+  }, []);
+
   const value = useMemo(
-    () => ({ style, persona, setStyle, setPersona }),
-    [style, persona, setStyle, setPersona],
+    () => ({ style, persona, lang, setStyle, setPersona, setLang }),
+    [style, persona, lang, setStyle, setPersona, setLang],
   );
 
   return <UiPrefsContext.Provider value={value}>{children}</UiPrefsContext.Provider>;
@@ -104,8 +134,10 @@ export function useUiPrefs(): UiPrefsContextValue {
     return {
       style: DEFAULT_UI_STYLE,
       persona: DEFAULT_PERSONA,
+      lang: DEFAULT_LANGUAGE,
       setStyle: applyUiStyleAttribute,
       setPersona: applyPersonaAttribute,
+      setLang: applyLanguageAttributes,
     };
   }
   return ctx;

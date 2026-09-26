@@ -47,14 +47,24 @@
         };
         var style = null;
         var gen = null;
+        var lang = null;
         try {
           style = pick(localStorage.getItem("kynex.uiStyle.v1"), STYLES, "glass");
         } catch (e) {}
         try {
           gen = pick(localStorage.getItem("kynex.genPersona.v1"), PERSONAS, "classic");
         } catch (e) {}
+        try {
+          lang = pick(localStorage.getItem("kynex.lang.v1"),
+            ["en", "zh-CN", "hi", "es", "fr", "ar", "bn", "pt", "id", "ur"], "en");
+        } catch (e) {}
         if (style) document.documentElement.setAttribute(STYLE_ATTR, style);
         if (gen) document.documentElement.setAttribute(GEN_ATTR, gen);
+        if (lang) {
+          document.documentElement.setAttribute("lang", lang);
+          document.documentElement.setAttribute("dir",
+            (lang === "ar" || lang === "ur") ? "rtl" : "ltr");
+        }
       } catch (e) {
         // Attributes are cosmetic — never block boot.
       }
@@ -67,6 +77,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap"
+    rel="stylesheet"
+  />
+  <!-- Global language engine: native script faces for the supported
+       locales. Loaded after the core triad; display=swap keeps first paint
+       instant — localized glyphs upgrade in place when ready. -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400..700&family=Noto+Nastaliq+Urdu:wght@400..700&family=Noto+Sans+Devanagari:wght@400..700&family=Noto+Sans+Bengali:wght@400..700&family=Noto+Sans+SC:wght@400..700&display=swap"
     rel="stylesheet"
   />
 </head>

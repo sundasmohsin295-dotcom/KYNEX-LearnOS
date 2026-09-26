@@ -10,7 +10,7 @@ import dns from "node:dns/promises";
 import net from "node:net";
 import { normalizeUntrustedText } from "./aiSanitize";
 import { aiBreaker, type BreakerOps } from "./circuitBreaker";
-import { GROUNDED_TUTOR_RULE, OUT_OF_SCOPE_MESSAGE, scopeDecision } from "./tutorScope";
+import { GROUNDED_TUTOR_RULE, outOfScopeMessage, scopeDecision } from "./tutorScope";
 
 // ---------------------------------------------------------------------------
 // Server-side rate limiting for AI/ingest actions (actions can't import the
@@ -63,6 +63,46 @@ export function resolvePersonaDirective(persona: string | undefined): string | n
   if (typeof persona !== "string") return null;
   return PERSONA_MODES.includes(persona as PersonaMode)
     ? PERSONA_DIRECTIVES[persona as PersonaMode]
+    : null;
+}
+
+/** Language allowlist (BCP-47 tags matching the client catalog in
+ *  src/lib/languages.ts). Maps each fixed tag to a fixed technical-integrity
+ *  directive: teach in the requested language WITHOUT corrupting scientific
+ *  terms, notation or code. Raw client strings are never interpolated — the
+ *  same allowlist discipline as modes and personas. */
+const LANGUAGE_MODES = ["en", "zh-CN", "hi", "es", "fr", "ar", "bn", "pt", "id", "ur"] as const;
+type LanguageMode = (typeof LANGUAGE_MODES)[number];
+
+const LANGUAGE_DIRECTIVES: Record<LanguageMode, string> = {
+  en: "LANGUAGE DIRECTIVE: Respond in English.",
+  "zh-CN":
+    "LANGUAGE DIRECTIVE: Respond in Simplified Chinese (简体中文). Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard form; gloss them in Chinese on first use. If no standard Chinese term exists for a technical concept, use the accepted English term and briefly explain it. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  hi:
+    "LANGUAGE DIRECTIVE: Respond in Hindi (Devanagari). Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard form; gloss them in Hindi on first use. If no standard Hindi term exists for a technical concept, use the accepted English term and briefly explain it. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  es:
+    "LANGUAGE DIRECTIVE: Respond in Spanish. Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard form; gloss them in Spanish on first use. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  fr:
+    "LANGUAGE DIRECTIVE: Respond in French. Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard form; gloss them in French on first use. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  ar:
+    "LANGUAGE DIRECTIVE: Respond in Modern Standard Arabic. Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard (Latin) form; gloss them in Arabic on first use. If no standard Arabic term exists for a technical concept, use the accepted English term and briefly explain it. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  bn:
+    "LANGUAGE DIRECTIVE: Respond in Bengali. Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard form; gloss them in Bengali on first use. If no standard Bengali term exists for a technical concept, use the accepted English term and briefly explain it. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  pt:
+    "LANGUAGE DIRECTIVE: Respond in Portuguese. Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard form; gloss them in Portuguese on first use. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  id:
+    "LANGUAGE DIRECTIVE: Respond in Indonesian. Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard form; gloss them in Indonesian on first use. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+  ur:
+    "LANGUAGE DIRECTIVE: Respond in Urdu (Nastaliq). Maintain full technical rigor: keep mathematical notation, code identifiers, syntax and API names in their standard (Latin) form; gloss them in Urdu on first use. If no standard Urdu term exists for a technical concept, use the accepted English term and briefly explain it. Accuracy outweighs fluency — never distort a concept for the sake of translation.",
+};
+
+/** Allowlist-gated language directive resolution. Exported for the
+ *  technical-integrity contract tests; unknown tags resolve to null and the
+ *  chat proceeds in the model's default (English-base) behavior. */
+export function resolveLanguageDirective(lang: string | undefined): string | null {
+  if (typeof lang !== "string") return null;
+  return LANGUAGE_MODES.includes(lang as LanguageMode)
+    ? LANGUAGE_DIRECTIVES[lang as LanguageMode]
     : null;
 }
 
@@ -814,6 +854,7 @@ Guidelines:
 - Use concrete examples and analogies.
 - When the student seems stuck, offer the prerequisite concept before the full answer.
 - Be encouraging but honest about gaps.
+- Citation discipline: when you use the study material, point to the concept or section it came from. Cite page/section numbers only when they exist in the material — never invent bibliographic details.
 
 Mode instructions (follow the mode the user picked):
 - explain: clear structured explanation.
@@ -829,7 +870,9 @@ Mode instructions (follow the mode the user picked):
 - application: give a realistic scenario where the concept is used and walk through it.
 - debugmyunderstanding: DIAGNOSTIC — the student believes something wrong. First state the misconception you think they hold as a question ("Are you assuming that…?"), then correct it with a minimal counterexample. Never dump a full lecture.
 
-Persona tone: when a PERSONA TONE directive appears in this conversation, it adjusts HOW you speak (register, energy, structure) — never WHAT is true. All grounding, source-labeling and untrusted-data rules above override persona style in every conflict.`;
+Persona tone: when a PERSONA TONE directive appears in this conversation, it adjusts HOW you speak (register, energy, structure) — never WHAT is true. All grounding, source-labeling and untrusted-data rules above override persona style in every conflict.
+
+Language: when a LANGUAGE DIRECTIVE appears, teach in the requested language while keeping scientific terms, mathematical notation, code identifiers and syntax in their standard form. Language choice never changes what is true — every grounding and source-labeling rule above still applies verbatim.`;
 
 export const chatInternal = internalAction({
   args: {
@@ -837,15 +880,20 @@ export const chatInternal = internalAction({
     materialId: v.optional(v.id("materials")),
     mode: v.string(),
     persona: v.optional(v.string()),
+    lang: v.optional(v.string()),
     history: v.array(v.object({ role: v.string(), content: v.string() })),
   },
-  handler: async (ctx, { conversationId, materialId, mode, persona, history }) => {
+  handler: async (ctx, { conversationId, materialId, mode, persona, lang, history }) => {
     const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
       { role: "system", content: CHAT_SYSTEM },
     ];
     const personaDirective = resolvePersonaDirective(persona);
     if (personaDirective) {
       messages.push({ role: "system", content: personaDirective });
+    }
+    const languageDirective = resolveLanguageDirective(lang);
+    if (languageDirective) {
+      messages.push({ role: "system", content: languageDirective });
     }
     if (materialId) {
       const chunks = await ctx.runQuery(internal.materials.getChunksInternal, { materialId });
@@ -890,7 +938,9 @@ export const chatInternal = internalAction({
           });
           await ctx.runMutation(internal.learning.appendAssistantInternal, {
             conversationId,
-            content: OUT_OF_SCOPE_MESSAGE,
+            // Localized FIXED string — the verified boundary statement in the
+            // student's language, never a model improvisation of it.
+            content: outOfScopeMessage(lang),
           });
           return;
         }
@@ -899,6 +949,14 @@ export const chatInternal = internalAction({
         messages.push({
           role: "system",
           content: GROUNDED_TUTOR_RULE,
+        });
+        // Evidence discipline: point to the concept/section the answer came
+        // from, and never fabricate bibliographic detail that isn't in the
+        // material itself.
+        messages.push({
+          role: "system",
+          content:
+            "CITATION DISCIPLINE: When your answer draws on the study material, identify which concept or section it came from. Cite page, section or figure numbers ONLY when they appear explicitly in the material itself — if the material has no such markers, say the answer synthesizes the material without a specific reference. Never invent bibliographic details, and never silently mix material content with general knowledge.",
         });
       }
     }
@@ -1123,8 +1181,9 @@ export const chat = action({
     materialId: v.optional(v.id("materials")),
     mode: v.string(),
     persona: v.optional(v.string()),
+    lang: v.optional(v.string()),
   },
-  handler: async (ctx, { conversationId, materialId, mode, persona }) => {
+  handler: async (ctx, { conversationId, materialId, mode, persona, lang }) => {
     const userId = await ctx.runQuery(api.securityGet.userId);
     if (!userId) throw new Error("Not authenticated");
 
@@ -1161,6 +1220,7 @@ export const chat = action({
       materialId,
       mode: safeMode,
       persona,
+      lang,
       history: history.map((m: { role: string; content: string }) => ({
         role: m.role,
         content: m.content,

@@ -33,7 +33,7 @@ const QUICK_PROMPTS = [
 
 export default function Chat() {
   const navigate = useNavigate();
-  const { persona } = useUiPrefs();
+  const { persona, lang } = useUiPrefs();
   const [params, setParams] = useSearchParams();
   const conversations = useQuery(api.learning.listConversations);
   const materials = useQuery(api.materials.listReady);
@@ -137,7 +137,7 @@ export default function Chat() {
       setWaiting(true);
       await sendUser({ conversationId: convId, content });
       persisted = true;
-      await runChat({ conversationId: convId, materialId: materialId ?? undefined, mode: MODE_TO_AI[mode], persona });
+      await runChat({ conversationId: convId, materialId: materialId ?? undefined, mode: MODE_TO_AI[mode], persona, lang });
     } catch (e) {
       // If the message never reached the database, give the student their
       // text back — losing composed work to a network drop is a data-loss

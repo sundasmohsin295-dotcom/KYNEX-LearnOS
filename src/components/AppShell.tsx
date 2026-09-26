@@ -20,6 +20,7 @@ import { useTheme } from "next-themes";
 import { XP_PER_LEVEL, STREAK_MESSAGES } from "@/lib/game";
 import { CommandBar } from "@/components/CommandBar";
 import { UiCustomizer } from "@/components/UiCustomizer";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { applyPrivateSeo } from "@/lib/seo";
 import { spring } from "@/lib/motion";
 import { AuroraField, gleamProps, routeSpectrumKey, useAccentSpectrum } from "@/lib/spectrum";
@@ -88,7 +89,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <AuroraField />
 
       {/* ---------- Sidebar (desktop) ---------- */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border/70 bg-sidebar/75 backdrop-blur-2xl lg:flex">
+      {/* Logical properties (start/e) keep the shell mirrored under RTL. */}
+      <aside className="fixed inset-y-0 start-0 z-40 hidden w-60 flex-col border-e border-border/70 bg-sidebar/75 backdrop-blur-2xl lg:flex">
         <button
           className="flex items-center gap-2.5 px-5 pt-6 pb-5 text-left"
           onClick={() => navigate("/dashboard")}
@@ -125,11 +127,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Command bar + design customizer + level card */}
+        {/* Command bar + design customizer + language + level card */}
         <div className="mx-3 mb-3 flex items-center gap-1.5">
           <div className="min-w-0 flex-1">
             <CommandBar />
           </div>
+          <LanguageSelector />
           <UiCustomizer />
         </div>
 
@@ -165,12 +168,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
         <div className="flex items-center gap-2">
           <CommandBar />
+          <LanguageSelector />
           <UiCustomizer />
           <span title={streakTitle} className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-bold">
             <Flame className={cn("size-3.5", streakAlive ? "fill-chart-5/30 text-chart-5" : "text-muted-foreground")} />
             {streak}
             {freezes > 0 && (
-              <span className="ml-0.5 rounded-full bg-primary/10 px-1.5 py-px text-[9px] font-bold text-primary" title="Streak freezes in reserve">
+              <span className="ms-0.5 rounded-full bg-primary/10 px-1.5 py-px text-[9px] font-bold text-primary" title="Streak freezes in reserve">
                 +{freezes}
               </span>
             )}
@@ -183,7 +187,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* ---------- Main ---------- */}
-      <main className="relative z-10 px-4 pb-24 pt-6 sm:px-6 lg:ml-60 lg:px-10 lg:pb-12">
+      <main className="relative z-10 px-4 pb-24 pt-6 sm:px-6 lg:ms-60 lg:px-10 lg:pb-12">
         <div className="mx-auto max-w-6xl">{children}</div>
       </main>
 
@@ -228,13 +232,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DropdownMenuLabel className="truncate">{user?.name ?? "Learner"}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/twin")}>
-            <Fingerprint className="mr-2 size-4" /> KYNEX Twin
+            <Fingerprint className="me-2 size-4" /> KYNEX Twin
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
-            {theme === "dark" ? <Sun className="mr-2 size-4" /> : <Moon className="mr-2 size-4" />}
+            {theme === "dark" ? <Sun className="me-2 size-4" /> : <Moon className="me-2 size-4" />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -244,7 +248,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               navigate("/");
             }}
           >
-            <LogOut className="mr-2 size-4" /> Sign out
+            <LogOut className="me-2 size-4" /> Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -195,6 +195,14 @@
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: "Fraunces", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Global language engine: native script faces per locale. Chromium-based
+     browsers auto-select these via unicode-range when the active <html lang>
+     matches; the html[lang] rules below make the selection deterministic. */
+  --font-arabic: "Noto Naskh Arabic", "IBM Plex Sans", sans-serif;
+  --font-urdu: "Noto Nastaliq Urdu", "Noto Naskh Arabic", "IBM Plex Sans", sans-serif;
+  --font-devanagari: "Noto Sans Devanagari", "IBM Plex Sans", sans-serif;
+  --font-bengali: "Noto Sans Bengali", "IBM Plex Sans", sans-serif;
+  --font-schinese: "Noto Sans SC", "IBM Plex Sans", sans-serif;
 }
 
 @layer base {
@@ -837,4 +845,59 @@ html[data-gen] {
   html[data-ui-style] .lift-spectrum {
     transition: none;
   }
+}
+
+/* ================================================================== */
+/* GLOBAL LANGUAGE ENGINE — script typography + RTL integrity          */
+/*                                                                      */
+/* <html lang> drives per-script font stacks (deterministic, no         */
+/* FOUT juggling between fallbacks); <html dir="rtl"> mirrors layout    */
+/* through CSS logical properties used across the shell. Line-height is */
+/* relaxed for Nastaliq/Devanagari so tall glyphs never clip.           */
+/* ================================================================== */
+html[lang="ar"] {
+  --font-sans: var(--font-arabic);
+  --font-display: var(--font-arabic);
+}
+html[lang="ur"] {
+  --font-sans: var(--font-urdu);
+  --font-display: var(--font-urdu);
+  /* Nastaliq descends deeply — the default 1.6 body line-height clips
+     stacked ligatures; 1.9 keeps every glyph stroke visible. */
+  body { line-height: 1.9; }
+}
+html[lang="hi"] {
+  --font-sans: var(--font-devanagari);
+  --font-display: var(--font-devanagari);
+  body { line-height: 1.75; }
+}
+html[lang="bn"] {
+  --font-sans: var(--font-bengali);
+  --font-display: var(--font-bengali);
+  body { line-height: 1.75; }
+}
+html[lang="zh-CN"] {
+  --font-sans: var(--font-schinese);
+  --font-display: var(--font-schinese);
+}
+
+/* RTL: the app shell is built on logical properties (ps/pe/ms/me/start/
+/* end), so browsers mirror spacing and alignment automatically. Code,
+/* formulas and numeric data stay LTR inside RTL pages — their semantics
+/* are direction-independent, and forcing RTL would corrupt them. */
+html[dir="rtl"] .font-data,
+html[dir="rtl"] code,
+html[dir="rtl"] pre,
+html[dir="rtl"] .katex,
+html[dir="rtl"] [dir="ltr"] {
+  direction: ltr;
+  text-align: start;
+}
+/* Data alignment (tabular numerals) stays on the reading edge in RTL. */
+html[dir="rtl"] .font-data {
+  text-align: end;
+}
+/* Per-element overrides remain possible without breaking the shell. */
+html[dir="rtl"] [dir="ltr"] {
+  direction: ltr;
 }
