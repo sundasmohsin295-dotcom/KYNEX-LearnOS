@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import { KynexSunCore } from "./KynexBrand";
 
@@ -46,17 +47,20 @@ export function KynexAuthShell({
             <KynexSunCore className="size-44" animate />
           </motion.div>
           <div>
-            <p className="font-display text-4xl font-extrabold tracking-[0.18em]">KYNEX</p>
+            <p className="font-display text-4xl font-extrabold tracking-[0.18em] text-foreground">KYNEX</p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.26em] text-primary">
               Academic Intelligence OS
             </p>
-            <p className="mt-6 max-w-xs text-lg font-medium leading-snug text-foreground/90">
+            <p className="mt-6 max-w-xs font-display text-xl font-semibold leading-snug text-foreground/95">
               “{quote}”
             </p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               KYNEX builds a living model of how you learn, then turns it into
               the one next move that actually improves your grades.
             </p>
+            <div className="mt-8 flex items-center gap-3 text-[11px] font-medium text-muted-foreground">
+              <span className="font-data">KNOW · UNDERSTAND · ACT · MASTER · ADVANCE</span>
+            </div>
           </div>
         </div>
 
@@ -70,13 +74,13 @@ export function KynexAuthShell({
           {children}
           <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
             By continuing you agree to our{" "}
-            <a href="/legal/terms" className="underline underline-offset-2 hover:text-foreground">
+            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
               Terms of Service
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a href="/legal/privacy" className="underline underline-offset-2 hover:text-foreground">
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
               Privacy Policy
-            </a>
+            </Link>
             .
           </p>
         </div>

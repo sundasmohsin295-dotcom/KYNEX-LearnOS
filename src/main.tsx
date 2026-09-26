@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { RequireAuth } from "@/components/RequireAuth";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import { ThemeProvider } from "next-themes";
 import { ConvexReactClient } from "convex/react";
 import React, { StrictMode, useEffect, lazy, Suspense } from "react";
 import {
@@ -250,6 +251,9 @@ createRoot(rootElement).render(
         <VlyToolbar />
       </ToolbarErrorBoundary>
       <ConvexAuthProvider client={convex}>
+        {/* Dual-mode theme: class-based tokens, no FOUC (index.html pre-sets
+            the class before paint using the same "theme" storage key). */}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <MotionProvider>
         <BrowserRouter>
           <RouteSyncer />
@@ -439,6 +443,7 @@ createRoot(rootElement).render(
         </BrowserRouter>
         </MotionProvider>
         <Toaster />
+        </ThemeProvider>
       </ConvexAuthProvider>
     </RootErrorBoundary>
   </StrictMode>,

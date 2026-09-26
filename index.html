@@ -5,8 +5,28 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/kynex-icon.svg" />
-  <meta name="theme-color" content="#0a1428" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F8FAFC" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0A0A0C" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <script>
+    // KYNEX dual-mode bootstrap: resolve the persisted theme BEFORE first
+    // paint so dark/light switching is flicker-free (zero FOUC). Mirrors
+    // next-themes' storage contract (key "theme", class on <html>). Kept in
+    // sync by ThemeProvider; no system listener needed — the provider takes
+    // over the moment React mounts.
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        var dark =
+          stored === "dark" ||
+          ((stored === null || stored === "system") &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      } catch (e) {
+        // Storage can throw in private mode — default to light silently.
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KYNEX | Your Academic Intelligence OS</title>
   <meta name="description" content="KYNEX builds a living model of your academic journey and continuously determines the highest-impact action you should take next. KNOW, UNDERSTAND, ACT, MASTER, ADVANCE." />
