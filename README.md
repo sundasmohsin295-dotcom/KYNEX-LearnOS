@@ -51,6 +51,19 @@ flowchart LR
 
 ---
 
+## 📐 Architectural References & Open-Source Blueprint
+
+KYNEX's design was shaped by studying modern open-source systems, then re-derived for an evidence-first academic context:
+
+| Reference | What was studied | How KYNEX applies it |
+|---|---|---|
+| **Earnhouse** (Next.js + Tailwind) | Component-driven dashboard composition, modular UI structure | AppShell architecture, 26 lazy-loaded routes, shadcn/ui layer |
+| **Frappe LMS** | Enterprise LMS workflow: material → concepts → tracked student progress | Vault concepts flow into missions, mastery tracking and the Mistake Bank |
+| **NotebookLM-class grounded-QA apps** | Retrieval-augmented document Q&A: retrieve → frame → generate → cite | The Socratic AI Professor retrieves material chunks server-side, frames them as untrusted data, labels sources ("From your material:" vs "General knowledge:"), and gates scope deterministically before the model is called |
+| **CrewAI / multi-agent study assistants** | Decomposing one generic assistant into specialized roles | The 5-stage cognitive pipeline (KNOW → UNDERSTAND → ACT → MASTER → ADVANCE) — each stage a dedicated engine with its own math, failure modes and honest empty states |
+
+> **A deliberate design choice:** KYNEX's retrieval is deterministic and material-scoped rather than opaque vector search. For a single student's syllabus, chunk-level grounding plus a lexical relevance gate gives *stricter, auditable* behavior — every accepted/rejected question is explainable — than black-box embedding similarity. Flashcard and quiz synthesis from ingested documents, spaced repetition scheduling and exam generation all run on the same deterministic evidence core.
+
 ## 🛠️ Core Modules
 
 1. **The Socratic AI Professor (`/chat`):** Grounded tutoring engine — every conversation is anchored to the student's own Vault material and mastery data. Teaching modes span STARTER explanations to EXAM drills, with Socratic and Feynman loops that withhold answers until the student commits to an attempt.
