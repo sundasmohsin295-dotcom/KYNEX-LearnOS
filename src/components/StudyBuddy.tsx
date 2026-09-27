@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router";
 import { Bot, Lightbulb } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,8 +38,61 @@ const AVATAR_GLYPH: Record<BuddyAvatar, string> = {
   anime: "🌟",
 };
 
+/**
+ * Router-independent pathname tracker.
+ *
+ * StudyBuddy is a GLOBAL widget mounted at the provider level (outside
+ * <BrowserRouter>), so React Router hooks (useLocation) would throw:
+ * "useLocation() may be used only in the context of a <Router> component".
+ * This hook derives the current path from window.location instead:
+ *  - `popstate` covers Back/Forward navigation,
+ *  - pushState/replaceState are wrapped (SPA navigations don't fire
+ *    popstate), calling through to the original History API untouched.
+ * The component stays mount-safe inside OR outside a <Router>.
+ */
+export function useWindowPathname(): string {
+  const [pathname, setPathname] = useState(() =>
+    typeof window === "undefined" ? "/" : window.location.pathname,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const update = () => setPathname(window.location.pathname);
+    const history = window.history;
+    // Capture the CURRENT method references (not bound copies) so unmount
+    // restores the exact original objects — stable even if multiple widgets
+    // ever patch the History API concurrently (LIFO restore).
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    const patchedPush = function pushState(
+      this: History,
+      ...args: Parameters<History["pushState"]>
+    ) {
+      const result = origPush.apply(this, args);
+      update();
+      return result;
+    } as History["pushState"];
+    const patchedReplace = function replaceState(
+      this: History,
+      ...args: Parameters<History["replaceState"]>
+    ) {
+      const result = origReplace.apply(this, args);
+      update();
+      return result;
+    } as History["replaceState"];
+    history.pushState = patchedPush;
+    history.replaceState = patchedReplace;
+    window.addEventListener("popstate", update);
+    return () => {
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+      window.removeEventListener("popstate", update);
+    };
+  }, []);
+  return pathname;
+}
+
 export function StudyBuddy() {
-  const location = useLocation();
+  const pathname = useWindowPathname();
   const { persona } = useUiPrefs();
 
   const [avatar, setAvatar] = useState<BuddyAvatar>(loadBuddyAvatar);
@@ -49,8 +101,8 @@ export function StudyBuddy() {
 
   const tone = useMemo(() => buddyToneFor(persona), [persona]);
   const hint = useMemo(
-    () => buddyHintForPath(location.pathname),
-    [location.pathname],
+    () => buddyHintForPath(pathname),
+    [pathname],
   );
 
   // ⌘K palette commands (and any other writer) commit through storage +
