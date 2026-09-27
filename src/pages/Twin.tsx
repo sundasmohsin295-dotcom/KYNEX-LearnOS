@@ -13,6 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Ring } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
+import type {
+  BeatYouResult,
+  CalibrationBand,
+  GapItem,
+  MasterDimension,
+  MemoryRow,
+  ProveItRow,
+} from "@/convex/intel";
 
 export default function Twin() {
   const navigate = useNavigate();
@@ -286,7 +294,7 @@ export default function Twin() {
                 Every dimension is computed from real practice, review and exam evidence.
               </p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {intel.master.dimensions.map((d) => (
+                {intel.master.dimensions.map((d: MasterDimension) => (
                   <div key={d.key} className="rounded-2xl border border-border/60 bg-muted/30 p-4" title={d.note}>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{d.label}</p>
                     <p className={cn("mt-1.5 font-display text-2xl font-extrabold", d.value == null ? "text-muted-foreground" : "text-foreground")}>
@@ -315,7 +323,7 @@ export default function Twin() {
                   </p>
                 ) : (
                   <div className="mt-4 space-y-2.5">
-                    {intel.gaps.slice(0, 6).map((g, i) => (
+                    {intel.gaps.slice(0, 6).map((g: GapItem, i: number) => (
                       <motion.button
                         key={`${g.type}-${g.conceptKey}`}
                         initial={{ opacity: 0, y: 8 }}
@@ -367,7 +375,7 @@ export default function Twin() {
                       </span>
                     </div>
                     <div className="mt-4 space-y-2.5">
-                      {intel.calibration.bands.filter((b) => b.count > 0).map((b) => (
+                      {intel.calibration.bands.filter((b: CalibrationBand) => b.count > 0).map((b: CalibrationBand) => (
                         <div key={b.key} className="rounded-xl bg-muted/40 px-3.5 py-2.5">
                           <div className="flex items-center justify-between text-xs font-bold">
                             <span>{b.label}</span>
@@ -408,7 +416,7 @@ export default function Twin() {
                   </p>
                 ) : (
                   <div className="mt-4 space-y-2">
-                    {intel.proveIt.slice(0, 8).map((p) => (
+                    {intel.proveIt.slice(0, 8).map((p: ProveItRow) => (
                       <div key={p.conceptKey} className={cn("rounded-2xl border px-4 py-3", p.verified ? "border-success/40 bg-success/5" : "border-border/60 bg-muted/20")}>
                         <div className="flex items-center justify-between gap-2">
                           <p className="truncate text-sm font-bold">{p.conceptLabel}</p>
@@ -422,7 +430,7 @@ export default function Twin() {
                         </div>
                         {!p.verified && p.missing.length > 0 && (
                           <ul className="mt-2 space-y-1">
-                            {p.missing.map((m) => (
+                            {p.missing.map((m: string) => (
                               <li key={m} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
                                 <Circle className="mt-0.5 size-2.5 shrink-0 text-border" /> {m}
                               </li>
@@ -448,7 +456,7 @@ export default function Twin() {
                     </p>
                   ) : (
                     <div className="mt-4 space-y-1.5">
-                      {intel.memory.slice(0, 6).map((m) => (
+                      {intel.memory.slice(0, 6).map((m: MemoryRow) => (
                         <div key={m.conceptKey} className="flex items-center gap-3 rounded-xl bg-muted/30 px-3.5 py-2.5">
                           <span className={cn(
                             "size-2.5 shrink-0 rounded-full",
@@ -588,7 +596,7 @@ function Field({
       <Input
         type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
         placeholder={placeholder}
         className="mt-1.5 h-10 rounded-xl"
       />

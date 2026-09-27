@@ -250,7 +250,7 @@ export default function Writer() {
               <Input
                 id="writer-title"
                 value={title}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setTitle(e.target.value);
                   dirtyRef.current = true;
                 }}
@@ -266,7 +266,7 @@ export default function Writer() {
               <Textarea
                 id="writer-body"
                 value={content}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                   setContent(e.target.value);
                   dirtyRef.current = true;
                 }}
@@ -308,13 +308,13 @@ export default function Writer() {
                 <div className="mt-4 space-y-3">
                   <Textarea
                     value={citeSource}
-                    onChange={(e) => setCiteSource(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCiteSource(e.target.value)}
                     placeholder="Paste the exact supporting passage from your material…"
                     className="min-h-[100px] rounded-2xl text-sm"
                   />
                   <Input
                     value={citeLocator}
-                    onChange={(e) => setCiteLocator(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCiteLocator(e.target.value)}
                     placeholder="Locator (optional) — e.g. ch. 3, p. 41"
                     className="h-10 rounded-2xl text-sm"
                   />
