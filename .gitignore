@@ -1,24 +1,17 @@
-# Environment & Secrets — never commit real keys
+# Environment and Secret Keys
 .env
 .env.local
-.env.*.local
-.env.development
-.env.production
 *.pem
 *.key
 
-# Build & Dependencies
+# Python Cache and Virtual Environments
+__pycache__/
+*.pyc
+venv/
+env/
+Scripts/
+
+# Node and Build Folders
 node_modules/
 dist/
-.vite/
-src/convex/_generated/
-
-# OS & IDE files
-.DS_Store
-.idea/
-.vscode/
-*.swp
-
-# Logs & local tooling artifacts
-*.log
-strix_runs/
+build/
