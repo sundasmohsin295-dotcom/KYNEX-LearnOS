@@ -65,6 +65,7 @@ Supporting modules: **KYNEX Twin**, **Vault**, **KYNEX Move** missions, **GPA La
 - **Three-State Circuit Breakers:** `closed → open → half_open` on every upstream AI call, with graceful local fallbacks — the UI never white-screens.
 - **SSRF-Guarded Ingestion:** Redirect-per-hop URL re-validation, private-address blocking, bounded exponential backoff with `Retry-After` and user-agent rotation.
 - **Deletion Integrity:** Account and material deletes cascade atomically — zero orphaned records (`deletionIntegrity.test.ts`).
+- **Append-Only Audit Trail:** Every security-relevant event (denied access, cross-user attempts, rate-limit hits, quota exhaustion) is logged content-free — actor id + action name only, never message content or secrets.
 
 ---
 

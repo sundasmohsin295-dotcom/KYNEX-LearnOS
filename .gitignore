@@ -10,6 +10,7 @@
 # Build & Dependencies
 node_modules/
 dist/
+build/
 .vite/
 src/convex/_generated/
 
