@@ -1,68 +1,97 @@
-# ⚡ Project KYNEX: The Autonomous Academic Intelligence OS
-*Built with Enterprise AI Engineering for the IBM Bob 2.0 Hackathon (September 2026)*
+<div align="center">
 
-> **Elevating student achievement through cognitive neuroscience, zero-trust security architecture, and a human-crafted anti-vibe-coded design system.**
+# ⚡ KYNEX — The Academic Intelligence OS
+
+**AI Professor · Leitner-X Recall · Exam Radar · GPA Lab — one zero-trust Academic Operating System.**
+
+*Built for the IBM Bob 2.0 Hackathon (September 2026)*
+
+`325+ automated tests passing` · `Zero-Trust security` · `10 languages + native RTL` · `MIT License`
+
+</div>
+
+> 🔗 **Live demo:** `_add your deployment URL here before publishing_`
+>
+> 📸 **Screenshots:** [`docs/screenshots/`](./docs/screenshots) — dashboard, grounded AI Professor, Recall, Examiner & GPA Lab (light + dark + RTL Arabic).
 
 ---
 
-## 🚀 Overview
-**KYNEX** is an enterprise-grade, high-performance academic operating system designed to function as an AI professor, study coach, and secure exam radar. Built to replace generic AI tutoring gimmicks with rigorous cognitive science loops—featuring Leitner-X spaced repetition, Socratic maieutic questioning, and a military-grade zero-trust backend.
+## 🧠 Architecture Flow — the KYNEX Cognitive Loop
 
-**The core loop:** `KNOW → UNDERSTAND → ACT → MASTER → ADVANCE`.
+Every module feeds the next. Evidence from studying yesterday decides what KYNEX serves tomorrow.
+
+```mermaid
+flowchart LR
+    A["📚 KNOW<br/>Vault ingestion"] --> B["🧑‍🏫 UNDERSTAND<br/>Socratic AI Professor"]
+    B --> C["🎯 ACT<br/>Leitner-X Recall + Adaptive Practice"]
+    C --> D["🔍 MASTER<br/>Exam Radar + Mistake Bank"]
+    D --> E["📈 ADVANCE<br/>GPA Lab + Planner + Twin"]
+    E -->|next highest-impact target| A
+```
+
+| Stage | Module | What it guarantees |
+|---|---|---|
+| **KNOW** | Vault (`/library` · `/add`) | PDF/URL/YouTube/text → structured concepts. NFKC-sanitized, SSRF-guarded, honest failure states — nothing faked. |
+| **UNDERSTAND** | Socratic AI Professor (`/chat`) | Answers anchored to the student's own Vault chunks (untrusted-content framing + deterministic out-of-scope gate before the model is ever called). |
+| **ACT** | Leitner-X Recall (`/flashcards`) + Practice (`/practice`) | Atomic server-side interval math; adaptive difficulty from real mastery evidence. |
+| **MASTER** | Exam Radar (`/examiner`) + Mistake Bank (`/mistakes`) | Root-cause autopsies (conceptual vs. careless vs. time-pressure) resolved only by later evidence. |
+| **ADVANCE** | GPA Lab (`/gpa`) + Planner + Twin (`/twin`) | Credit-weighted projections, required-GPA feasibility math, NEXT MOVE missions. |
 
 ---
 
-## 🛠️ Architecture & Core Modules
+## 🛠️ Core Modules
+
 1. **The Socratic AI Professor (`/chat`):** Grounded tutoring engine — every conversation is anchored to the student's own Vault material and mastery data. Teaching modes span STARTER explanations to EXAM drills, with Socratic and Feynman loops that withhold answers until the student commits to an attempt.
 2. **The Leitner-X Spaced Repetition Engine (`/flashcards`):** Mathematical scheduler with per-card ease, interval and lapse tracking; confidence-calibrated retrieval surfaces exactly what is due, server-computed.
-3. **The Exam Radar & Triage Matrix (`/insights` · `/examiner`):** Preparation priority triaged from real evidence — accuracy, recency and uploaded materials — compressing study queues as exam day approaches. Evidence-based by design: it never claims a topic will appear, and written-answer marks are provisional rubric marks.
-4. **The Mistake Bank & Autopsy (`/mistakes`):** Every miss is classified — conceptual, calculation, careless, misreading, time-pressure — and tracked until later evidence resolves it, breaking down why the student fell for the trap.
+3. **The Exam Radar & Triage Matrix (`/insights` · `/examiner`):** Preparation priority triaged from real evidence — accuracy, recency and uploaded materials. It never claims a topic will appear, and written-answer marks are provisional rubric marks.
+4. **The Mistake Bank & Autopsy (`/mistakes`):** Every miss is classified — conceptual, calculation, careless, misreading, time-pressure — and tracked until later evidence resolves it.
 
-Supporting modules: **KYNEX Twin** (`/twin`, living academic identity + Gap Radar + confidence calibration), **Vault** (`/library`·`/add`, universal intake with honest failure states), **KYNEX Move** missions, **GPA Lab** (`/gpa`), **Planner** (`/planner`), **KYNEX Map** (`/graph`), **Visualize** (`/visualize`) and **Writer** (`/writer`).
+Supporting modules: **KYNEX Twin**, **Vault**, **KYNEX Move** missions, **GPA Lab**, **Planner**, **KYNEX Map** (`/graph`), **Visualize**, **Writer**.
 
 ---
 
 ## 🌍 Global & Generational Ecosystem
-- **10 Languages, Native RTL:** English, Mandarin (Simplified), Hindi, Spanish, French, Arabic, Bengali, Portuguese, Indonesian and Urdu — with structural RTL mirroring (`dir` attributes, logical `ms-*`/`me-*` spacing) and dedicated Naskh/Nastaliq/Devanagari/Bengali typography for Arabic, Urdu, Hindi and Bengali.
-- **Generational Style Matrix:** Five runtime UI profiles (Glassmorphism, Neumorphism, Claymorphism, Bento, Minimal) × four generational personas (Classic, Millennial, Gen Z, Gen Alpha) — switchable instantly from ⌘K or the in-app customizer, persisted via versioned storage with corruption-sweep protection.
-- **Study Buddy Companion:** A fully local, customizable cartoon assistant — choose Cyber-Bot, Wise Owl, Pixel Scholar or Anime Mentor, rename it anything, and get context-aware module guidance in the tone of your active persona. Zero AI calls, zero data leaves the browser.
+- **10 Languages, Native RTL:** English, Mandarin (Simplified), Hindi, Spanish, French, Arabic, Bengali, Portuguese, Indonesian and Urdu — structural RTL mirroring (`dir` attributes, logical `ms-*`/`me-*` spacing) plus dedicated Naskh/Nastaliq/Devanagari/Bengali typography.
+- **Generational Style Matrix:** Five runtime UI profiles (Glassmorphism, Neumorphism, Claymorphism, Bento, Minimal) × four generational personas (Classic, Millennial, Gen Z, Gen Alpha) — instant switching from ⌘K, persisted via versioned storage with corruption-sweep protection.
+- **Study Buddy Companion:** A fully local, customizable cartoon assistant — Cyber-Bot, Wise Owl, Pixel Scholar or Anime Mentor, rename it anything, with context-aware module guidance in your persona's tone. Zero AI calls; zero data leaves the browser.
 
 ---
 
-## 🛡️ Enterprise Security & Zero-Trust Grid
-- **Server-Authoritative Perimeter:** Every query and mutation rigorously re-verifies user ownership (`getAuthUserIdStrict`), completely neutralizing IDOR and cross-user data leakage. Actions never accept a user id from the client, and ownership is re-checked at the action boundary.
-- **Input Sanitization (AI Perturbation Shield):** NFKC normalization, bidi-control removal, zero-width character stripping and frame-marker neutralization on all uploaded study materials and past papers before they reach the database or an AI prompt boundary — plus SSRF-guarded web ingestion.
-- **Resilient Fault Tolerance:** Persisted three-state circuit breakers (`closed → open → half_open`) and autonomous fallbacks protecting all upstream AI gateway inferences; strict output schema validation before anything is persisted.
-- **Fail-Closed Entitlements:** Server-authoritative plans and daily AI quotas — the client never sends or caches entitlement state.
+## 🛡️ Zero-Trust Security — built in, not bolted on
+
+- **IDOR & Tenant Isolation:** Every query and mutation resolves identity **server-side only** and re-verifies row ownership (`row.userId === caller`) before read or write — a caller can never pass another user's id anywhere. Verified continuously by an adversarial test suite (`crossUserAttacks.test.ts`, 16 tests) that attempts cross-tenant reads, writes and deletes.
+- **AI Perturbation Shield:** NFKC normalization, bidi-control removal, zero-width character stripping and frame-marker neutralization on all uploaded material — before it reaches the database or an AI prompt boundary.
+- **Fail-Closed Quotas & Entitlements:** Server-authoritative daily AI limits and plans; the client never sends or caches entitlement state.
+- **Three-State Circuit Breakers:** `closed → open → half_open` on every upstream AI call, with graceful local fallbacks — the UI never white-screens.
+- **SSRF-Guarded Ingestion:** Redirect-per-hop URL re-validation, private-address blocking, bounded exponential backoff with `Retry-After` and user-agent rotation.
+- **Deletion Integrity:** Account and material deletes cascade atomically — zero orphaned records (`deletionIntegrity.test.ts`).
 
 ---
 
-## 🎨 The Human-Crafted Design System (Anti-Vibe-Coded)
-Rejecting generic AI templates and purple gradients, KYNEX implements:
-- **Pristine Paper-White & Mesh Canvas:** A slow-drifting living mesh — ethereal rose gold, soft pastel sage, warm solar amber — at ~3–4% effective opacity over a clean editorial paper-white (`#F8FAFC`) base, with a deep obsidian dark mode and flicker-free switching.
-- **Typography Triad:** Fraunces for editorial authority, IBM Plex Sans for pristine body clarity, and IBM Plex Mono (`.font-data`) for tabular numerical metrics and GPA counters.
-- **Purposeful Micro-Interactions:** Physics-based spring transitions (Framer Motion, reduced-motion aware) adhering strictly to WCAG AAA contrast standards.
+## 🧪 Verification — 325 automated tests, 33 suites
 
----
+```bash
+bun tsc -b --noEmit   # strict typecheck: zero errors
+bun run test          # 325 tests / 33 files — all green
+bun convex dev --once # backend schema sync
+```
 
-## 🧪 Verification
-`bun tsc -b --noEmit` clean · **321 tests / 32 files passing**, including adversarial suites:
-cross-user attacks, AI context isolation, perturbation shield E2E, deletion integrity, chaos boundaries, referral exploits, and the core validation suite (GPA boundaries, sanitization shield, rate-limit classification).
+Adversarial suites included: cross-user attacks, AI context isolation, perturbation shield E2E, deletion integrity, chaos boundaries (crash + circuit-breaker handoff), referral exploits, router-context isolation, and the core validation suite (GPA boundaries, sanitization shield, rate-limit classification).
+
+## 🚀 Getting Started
 
 ```bash
 bun install
 cp env.example .env   # fill real values; .env is git-ignored (or use the platform Keys UI)
-bun run dev           # app (Convex dev runs in the platform sandbox)
-bun run test
-bun run build
+bun run dev
 ```
 
-> 🔐 **Secrets hygiene:** real keys live only in `.env` (git-ignored) or the platform's encrypted key store. `env.example` documents every variable with placeholders — no secret is ever committed. See [`SECURITY.md`](./SECURITY.md).
+> 🔐 **Secrets hygiene:** real keys live only in `.env` (strictly git-ignored) or the platform's encrypted key store. [`env.example`](./env.example) documents every variable with placeholders — no secret is ever committed. See [`SECURITY.md`](./SECURITY.md).
 >
 > 📄 Released under the [MIT License](./LICENSE).
 >
-> 📂 *Compliance verification proof of our enterprise development workflows and session logs are structured within the [`bob_sessions/`](./bob_sessions) folder.*
+> 📂 *Enterprise development workflow and session logs: [`bob_sessions/`](./bob_sessions).*
 
 ---
 
-*KNOW → UNDERSTAND → ACT → MASTER → ADVANCE*
+<div align="center"><em>KNOW → UNDERSTAND → ACT → MASTER → ADVANCE</em></div>
