@@ -272,8 +272,17 @@ function sleep(ms: number) {
 // 429 is an honest user-facing state, never a fake analysis.
 // ---------------------------------------------------------------------------
 
-const URL_FETCH_ATTEMPTS = 2; // initial try + 1 bounded retry for 429/5xx only
+const URL_FETCH_ATTEMPTS = 3; // initial try + up to 2 bounded retries for 429/5xx only
+const RETRY_BASE_MS = 1_000; // exponential backoff base: 1s, 2s, … (Retry-After overrides)
 const MAX_RETRY_AFTER_MS = 8_000; // never sleep longer than this per Retry-After
+// UA rotation: some upstream rate limiters key on the exact UA string.
+// Rotating a small set of honest, product-identifying agents across attempts
+// avoids a single pinned fingerprint without masquerading as a real browser.
+const URL_USER_AGENTS = [
+  "Mozilla/5.0 (compatible; KYNEXBot/1.0; +https://kynex.app/bot)",
+  "Mozilla/5.0 (compatible; KYNEXIngest/1.0; academic study tool)",
+  "KYNEX/1.0 (study-material fetcher)",
+] as const;
 
 /** Map an HTTP status (and optional Retry-After) to a safe, actionable
  *  user-facing message. Exported for unit testing. Never leaks internals. */
@@ -1306,7 +1315,7 @@ export const ingestUrl = action({
     let title = normalized.hostname + normalized.pathname;
     try {
       // Bounded retry: ONLY transient statuses (429 / 5xx) are retried, at
-      // most once more, honoring the site's Retry-After (capped). 4xx client
+      // most twice more, honoring Retry-After (capped) w/ exponential fallback. 4xx client
       // errors are never retried — hammering a rejecting site is wrong.
       let hop: Response | null = null;
       let lastStatus = 0;
@@ -1314,14 +1323,14 @@ export const ingestUrl = action({
       for (let attempt = 0; attempt < URL_FETCH_ATTEMPTS; attempt++) {
         if (attempt > 0) {
           const waitMs = Math.min(
-            (parseRetryAfter(lastRetryAfter) ?? 2) * 1000,
+            (parseRetryAfter(lastRetryAfter) ?? (RETRY_BASE_MS * 2 ** (attempt - 1)) / 1000) * 1000,
             MAX_RETRY_AFTER_MS,
           );
           await sleep(waitMs);
         }
         hop = await fetch(normalized.toString(), {
           headers: {
-            "User-Agent": "Mozilla/5.0 (compatible; KYNEXBot/1.0)",
+            "User-Agent": URL_USER_AGENTS[attempt % URL_USER_AGENTS.length],
             Accept: "text/html,text/plain,*/*",
           },
           signal: AbortSignal.timeout(15000),
@@ -1343,7 +1352,7 @@ export const ingestUrl = action({
           normalized = await assertPublicHttpUrl(next);
           hop = await fetch(normalized.toString(), {
             headers: {
-              "User-Agent": "Mozilla/5.0 (compatible; KYNEXBot/1.0)",
+              "User-Agent": URL_USER_AGENTS[attempt % URL_USER_AGENTS.length],
               Accept: "text/html,text/plain,*/*",
             },
             signal: AbortSignal.timeout(15000),
