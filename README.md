@@ -13,8 +13,20 @@
 > 🔗 **Live demo:** `_add your deployment URL here before publishing_`
 >
 > 📸 **Screenshots:** [`docs/screenshots/`](./docs/screenshots) — dashboard, grounded AI Professor, Recall, Examiner & GPA Lab (light + dark + RTL Arabic).
+>
+> 🎤 **Judging materials:** [Pitch deck script](./docs/PITCH_DECK.md) · [2-minute video script](./docs/VIDEO_SCRIPT.md) · [Code review report](./docs/CODE_REVIEW_REPORT.md)
 
 ---
+
+## ❗ The Problem
+
+Students juggle six disconnected tools — a PDF reader here, a flashcard app there, a generic AI chatbot that confidently invents facts, and a GPA spreadsheet. None of them talk to each other, none of them know what the student actually practiced, and every one of them answers the same useless question: *"what should I study?"* — with either silence or a generic syllabus. The result: effort without direction, and AI that hallucinates instead of teaching.
+
+## 💡 What Makes KYNEX Different
+
+- **One evidence loop, not six apps.** Every module writes back to a single mastery model — what you practiced yesterday literally decides what KYNEX serves you tomorrow (KNOW → UNDERSTAND → ACT → MASTER → ADVANCE).
+- **Deterministic intelligence, not vibes.** Gap radar, confidence calibration, memory decay and exam readiness are computed from real practice evidence with transparent math — the AI layer anchors to your own Vault material and is fenced by a deterministic out-of-scope gate *before* the model is ever called. When evidence doesn't exist, KYNEX says so instead of inventing it.
+- **Zero-trust from row zero.** Identity is resolved server-side on every call, every row is re-verified against the caller, and an adversarial cross-tenant test suite tries to break it continuously.
 
 ## 🧠 Architecture Flow — the KYNEX Cognitive Loop
 
