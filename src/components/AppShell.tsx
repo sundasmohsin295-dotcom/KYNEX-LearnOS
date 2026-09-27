@@ -22,27 +22,31 @@ import { CommandBar } from "@/components/CommandBar";
 import { UiCustomizer } from "@/components/UiCustomizer";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { applyPrivateSeo } from "@/lib/seo";
+import { translate, type DictKey } from "@/lib/i18n";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
 import { spring } from "@/lib/motion";
 import { AuroraField, gleamProps, routeSpectrumKey, useAccentSpectrum } from "@/lib/spectrum";
 
+// Labels are i18n dictionary keys — resolved per render against the active
+// language (translate() falls back to English for any unknown key).
 const NAV = [
-  { to: "/dashboard", label: "Command Center", icon: LayoutDashboard },
-  { to: "/twin", label: "Twin", icon: Fingerprint },
-  { to: "/library", label: "Vault", icon: BookOpen },
-  { to: "/chat", label: "Professor", icon: GraduationCap },
-  { to: "/practice", label: "Practice", icon: Target },
-  { to: "/examiner", label: "Examiner", icon: ClipboardCheck },
-  { to: "/flashcards", label: "Recall", icon: RefreshCw },
-  { to: "/mistakes", label: "Mistake Bank", icon: Wrench },
-  { to: "/graph", label: "KYNEX Map", icon: Network },
-  { to: "/visualize", label: "Visualize", icon: Shapes },
-  { to: "/writer", label: "Writer", icon: PenLine },
-  { to: "/planner", label: "Planner", icon: CalendarDays },
-  { to: "/gpa", label: "GPA Lab", icon: Calculator },
-  { to: "/insights", label: "Insights", icon: BarChart3 },
-  { to: "/plan", label: "Plan & usage", icon: Gauge },
-  { to: "/security", label: "Security", icon: ShieldCheck },
-] as const;
+  { to: "/dashboard", label: "nav.commandCenter", icon: LayoutDashboard },
+  { to: "/twin", label: "nav.twin", icon: Fingerprint },
+  { to: "/library", label: "nav.vault", icon: BookOpen },
+  { to: "/chat", label: "nav.professor", icon: GraduationCap },
+  { to: "/practice", label: "nav.practice", icon: Target },
+  { to: "/examiner", label: "nav.examiner", icon: ClipboardCheck },
+  { to: "/flashcards", label: "nav.recall", icon: RefreshCw },
+  { to: "/mistakes", label: "nav.mistakes", icon: Wrench },
+  { to: "/graph", label: "nav.map", icon: Network },
+  { to: "/visualize", label: "nav.visualize", icon: Shapes },
+  { to: "/writer", label: "nav.writer", icon: PenLine },
+  { to: "/planner", label: "nav.planner", icon: CalendarDays },
+  { to: "/gpa", label: "nav.gpa", icon: Calculator },
+  { to: "/insights", label: "nav.insights", icon: BarChart3 },
+  { to: "/plan", label: "nav.plan", icon: Gauge },
+  { to: "/security", label: "nav.security", icon: ShieldCheck },
+] as const satisfies readonly { to: string; label: DictKey; icon: typeof LayoutDashboard }[];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
@@ -51,6 +55,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const ensureProfile = useMutation(api.learning.ensureGameProfile);
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { lang } = useUiPrefs();
+  const t = (key: DictKey, vars?: Record<string, string | number>) =>
+    translate(lang, key, vars);
 
   // Dynamic spectrum: every module breathes its own hue into the whole OS —
   // primary, ring, charts, aurora field, glow borders all follow.
@@ -75,11 +82,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const streakTitle =
     streak === 0
-      ? "Learn something today to start your streak"
+      ? t("shell.streakStart")
       : streakAlive
         ? freezes > 0
-          ? `${streak}-day learning streak · ${freezes} streak freeze${freezes === 1 ? "" : "s"} in reserve`
-          : `${streak}-day learning streak`
+          ? freezes === 1
+            ? t("shell.streakFreezesOne", { n: streak, m: freezes })
+            : t("shell.streakFreezesMany", { n: streak, m: freezes })
+          : t("shell.dayStreak", { n: streak })
         : freezes > 0
           ? `${STREAK_MESSAGES.welcomeBack} A streak freeze will cover the gap on your next study day.`
           : STREAK_MESSAGES.welcomeBack;
@@ -117,7 +126,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               }
             >
               <Icon className="size-4.5 shrink-0" />
-              <span className="flex-1">{label}</span>
+              <span className="flex-1">{t(label)}</span>
               {to === "/flashcards" && dueCards > 0 && (
                 <span className="rounded-full bg-xp px-1.5 py-0.5 text-[10px] font-bold text-xp-foreground">
                   {dueCards}
@@ -145,7 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <Progress value={xpPct} className="mt-2 h-1.5" />
           <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {XP_PER_LEVEL - xpInLevel} XP to level {(game?.level ?? 1) + 1}
+            {t("shell.xpToLevel", { n: XP_PER_LEVEL - xpInLevel, m: (game?.level ?? 1) + 1 })}
           </p>
         </div>
 
@@ -154,7 +163,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {...gleamProps()}
           className="gleam gleam-strong mx-3 mb-4 gap-2 rounded-xl shadow-lg shadow-primary/25"
         >
-          <Plus className="size-4" /> Add to Vault
+          <Plus className="size-4" /> {t("shell.addToVault")}
         </Button>
 
         <UserFooter />
@@ -180,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </span>
           <Button size="sm" className="h-8 gap-1 rounded-lg" onClick={() => navigate("/add")}>
-            <Plus className="size-3.5" /> Add
+            <Plus className="size-3.5" /> {t("shell.add")}
           </Button>
           <UserFooter mobile />
         </div>
@@ -209,7 +218,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {({ isActive }) => (
               <>
                 <Icon className="size-5" />
-                {label === "Command Center" ? "Home" : label.split(" ")[0]}
+                {label === "nav.commandCenter" ? t("nav.home") : t(label).split(" ")[0]}
               </>
             )}
           </NavLink>
@@ -239,7 +248,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
             {theme === "dark" ? <Sun className="me-2 size-4" /> : <Moon className="me-2 size-4" />}
-            {theme === "dark" ? "Light mode" : "Dark mode"}
+            {theme === "dark" ? t("shell.lightMode") : t("shell.darkMode")}
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer text-destructive focus:text-destructive"
@@ -248,7 +257,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               navigate("/");
             }}
           >
-            <LogOut className="me-2 size-4" /> Sign out
+            <LogOut className="me-2 size-4" /> {t("shell.signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

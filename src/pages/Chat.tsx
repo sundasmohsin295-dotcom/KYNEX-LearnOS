@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
 import { MODES, MODE_TO_AI, type ModeKey } from "@/lib/learning";
+import { translate } from "@/lib/i18n";
 import { useUiPrefs } from "@/components/UiPrefsProvider";
 
 const QUICK_PROMPTS = [
@@ -194,7 +195,7 @@ export default function Chat() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search conversations"
+                placeholder={translate(lang, "chat.searchConversations")}
                 className="h-9 rounded-lg pl-9 text-xs"
               />
             </div>
@@ -334,7 +335,7 @@ export default function Chat() {
               }}
               className="h-8 max-w-44 rounded-lg border border-border bg-background px-2 text-xs font-medium"
             >
-              <option value="">No material context</option>
+              <option value="">{translate(lang, "chat.noMaterial")}</option>
               {(materials ?? []).map((m) => (
                 <option key={m._id} value={m._id}>{m.title}</option>
               ))}

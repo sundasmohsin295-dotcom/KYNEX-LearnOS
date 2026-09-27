@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
+import { translate } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,6 +73,7 @@ export default function ExaminerPage() {
   const [materialId, setMaterialId] = useState<string>("");
   const [scheme, setScheme] = useState("");
   const [busy, setBusy] = useState(false);
+  const { lang } = useUiPrefs();
   const [result, setResult] = useState<{
     marksAwarded: number;
     marksTotal: number;
@@ -90,7 +93,7 @@ export default function ExaminerPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="AI Examiner · provisional rubric"
+        eyebrow={translate(lang, "examiner.eyebrow")}
         title="Examiner"
       >
         <p className="max-w-md text-sm text-muted-foreground">
@@ -282,7 +285,7 @@ export default function ExaminerPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {result.missingPoints.length > 0 && (
                   <div className="kynex-glass spectrum-border rounded-3xl p-5">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Missing points</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{translate(lang, "examiner.missingPoints")}</p>
                     <ul className="mt-2 space-y-1.5 text-sm">
                       {result.missingPoints.map((p, i) => (
                         <li key={i} className="flex gap-2">
@@ -295,7 +298,7 @@ export default function ExaminerPage() {
                 )}
                 {result.errors.length > 0 && (
                   <div className="kynex-glass spectrum-border rounded-3xl p-5">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Errors</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{translate(lang, "examiner.errors")}</p>
                     <ul className="mt-2 space-y-1.5 text-sm">
                       {result.errors.map((p, i) => (
                         <li key={i} className="flex gap-2">
@@ -309,7 +312,7 @@ export default function ExaminerPage() {
               </div>
 
               <div className="rounded-3xl border border-primary/25 bg-primary/5 p-6">
-                <h3 className="font-display text-base font-bold">How to improve</h3>
+                <h3 className="font-display text-base font-bold">{translate(lang, "examiner.howToImprove")}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{result.howToImprove}</p>
                 <p className="mt-3 rounded-xl bg-card px-3 py-2 text-sm font-semibold">
                   <Sparkles className="mr-1.5 inline size-4 text-primary" />

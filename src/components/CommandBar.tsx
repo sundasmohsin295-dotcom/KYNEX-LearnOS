@@ -11,6 +11,7 @@ import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { translate } from "@/lib/i18n";
 import { useUiPrefs } from "@/components/UiPrefsProvider";
 import {
   PERSONAS,
@@ -206,7 +207,7 @@ export function CommandBar() {
         className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
       >
         <Search className="size-3.5" />
-        <span className="hidden sm:inline">Search, ask, act…</span>
+        <span className="hidden sm:inline">{translate(lang, "shell.searchAsk")}</span>
         <kbd className="ml-1 hidden rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-bold sm:inline">⌘K</kbd>
       </button>
 

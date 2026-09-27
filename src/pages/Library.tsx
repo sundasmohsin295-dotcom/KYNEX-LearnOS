@@ -8,6 +8,8 @@ import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
+import { translate } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const STATUS_META = {
@@ -21,6 +23,7 @@ export default function Library() {
   const subjects = useQuery(api.materials.listSubjects);
   const remove = useMutation(api.materials.remove);
   const navigate = useNavigate();
+  const { lang } = useUiPrefs();
   const [q, setQ] = useState("");
 
   const subjectNames = useMemo(() => {
@@ -54,9 +57,9 @@ export default function Library() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="KYNEX Brain · your subjects" title="Vault">
+      <PageHeader eyebrow={translate(lang, "vault.eyebrow")} title="Vault">
         <Button onClick={() => navigate("/add")} className="gap-2 rounded-xl shadow-lg shadow-primary/25">
-          <Plus className="size-4" /> Add to Vault
+          <Plus className="size-4" /> {translate(lang, "vault.addToVault")}
         </Button>
       </PageHeader>
 
@@ -65,7 +68,7 @@ export default function Library() {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search materials…"
+          placeholder={translate(lang, "vault.search")}
           className="h-11 rounded-xl pl-10"
         />
       </div>

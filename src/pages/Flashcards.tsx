@@ -6,6 +6,8 @@ import { CheckCircle2, Flame, Layers, RotateCcw, Sparkles, Zap } from "lucide-re
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
+import { translate } from "@/lib/i18n";
 import { spring } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,6 +25,7 @@ export default function Flashcards() {
   const due = useQuery(api.learning.dueFlashcards);
   const counts = useQuery(api.learning.flashcardCount);
   const review = useMutation(api.learning.reviewFlashcard);
+  const { lang } = useUiPrefs();
   const [flipped, setFlipped] = useState(false);
   const [index, setIndex] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
@@ -76,7 +79,7 @@ export default function Flashcards() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="KYNEX Recall · spaced repetition" title="Recall">
+      <PageHeader eyebrow={translate(lang, "recall.eyebrow")} title="Recall">
         <div className="flex items-center gap-2">
           <span className="font-data flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-sm font-bold tabular-nums">
             <Layers className="size-4 text-primary" />
@@ -101,7 +104,7 @@ export default function Flashcards() {
           >
             <Zap className="size-8 fill-current" />
           </motion.div>
-          <p className="mt-5 font-display text-2xl font-extrabold">Session complete</p>
+          <p className="mt-5 font-display text-2xl font-extrabold">{translate(lang, "recall.sessionComplete")}</p>
           <p className="mt-2 text-sm text-muted-foreground">
             {doneCount} card{doneCount === 1 ? "" : "s"} moved forward in the schedule ·{" "}
             {reviewedThisSession - doneCount} flagged for another pass
@@ -110,7 +113,7 @@ export default function Flashcards() {
             KYNEX rewards genuine recall, never clicking through.
           </p>
           <Button asChild variant="outline" className="mt-6 gap-2 rounded-xl">
-            <Link to="/dashboard">Back to dashboard</Link>
+            <Link to="/dashboard">{translate(lang, "recall.backToDashboard")}</Link>
           </Button>
         </div>
       )}
@@ -118,7 +121,7 @@ export default function Flashcards() {
       {empty && (
         <div className="mx-auto max-w-2xl rounded-3xl border border-dashed border-border p-14 text-center">
           <CheckCircle2 className="mx-auto size-12 text-success" />
-          <p className="mt-4 font-display text-2xl font-bold">Nothing due right now</p>
+          <p className="mt-4 font-display text-2xl font-bold">{translate(lang, "recall.nothingDue")}</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
             KYNEX Recall schedules cards at the moment you're about to forget them. Generate
             cards from any Vault source.

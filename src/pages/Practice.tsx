@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { useUiPrefs } from "@/components/UiPrefsProvider";
+import { translate } from "@/lib/i18n";
 import { MasteryRings } from "@/components/VisualBits";
 import { cn } from "@/lib/utils";
 import { masteryState } from "@/lib/learning";
@@ -33,6 +35,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
   const attempts = useQuery(api.learning.listQuizAttempts, {});
   const startQuiz = useMutation(api.learning.startQuiz);
   const genQuiz = useAction(api.aiEngine.generateQuiz);
+  const { lang } = useUiPrefs();
 
   const weak = (overview?.mastery ?? [])
     .filter((m) => masteryState(m) === "weak")
@@ -61,7 +64,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Mastery loop" title="Practice">
+      <PageHeader eyebrow={translate(lang, "practice.eyebrow")} title="Practice">
         <p className="max-w-md text-sm text-muted-foreground">
           Adaptive questions that target exactly where your accuracy drops. Every answer updates your mastery map.
         </p>
@@ -173,7 +176,7 @@ function PracticeHub({ navigate }: { navigate: (to: string) => void }) {
 
       {/* pick a material */}
       <div className="mt-6 kynex-glass spectrum-border rounded-3xl p-6">
-        <h3 className="font-display text-lg font-bold">Start from a material</h3>
+        <h3 className="font-display text-lg font-bold">{translate(lang, "practice.startFromMaterial")}</h3>
         <PracticeMaterialPicker />
       </div>
     </AppShell>
@@ -225,6 +228,7 @@ function PracticeSession({
   const [examMinutes, setExamMinutes] = useState(20);
   const [negativeMarking, setNegativeMarking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { lang } = useUiPrefs();
 
   const conceptRows = (material?.analysis?.concepts ?? []).map((c) => {
     const row = overview?.mastery.find(
@@ -267,7 +271,7 @@ function PracticeSession({
       <AppShell>
         <div className="mx-auto max-w-xl kynex-glass spectrum-border rounded-3xl p-10 text-center">
           <p className="font-display text-xl font-bold">This material isn't ready yet</p>
-          <Button className="mt-5" onClick={() => navigate("/library")}>Back to library</Button>
+          <Button className="mt-5" onClick={() => navigate("/library")}>{translate(lang, "practice.backToLibrary")}</Button>
         </div>
       </AppShell>
     );
@@ -275,7 +279,7 @@ function PracticeSession({
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Configure session" title={`Practice: ${material.analysis.title ?? material.title}`}>
+      <PageHeader eyebrow={translate(lang, "practice.configure")} title={`Practice: ${material.analysis.title ?? material.title}`}>
         <p className="max-w-md text-sm text-muted-foreground">
           Choose a focus or go mixed. Adaptive difficulty ramps up as you get answers right.
         </p>
@@ -283,7 +287,7 @@ function PracticeSession({
 
       <div className="kynex-glass spectrum-border rounded-3xl p-6 sm:p-8">
         {/* concept focus */}
-        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Focus</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{translate(lang, "practice.focus")}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Chip active={conceptKey === null} onClick={() => setConceptKey(null)}>
             <Brain className="size-3.5" /> Mixed: all concepts
@@ -301,7 +305,7 @@ function PracticeSession({
         </div>
 
         {/* count */}
-        <p className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">Questions</p>
+        <p className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">{translate(lang, "practice.questions")}</p>
         <div className="mt-3 flex gap-2">
           {[5, 8, 10, 12].map((n) => (
             <Chip key={n} active={count === n} onClick={() => setCount(n)}>{n} questions</Chip>
@@ -309,7 +313,7 @@ function PracticeSession({
         </div>
 
         {/* difficulty */}
-        <p className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">Difficulty</p>
+        <p className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">{translate(lang, "practice.difficulty")}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {(
             [
@@ -357,7 +361,7 @@ function PracticeSession({
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
               <div className="mt-4 space-y-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Time limit</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{translate(lang, "practice.timeLimit")}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {[10, 20, 30, 45, 60].map((m) => (
                       <Chip key={m} active={examMinutes === m} onClick={() => setExamMinutes(m)}>{m} min</Chip>
