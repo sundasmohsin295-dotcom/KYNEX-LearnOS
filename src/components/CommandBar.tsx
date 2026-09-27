@@ -11,6 +11,14 @@ import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { Bot } from "lucide-react";
+import {
+  applyBuddyAvatarAttribute,
+  BUDDY_AVATARS,
+  BUDDY_AVATAR_META,
+  saveBuddyAvatar,
+  saveBuddyName,
+} from "@/lib/studyBuddy";
 import { translate } from "@/lib/i18n";
 import { useUiPrefs } from "@/components/UiPrefsProvider";
 import {
@@ -139,6 +147,42 @@ export function CommandBar() {
         run: () => setPersona(p as Persona),
       });
     }
+    // Study Buddy controls — same palette, same persistence contract.
+    for (const a of BUDDY_AVATARS) {
+      base.push({
+        id: `buddy-avatar-${a}`,
+        label: `Buddy: ${BUDDY_AVATAR_META[a].label}`,
+        group: "Study Buddy",
+        icon: Bot,
+        hint: BUDDY_AVATAR_META[a].blurb,
+        run: () => {
+          saveBuddyAvatar(a);
+          applyBuddyAvatarAttribute(a);
+          window.dispatchEvent(new Event("kynex:buddy"));
+        },
+      });
+    }
+    if (q.trim().length > 0) {
+      base.push({
+        id: "buddy-rename",
+        label: `Rename your buddy: “${q.trim().slice(0, 24)}”`,
+        group: "Study Buddy",
+        icon: Bot,
+        hint: "Personalize your companion's moniker",
+        run: () => {
+          saveBuddyName(q.trim());
+          window.dispatchEvent(new Event("kynex:buddy"));
+        },
+      });
+    }
+    base.push({
+      id: "buddy-hint",
+      label: "Ask your buddy for a hint",
+      group: "Study Buddy",
+      icon: Bot,
+      hint: "What does this screen do?",
+      run: () => window.dispatchEvent(new Event("kynex:buddy")),
+    });
     // Language switching — instant, RTL-aware, persisted.
     for (const l of LANGUAGES) {
       if (l.code === lang) continue;

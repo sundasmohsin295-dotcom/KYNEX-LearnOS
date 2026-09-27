@@ -1,4 +1,5 @@
 import type { Doc } from "@/convex/_generated/dataModel";
+import type { PDFDocumentProxy } from "pdfjs-dist";
 
 /** Backend analysis shape (client mirror of the AI output). */
 export type LearningAnalysis = NonNullable<Doc<"materials">["analysis"]>;
@@ -91,6 +92,39 @@ export function kindIcon(kind: string): string {
   }
 }
 
+/**
+ * Precise, user-friendly extraction failures. `extractTextFromFile` throws
+ * ONLY these — the AddMaterial boundary renders their messages verbatim,
+ * so a corrupted upload produces guidance, never a stack trace.
+ */
+export class FileReadError extends Error {}
+export class FilePasswordError extends FileReadError {}
+export class FileEmptyError extends FileReadError {}
+
+/**
+ * Explicitly configure pdf.js's worker before first use. Bundler/CDN worker
+ * resolution is the #1 source of "Setting up fake worker" failures and
+ * broken ingestions; pinning a same-version workerSrc from a public CDN
+ * removes it. Falls back to bundler resolution if the CDN is unreachable.
+ */
+let workerConfigured = false;
+async function configurePdfWorker(pdfjs: typeof import("pdfjs-dist")): Promise<void> {
+  if (workerConfigured) return;
+  try {
+    const version = pdfjs.version;
+    const cdn = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+    const probe = await fetch(cdn, { method: "HEAD" });
+    pdfjs.GlobalWorkerOptions.workerSrc = probe.ok
+      ? cdn
+      : `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+  } catch {
+    // Offline or blocked probe → leave bundler-resolved default in place.
+  } finally {
+    // Never retry the probe on every upload — one decision per session.
+    workerConfigured = true;
+  }
+}
+
 /** URL/file → plain text extraction (client-side, best effort per kind). */
 export async function extractTextFromFile(file: File): Promise<string> {
   const name = file.name.toLowerCase();
@@ -101,13 +135,39 @@ export async function extractTextFromFile(file: File): Promise<string> {
   }
   if (ext === "pdf") {
     const pdfjs = await import("pdfjs-dist");
-    const src = await file.arrayBuffer();
-    const pdf = await pdfjs.getDocument({ data: src }).promise;
+    await configurePdfWorker(pdfjs);
+    let src: ArrayBuffer;
+    try {
+      src = await file.arrayBuffer();
+    } catch {
+      throw new FileReadError(
+        "The file couldn't be opened (it may still be syncing or the download was interrupted). Re-download it and try again.",
+      );
+    }
+    let pdf: PDFDocumentProxy;
+    try {
+      pdf = await pdfjs.getDocument({ data: src }).promise;
+    } catch (e) {
+      const msg = e instanceof Error ? String(e.message ?? e) : String(e);
+      if (/password/i.test(msg)) {
+        throw new FilePasswordError(
+          "That PDF is password-protected. Remove the password (or export an unprotected copy) and upload it again.",
+        );
+      }
+      throw new FileReadError(
+        "That PDF appears to be corrupted or not a real PDF. Try re-saving it from the original app, or paste the text directly instead.",
+      );
+    }
     let out = "";
     for (let i = 1; i <= Math.min(pdf.numPages, 40); i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
       out += content.items.map((it: unknown) => (it as { str?: string }).str ?? "").join(" ") + "\n\n";
+    }
+    if (out.replace(/\s/g, "").length === 0) {
+      throw new FileEmptyError(
+        "That PDF has no readable text (it's likely a scan or image-only export). KYNEX needs selectable text — try a text-based copy or paste the content directly.",
+      );
     }
     return out;
   }
@@ -117,12 +177,18 @@ export async function extractTextFromFile(file: File): Promise<string> {
     return value;
   }
   if (ext === "pptx") {
-    throw new Error(
+    throw new FileReadError(
       "PPTX support is limited — please copy the slide text and paste it as text content instead.",
     );
   }
   // last resort: try as text
-  return await file.text();
+  try {
+    return await file.text();
+  } catch {
+    throw new FileReadError(
+      "KYNEX couldn't read that file type. Supported: PDF, DOCX, TXT, Markdown, CSV and pasted text.",
+    );
+  }
 }
 
 export function isImageFile(file: File): boolean {

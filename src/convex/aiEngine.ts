@@ -988,6 +988,11 @@ export const chatInternal = internalAction({
     }
     messages.push({ role: "system", content: `Active mode: ${mode}.` });
 
+    // Captured BEFORE the AI attempt: the credential fallback (below) needs to
+    // know whether local Vault guidance is possible without leaking whether
+    // the gate above already consumed the material.
+    const hasMaterial = materialId != null;
+
     try {
       const reply = await callAI(messages, 1600, 0.4, aiBreaker(ctx));
       await ctx.runMutation(internal.learning.appendAssistantInternal, {
@@ -1011,9 +1016,18 @@ export const chatInternal = internalAction({
         action: "ai_chat_failed",
         detail: `${cls.code}:${requestId}`.slice(0, 120),
       });
+      // CREDENTIAL GRACEFUL DEGRADATION: a missing/rejected key must not feel
+      // like a dead end. The honest status message is extended with what the
+      // student can still do RIGHT NOW with purely local, verified data.
+      const offlineGuidance =
+        cls.code === "ai_not_configured" || cls.code === "ai_key_rejected"
+          ? hasMaterial
+            ? " You can keep studying meanwhile: your material's summary, concepts and flashcards in the Vault are generated locally and remain fully available."
+            : " Everything that doesn't need the AI service keeps working: your Vault, Recall schedule, GPA Lab and practice history."
+          : "";
       await ctx.runMutation(internal.learning.appendAssistantInternal, {
         conversationId,
-        content: cls.userMessage,
+        content: cls.userMessage + offlineGuidance,
       });
     }
   },

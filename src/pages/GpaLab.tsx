@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
@@ -48,6 +48,11 @@ type Overview = {
 export default function GpaLab() {
   const navigate = useNavigate();
   const data = useQuery(api.gpa.overview) as Overview | null | undefined;
+  // Client mirror of the server's scale bounds (gpa.ts clamps gradePoint to
+  // [0, maxPointFor(scale)] and credits to [0.5, 30]). Validating here, before
+  // submission, turns a backend rejection into an inline hint instead of a
+  // toast surprise — and Add stays disabled until the row is valid.
+  const gradeBounds = data ? { min: 0, max: data.max } : { min: 0, max: 4.0 };
   const addSemester = useMutation(api.gpa.addSemester);
   const renameSemester = useMutation(api.gpa.renameSemester);
   const deleteSemester = useMutation(api.gpa.deleteSemester);
@@ -61,6 +66,25 @@ export default function GpaLab() {
     semId: null, name: "", code: "", credits: "", grade: "",
   });
   const [busy, setBusy] = useState(false);
+
+  // Inline validation — mirrors gpa.ts exactly (gradePoint ∈ [0, scale max],
+  // credits ∈ [0.5, 30]) so invalid rows are caught before submission.
+  const gradeInvalid = useMemo(() => {
+    if (!newCourse.grade) return null;
+    const g = Number(newCourse.grade);
+    if (Number.isNaN(g) || g < gradeBounds.min || g > gradeBounds.max) {
+      return `GPA scale must be between ${gradeBounds.min.toFixed(1)} and ${gradeBounds.max.toFixed(1)}`;
+    }
+    return null;
+  }, [newCourse.grade, gradeBounds.min, gradeBounds.max]);
+  const creditsInvalid = useMemo(() => {
+    if (!newCourse.credits) return null;
+    const c = Number(newCourse.credits);
+    if (Number.isNaN(c) || c < 0.5 || c > 30) {
+      return "Credit hours must be between 0.5 and 30";
+    }
+    return null;
+  }, [newCourse.credits]);
 
   // ---------------------------------------------------------------- actions
   // Returns true when the operation succeeded so callers can decide whether
@@ -363,12 +387,18 @@ export default function GpaLab() {
                     placeholder={`Grade (0 to ${data.max})`}
                     value={newCourse.grade}
                     onChange={(e) => setNewCourse({ ...newCourse, grade: e.target.value })}
-                    className="h-8 w-28 rounded-lg text-sm"
+                    aria-invalid={gradeInvalid ? true : undefined}
+                    className={cn("h-8 w-28 rounded-lg text-sm", gradeInvalid && "border-destructive focus-visible:ring-destructive/40")}
                   />
+                  {gradeInvalid ? (
+                    <p className="text-[11px] font-medium text-destructive" role="alert">{gradeInvalid}</p>
+                  ) : creditsInvalid ? (
+                    <p className="text-[11px] font-medium text-destructive" role="alert">{creditsInvalid}</p>
+                  ) : null}
                   <Button
                     size="sm"
                     className="h-8 gap-1 rounded-lg"
-                    disabled={busy || !newCourse.name.trim() || !newCourse.credits}
+                    disabled={busy || !newCourse.name.trim() || !newCourse.credits || !!gradeInvalid || !!creditsInvalid}
                     onClick={async () => {
                       const okResult = await guard(() => addCourse({
                         semesterId: sem.id,

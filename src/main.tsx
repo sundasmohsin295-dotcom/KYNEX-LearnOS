@@ -17,6 +17,7 @@ import { DegradedRoute } from "@/components/DegradedRoute";
 import { SystemRecoveryScreen } from "@/components/SystemRecoveryScreen";
 import { MotionProvider } from "@/lib/motion";
 import { UiPrefsProvider } from "@/components/UiPrefsProvider";
+import { StudyBuddy } from "@/components/StudyBuddy";
 import { api } from "@/convex/_generated/api";
 import { sweepCorruptedStorage } from "@/lib/storageSweep";
 import { createRoot } from "react-dom/client";
@@ -496,6 +497,10 @@ createRoot(rootElement).render(
             </RouteErrorBoundary>
           </Suspense>
         </BrowserRouter>
+        {/* Study Buddy: context-aware companion. Provider-aware (persona),
+            route-aware (hints) — but rendered outside <Routes> so it never
+            remounts on navigation. */}
+        <StudyBuddy />
         </MotionProvider>
         </UiPrefsProvider>
         <Toaster />

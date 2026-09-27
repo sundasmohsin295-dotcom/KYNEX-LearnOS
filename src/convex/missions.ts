@@ -166,7 +166,7 @@ export const startFromCurrent = mutation({
     if (material.status !== "ready" || !material.analysis) {
       if (material.status === "processing") {
         throw new Error(
-          "Your material exists, but analysis is still running. Wait for it to finish, then start the mission.",
+          "Material analysis is currently processing. Please wait for completion in the Vault before starting your mission.",
         );
       }
       const reason = material.error

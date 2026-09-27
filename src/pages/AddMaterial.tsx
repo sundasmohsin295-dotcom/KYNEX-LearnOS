@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";import { useMutation, useA
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  AlertTriangle, FileUp, Link2, Sparkles, Upload, X,
+  AlertTriangle, Clock, FileUp, Link2, Sparkles, Upload, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -28,6 +28,11 @@ export default function AddMaterial() {
   const [errorMsg, setErrorMsg] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
+  // HTTP 429 recovery flow: the server classifies upstream rate limits
+  // (aiEngine.ingestHttpError) and returns a message containing "(HTTP 429)".
+  // When detected, the failure gets its own actionable banner + toast —
+  // upload-as-file / paste-text / retry-later — instead of the generic red card.
+  const [rateLimited, setRateLimited] = useState(false);
   // Kept in state (not a ref) so the button's disabled state re-renders when
   // a file is chosen — refs don't trigger renders.
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -43,10 +48,20 @@ export default function AddMaterial() {
     async (job: () => Promise<void>) => {
       setPhase("working");
       setErrorMsg("");
+      setRateLimited(false);
       try {
         await job();
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        const is429 = msg.includes("(HTTP 429)");
+        setRateLimited(is429);
+        if (is429) {
+          // Immediate, actionable toast — the protocol's exact guidance.
+          toast.warning(
+            "That source temporarily limited access (HTTP 429). Please upload the document directly as a PDF or text file, or try again shortly.",
+            { duration: 12_000 },
+          );
+        }
         setErrorMsg(msg);
         setPhase("error");
       }
@@ -318,7 +333,28 @@ export default function AddMaterial() {
                 </p>
               </div>
             )}
-            {phase === "error" && (
+            {phase === "error" && rateLimited && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-start gap-3 rounded-2xl border border-warning/30 bg-warning/5 p-5"
+              >
+                <Clock className="mt-0.5 size-5 shrink-0 text-warning" />
+                <div className="flex-1">
+                  <p className="font-semibold text-warning">Source is rate-limiting us (HTTP 429)</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{errorMsg}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Your material was NOT analyzed — nothing was faked. Fastest path: switch to
+                    the <strong>Upload file</strong> or <strong>Paste text</strong> tab above and
+                    add the same content directly, or retry this link in a few minutes.
+                  </p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setPhase("idle")}>
+                  <X className="size-4" />
+                </Button>
+              </motion.div>
+            )}
+            {phase === "error" && !rateLimited && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
