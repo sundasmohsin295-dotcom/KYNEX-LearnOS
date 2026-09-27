@@ -6,6 +6,8 @@ import {
   type ScaleId,
   type GradeBand,
   maxPointFor,
+  isValidGradePoint,
+  isValidCreditHours,
   semesterGpa,
   cumulativeGpa,
   gradedCredits,
@@ -353,22 +355,23 @@ export const addCourse = mutation({
     }
     const finalName = name.trim().slice(0, COURSE_NAME_MAX);
     if (!finalName) return { ok: false as const };
-    const credits = clampNum(creditHours, 0.5, 30);
-    if (credits === undefined) {
+    // Strict boundary validation (same validators the unit tests cover).
+    if (!isValidCreditHours(creditHours)) {
       throw new Error("Credit hours must be between 0.5 and 30.");
     }
+    const credits = creditHours;
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
-    const max = maxPointFor((profile?.gradingScale ?? "4.0") as "4.0" | "5.0");
+    const scale = (profile?.gradingScale ?? "4.0") as "4.0" | "5.0";
+    const max = maxPointFor(scale);
     let gp: number | undefined;
     if (gradePoint !== undefined) {
-      const g = clampNum(gradePoint, 0, max);
-      if (g === undefined) {
+      if (!isValidGradePoint(gradePoint, scale)) {
         throw new Error(`Grade point must be between 0 and ${max}.`);
       }
-      gp = g;
+      gp = gradePoint;
     }
     await ctx.db.insert("gpaCourses", {
       userId,

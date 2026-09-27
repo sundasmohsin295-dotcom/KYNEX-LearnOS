@@ -18,7 +18,14 @@
 3. **The Exam Radar & Triage Matrix (`/insights` · `/examiner`):** Preparation priority triaged from real evidence — accuracy, recency and uploaded materials — compressing study queues as exam day approaches. Evidence-based by design: it never claims a topic will appear, and written-answer marks are provisional rubric marks.
 4. **The Mistake Bank & Autopsy (`/mistakes`):** Every miss is classified — conceptual, calculation, careless, misreading, time-pressure — and tracked until later evidence resolves it, breaking down why the student fell for the trap.
 
-Supporting modules: **KYNEX Twin** (`/twin`, living academic identity + Gap Radar + confidence calibration), **Vault** (`/library`·`/add`, universal intake with honest failure states), **KYNEX Move** missions, **GPA Lab** (`/gpa`), **Planner** (`/planner`), **KYNEX Map** (`/graph`).
+Supporting modules: **KYNEX Twin** (`/twin`, living academic identity + Gap Radar + confidence calibration), **Vault** (`/library`·`/add`, universal intake with honest failure states), **KYNEX Move** missions, **GPA Lab** (`/gpa`), **Planner** (`/planner`), **KYNEX Map** (`/graph`), **Visualize** (`/visualize`) and **Writer** (`/writer`).
+
+---
+
+## 🌍 Global & Generational Ecosystem
+- **10 Languages, Native RTL:** English, Mandarin (Simplified), Hindi, Spanish, French, Arabic, Bengali, Portuguese, Indonesian and Urdu — with structural RTL mirroring (`dir` attributes, logical `ms-*`/`me-*` spacing) and dedicated Naskh/Nastaliq/Devanagari/Bengali typography for Arabic, Urdu, Hindi and Bengali.
+- **Generational Style Matrix:** Five runtime UI profiles (Glassmorphism, Neumorphism, Claymorphism, Bento, Minimal) × four generational personas (Classic, Millennial, Gen Z, Gen Alpha) — switchable instantly from ⌘K or the in-app customizer, persisted via versioned storage with corruption-sweep protection.
+- **Study Buddy Companion:** A fully local, customizable cartoon assistant — choose Cyber-Bot, Wise Owl, Pixel Scholar or Anime Mentor, rename it anything, and get context-aware module guidance in the tone of your active persona. Zero AI calls, zero data leaves the browser.
 
 ---
 
@@ -39,16 +46,21 @@ Rejecting generic AI templates and purple gradients, KYNEX implements:
 ---
 
 ## 🧪 Verification
-`bun tsc -b --noEmit` clean · **256 tests / 25 files passing**, including adversarial suites:
-cross-user attacks, AI context isolation, perturbation shield E2E, deletion integrity, chaos boundaries, referral exploits.
+`bun tsc -b --noEmit` clean · **321 tests / 32 files passing**, including adversarial suites:
+cross-user attacks, AI context isolation, perturbation shield E2E, deletion integrity, chaos boundaries, referral exploits, and the core validation suite (GPA boundaries, sanitization shield, rate-limit classification).
 
 ```bash
 bun install
-bun run dev     # app (Convex dev runs in the platform sandbox)
+cp env.example .env   # fill real values; .env is git-ignored (or use the platform Keys UI)
+bun run dev           # app (Convex dev runs in the platform sandbox)
 bun run test
 bun run build
 ```
 
+> 🔐 **Secrets hygiene:** real keys live only in `.env` (git-ignored) or the platform's encrypted key store. `env.example` documents every variable with placeholders — no secret is ever committed. See [`SECURITY.md`](./SECURITY.md).
+>
+> 📄 Released under the [MIT License](./LICENSE).
+>
 > 📂 *Compliance verification proof of our enterprise development workflows and session logs are structured within the [`bob_sessions/`](./bob_sessions) folder.*
 
 ---

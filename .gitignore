@@ -1,5 +1,24 @@
+# Environment & Secrets — never commit real keys
+.env
 .env.local
-node_modules
-dist
-src/convex/_generated
+.env.*.local
+.env.development
+.env.production
+*.pem
+*.key
+
+# Build & Dependencies
+node_modules/
+dist/
+.vite/
+src/convex/_generated/
+
+# OS & IDE files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs & local tooling artifacts
+*.log
 strix_runs/

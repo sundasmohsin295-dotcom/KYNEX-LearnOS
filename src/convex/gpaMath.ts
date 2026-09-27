@@ -79,6 +79,30 @@ export function maxPointFor(scale: ScaleId): number {
   return scale === "5.0" ? 5 : 4;
 }
 
+// ---------------------------------------------------------------------------
+// Strict boundary validation — the dual-layer GPA contract.
+// The SAME validators are used by the server mutations (gpa.ts) and tested
+// directly, so the client hints, server clamps and unit tests can never
+// drift apart.
+// ---------------------------------------------------------------------------
+
+export const CREDIT_HOURS_MIN = 0.5;
+export const CREDIT_HOURS_MAX = 30;
+
+/** Strict grade-point boundary: finite and within [0, scale max]. */
+export function isValidGradePoint(value: number, scale: ScaleId): boolean {
+  return Number.isFinite(value) && value >= 0 && value <= maxPointFor(scale);
+}
+
+/** Strict credit-hour boundary: finite and within [0.5, 30]. */
+export function isValidCreditHours(value: number): boolean {
+  return (
+    Number.isFinite(value) &&
+    value >= CREDIT_HOURS_MIN &&
+    value <= CREDIT_HOURS_MAX
+  );
+}
+
 /** Convert a percentage mark to grade points under a band table. */
 export function pointForPercent(percent: number, bands: GradeBand[]): number {
   if (!Number.isFinite(percent)) return 0;
